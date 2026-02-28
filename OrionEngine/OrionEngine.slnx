@@ -1,0 +1,8 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="editor/Editor.vcxproj" Id="d0008102-4fab-4257-ae36-3232ad3ef456" />
+  <Project Path="engine/Engine.vcxproj" Id="d90daa7e-639b-4298-886b-5fb9abc5ab23" />
+</Solution>

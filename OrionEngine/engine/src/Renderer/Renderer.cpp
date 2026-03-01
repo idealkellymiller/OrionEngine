@@ -2,6 +2,55 @@
 
 #include "Renderer/Renderer.h"
 
-void Renderer::RenPrint() {
-	std::cout << "Renderer printing this message" << std::endl;
+
+bool Renderer::Init() {
+	printf("Initializing Renderer...\n");
+	
+	printf("Renderer initialized successfully.\n");
+	return true;
+}
+
+void Renderer::Shutdown() {
+	printf("Renderer shutdown successfully.\n");
+}
+
+void Renderer::beginFrame(float dt) {
+
+}
+
+void Renderer::RenderFrame() {
+
+}
+
+void Renderer::EndFrame() {
+
+}
+
+void Renderer::SetScene(Scene* scene) {
+
+}
+
+void Renderer::SyncScene() {
+
+}
+
+void Renderer::SetViewportSize(int w, int h) {
+
+}
+
+TextureHandle Renderer::GetViewportTexture() {
+	TextureHandle tex;
+	return tex;
+}
+
+void Renderer::RebuildPassList() {
+
+}
+
+void Renderer::ExecutePasses() {
+
+}
+
+int Renderer::PickObject() {
+	return -1;
 }

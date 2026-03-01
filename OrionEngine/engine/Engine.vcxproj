@@ -19,15 +19,44 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ECS\ECS.h" />
+    <ClInclude Include="include\Apollo\Apollo.h" />
+    <ClInclude Include="include\Asset\AssetLoader.h" />
+    <ClInclude Include="include\Asset\AssetManager.h" />
+    <ClInclude Include="include\Asset\AssetRegistry.h" />
+    <ClInclude Include="include\Core\Config.h" />
+    <ClInclude Include="include\Core\Console.h" />
+    <ClInclude Include="include\Core\Core.h" />
+    <ClInclude Include="include\Core\Profiler.h" />
+    <ClInclude Include="include\Core\Time.h" />
+    <ClInclude Include="include\ECS\Component.h" />
+    <ClInclude Include="include\ECS\ECSSystem.h" />
+    <ClInclude Include="include\ECS\Entity.h" />
+    <ClInclude Include="include\ECS\Registry.h" />
+    <ClInclude Include="include\Input\Input.h" />
+    <ClInclude Include="include\Input\Keyboard.h" />
+    <ClInclude Include="include\Input\Mouse.h" />
     <ClInclude Include="include\Orion.h" />
-    <ClInclude Include="include\Renderer\Renderer.h" />
+    <ClInclude Include="include\Physics\Collider.h" />
+    <ClInclude Include="include\Physics\PhysicsSystem.h" />
+    <ClInclude Include="include\Physics\Rigidbody.h" />
+    <ClInclude Include="include\Renderer\Buffer.h" />
+    <ClInclude Include="include\Renderer\Camera.h" />
+    <ClInclude Include="include\Renderer\Material.h" />
+    <ClInclude Include="include\Renderer\Mesh.h" />
+    <ClInclude Include="include\Renderer\ResourceDescs.h" />
+    <ClInclude Include="include\Renderer\Texture.h" />
     <ClInclude Include="include\Scene\Scene.h" />
+    <ClInclude Include="include\Scene\SceneManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Core\Console.cpp" />
     <ClCompile Include="src\ECS\ECS.cpp" />
     <ClCompile Include="src\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Scene\Scene.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\fragment.glsl" />
+    <None Include="shaders\vertex.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

@@ -1,6 +1,7 @@
 #pragma once
 
-class ECS {
+
+class PhysicsSystem {
 public:
 
 };

@@ -1,5 +1,4 @@
 #include "Renderer/Mesh.h"
-#include "glad/glad.h"
 #include <vector>
 
 

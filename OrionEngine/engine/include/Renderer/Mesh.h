@@ -1,4 +1,5 @@
 #pragma once
+#include "external/glad/glad.h"
 
 
 class Mesh {

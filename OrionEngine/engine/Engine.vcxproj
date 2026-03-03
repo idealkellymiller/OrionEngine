@@ -33,6 +33,8 @@
     <ClInclude Include="include\ECS\Entity.h" />
     <ClInclude Include="include\ECS\Registry.h" />
     <ClInclude Include="include\external\glad\glad.h" />
+    <ClInclude Include="include\external\GLFW\glfw3.h" />
+    <ClInclude Include="include\external\GLFW\glfw3native.h" />
     <ClInclude Include="include\external\KHR\khrplatform.h" />
     <ClInclude Include="include\glad\glad.h" />
     <ClInclude Include="include\Input\Input.h" />
@@ -85,7 +87,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>

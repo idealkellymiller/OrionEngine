@@ -1,4 +1,6 @@
 C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\src\Core\Console.cpp;C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\x64\Debug\Console.obj
 C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\src\ECS\ECS.cpp;C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\x64\Debug\ECS.obj
+C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\src\Renderer\glad.c;C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\x64\Debug\glad.obj
+C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\src\Renderer\Mesh.cpp;C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\x64\Debug\Mesh.obj
 C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\src\Renderer\Renderer.cpp;C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\x64\Debug\Renderer.obj
 C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\src\Scene\Scene.cpp;C:\Users\luked\Desktop\OrionEngine\OrionEngine\engine\x64\Debug\Scene.obj

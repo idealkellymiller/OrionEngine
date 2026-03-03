@@ -14,6 +14,7 @@
 #include "Renderer/DebugRenderSettings.h"
 #include "Renderer/RenderPass.h"
 #include "Scene/Scene.h"
+#include "Renderer/Mesh.h"
 
 
 class Renderer {

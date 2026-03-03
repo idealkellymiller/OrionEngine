@@ -54,3 +54,4 @@ void Renderer::ExecutePasses() {
 int Renderer::PickObject() {
 	return -1;
 }
+

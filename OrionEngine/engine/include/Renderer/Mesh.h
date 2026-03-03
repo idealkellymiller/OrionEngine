@@ -3,6 +3,11 @@
 
 class Mesh {
 public:
-	Mesh() = default;
-	~Mesh() = default;
+	Mesh();
+	void Draw();
+	~Mesh();
+
+private:
+	// Vertex Buffer Object, Vertex Array Object
+	unsigned int VBO, VAO, vertex_count;
 };

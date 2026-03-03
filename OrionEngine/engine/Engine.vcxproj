@@ -33,6 +33,7 @@
     <ClInclude Include="include\ECS\Entity.h" />
     <ClInclude Include="include\ECS\Registry.h" />
     <ClInclude Include="include\external\glad\glad.h" />
+    <ClInclude Include="include\external\KHR\khrplatform.h" />
     <ClInclude Include="include\glad\glad.h" />
     <ClInclude Include="include\Input\Input.h" />
     <ClInclude Include="include\Input\Keyboard.h" />

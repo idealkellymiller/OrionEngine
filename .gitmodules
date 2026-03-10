@@ -1,0 +1,3 @@
+[submodule "OrionEngine/engine/external/GLFW"]
+	path = OrionEngine/engine/external/GLFW
+	url = https://github.com/glfw/glfw

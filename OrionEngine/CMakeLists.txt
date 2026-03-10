@@ -1,21 +1,24 @@
 cmake_minimum_required(VERSION 3.23)
-
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 project(OrionEngine)
 
     # include all external dependency libraries' CMake files to build them
     add_subdirectory("engine/external/GLFW")
 
+    add_library(Glad STATIC "engine/external/Glad/src/glad.c")
+        target_include_directories(Glad PUBLIC "engine/external/Glad/include")
+
     # Engine .dll
     add_library(Engine SHARED)
 
         # sets output directory to something like OrionEngine/bin/Debug-x64-Windows
-        set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>-$<PLATFORM_ID>-$<HOST_SYSTEM_PROCESSOR>")
+        set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>-${CMAKE_GENERATOR_PLAFORM}-$<PLATFORM_ID>")
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
         set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR})
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 
         # source files that define the engine library
-        target_sources(OrionEngine PRIVATE
+        target_sources(Engine PRIVATE
             "engine/src/Core/Console.cpp"
 
             "engine/src/ECS/ECS.cpp"
@@ -25,17 +28,21 @@ project(OrionEngine)
 
             "engine/src/Scene/Scene.cpp"
 
-            "engine/external/Glad/src/glad.c" # compiles glad directly
+            # "engine/external/Glad/src/glad.c" # compiles glad directly
         )
 
-        target_link_libraries(OrionEngine PUBLIC
+        target_link_libraries(Engine PUBLIC
             glfw
+            Glad
         )
 
         # include all headers from the include directory
-        target_include_directories(OrionEngine PUBLIC 
+        target_include_directories(Engine 
+        PUBLIC 
             "engine/include"
-            "engine/external/Glad/include"
+            # "engine/external/Glad/include"
+        PRIVATE
+            "engine/src"
         )
 
     # Editor .exe
@@ -46,4 +53,13 @@ project(OrionEngine)
         )
         
         # link Editor.exe to Engine.dll
-        target_link_libraries(Editor PRIVATE Engine)
+        target_link_libraries(Editor PRIVATE 
+            Engine)
+
+# this post-build command copies Engine.dll to the dir where Editor.exe is
+# for easy Windows execution!
+add_custom_command(TARGET Editor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:Engine>
+    $<TARGET_FILE_DIR:Editor>
+)

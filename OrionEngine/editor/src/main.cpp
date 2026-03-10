@@ -1,7 +1,5 @@
 #include <Orion.h>
 
-
-
 // Prototypes
 unsigned int make_shader(const std::string& vertex_filepath, const std::string& fragment_filepath);
 unsigned int make_module(const std::string& filepath, unsigned int module_type);
@@ -36,7 +34,7 @@ int main() {
 	Renderer::Init();
 	
 	// Create a triangle (mesh) object
-	Mesh* triangle = new Mesh();
+	//Mesh* triangle = new Mesh();
 
 	// create the shader (vertex and fragment)
     /*

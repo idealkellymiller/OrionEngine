@@ -7,6 +7,8 @@ bool Renderer::Init() {
 	printf("Initializing Renderer...\n");
 	
 	printf("Renderer initialized successfully.\n");
+	printf("Testttttting.\n");
+	printf("Test stuffzzzz.\n");
 	return true;
 }
 

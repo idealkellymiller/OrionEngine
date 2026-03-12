@@ -13,4 +13,4 @@
 #include "ECS/ECSSystem.h"
 #include "Core/Core.h"
 
-#include "external/GLFW/glfw3.h"
+#include "../external/GLFW/include/GLFW/glfw3.h"

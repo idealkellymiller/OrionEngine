@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.23)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-project(OrionEngine)
+project(OrionEngine LANGUAGES CXX C)
 
     # include all external dependency libraries' CMake files to build them
     add_subdirectory("engine/external/GLFW")
 
     add_library(Glad STATIC "engine/external/Glad/src/glad.c")
-        target_include_directories(Glad PUBLIC "engine/external/Glad/include")
+        target_include_directories(Glad PUBLIC 
+        "engine/external/Glad/include"
+        "engine/external/Glad/include/glad"
+        "engine/external/Glad/include/KHR"
+    )
 
     # Engine .dll
     add_library(Engine SHARED)
@@ -17,7 +21,8 @@ project(OrionEngine)
         set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR})
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 
-        # source files that define the engine library
+        # source files that define the engine library 
+        # (PUT ALL OUR WRITTEN .CPPs HERE)
         target_sources(Engine PRIVATE
             "engine/src/Core/Console.cpp"
 
@@ -27,8 +32,6 @@ project(OrionEngine)
             "engine/src/Renderer/Mesh.cpp"
 
             "engine/src/Scene/Scene.cpp"
-
-            # "engine/external/Glad/src/glad.c" # compiles glad directly
         )
 
         target_link_libraries(Engine PUBLIC
@@ -40,7 +43,6 @@ project(OrionEngine)
         target_include_directories(Engine 
         PUBLIC 
             "engine/include"
-            # "engine/external/Glad/include"
         PRIVATE
             "engine/src"
         )

@@ -3,6 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="editor/Editor.vcxproj" Id="d0008102-4fab-4257-ae36-3232ad3ef456" />
-  <Project Path="engine/Engine.vcxproj" Id="d90daa7e-639b-4298-886b-5fb9abc5ab23" />
+  <Project Path="editor/Editor.vcxproj" DisplayName="editor" Id="91c5c2a0-5ea1-44b5-be8d-0791a2fa0f0d" />
+  <Project Path="engine/Engine.vcxproj" DisplayName="engine" Id="5322eee9-8acd-4782-b480-580f4b79eb11" />
 </Solution>

@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\luked\Desktop\OrionEngine\OrionEngine\x64\Debug\Engine.dll</FullPath>
+      <FullPath>C:\dev\OrionEngine\OrionEngine\x64\Debug\engine.dll</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

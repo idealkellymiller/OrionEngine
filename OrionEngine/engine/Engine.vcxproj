@@ -18,58 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\Apollo\Apollo.h" />
-    <ClInclude Include="include\Asset\AssetLoader.h" />
-    <ClInclude Include="include\Asset\AssetManager.h" />
-    <ClInclude Include="include\Asset\AssetRegistry.h" />
-    <ClInclude Include="include\Core\Config.h" />
-    <ClInclude Include="include\Core\Console.h" />
-    <ClInclude Include="include\Core\Core.h" />
-    <ClInclude Include="include\Core\Profiler.h" />
-    <ClInclude Include="include\Core\Time.h" />
-    <ClInclude Include="include\ECS\Component.h" />
-    <ClInclude Include="include\ECS\ECSSystem.h" />
-    <ClInclude Include="include\ECS\Entity.h" />
-    <ClInclude Include="include\ECS\Registry.h" />
-    <ClInclude Include="include\external\glad\glad.h" />
-    <ClInclude Include="include\external\GLFW\glfw3.h" />
-    <ClInclude Include="include\external\GLFW\glfw3native.h" />
-    <ClInclude Include="include\external\KHR\khrplatform.h" />
-    <ClInclude Include="include\glad\glad.h" />
-    <ClInclude Include="include\Input\Input.h" />
-    <ClInclude Include="include\Input\Keyboard.h" />
-    <ClInclude Include="include\Input\Mouse.h" />
-    <ClInclude Include="include\Orion.h" />
-    <ClInclude Include="include\Physics\Collider.h" />
-    <ClInclude Include="include\Physics\PhysicsSystem.h" />
-    <ClInclude Include="include\Physics\Rigidbody.h" />
-    <ClInclude Include="include\Renderer\Buffer.h" />
-    <ClInclude Include="include\Renderer\Camera.h" />
-    <ClInclude Include="include\Renderer\Material.h" />
-    <ClInclude Include="include\Renderer\Mesh.h" />
-    <ClInclude Include="include\Renderer\ResourceDescs.h" />
-    <ClInclude Include="include\Renderer\Texture.h" />
-    <ClInclude Include="include\Scene\Scene.h" />
-    <ClInclude Include="include\Scene\SceneManager.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\Core\Console.cpp" />
-    <ClCompile Include="src\ECS\ECS.cpp" />
-    <ClCompile Include="src\Renderer\glad.c" />
-    <ClCompile Include="src\Renderer\Mesh.cpp" />
-    <ClCompile Include="src\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Scene\Scene.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\fragment.glsl" />
-    <None Include="shaders\vertex.glsl" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{D90DAA7E-639B-4298-886B-5FB9ABC5AB23}</ProjectGuid>
-    <RootNamespace>OrionEngine</RootNamespace>
+    <ProjectGuid>{5322eee9-8acd-4782-b480-580f4b79eb11}</ProjectGuid>
+    <RootNamespace>engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -87,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -152,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(SolutionDir)external;include/renderer;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -174,6 +127,46 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="include\renderer\BoundingSphere.hpp" />
+    <ClInclude Include="include\renderer\Camera.hpp" />
+    <ClInclude Include="include\renderer\DirectionalLight.hpp" />
+    <ClInclude Include="include\renderer\EditorCamera.hpp" />
+    <ClInclude Include="include\renderer\Framebuffer.hpp" />
+    <ClInclude Include="include\renderer\Frustum.hpp" />
+    <ClInclude Include="include\renderer\IndexBuffer.hpp" />
+    <ClInclude Include="include\renderer\IRenderBackend.hpp" />
+    <ClInclude Include="include\renderer\Material.hpp" />
+    <ClInclude Include="include\renderer\MaterialRenderState.hpp" />
+    <ClInclude Include="include\renderer\Mesh.hpp" />
+    <ClInclude Include="include\renderer\OBJLoader.hpp" />
+    <ClInclude Include="include\renderer\OpenGLBackend.hpp" />
+    <ClInclude Include="include\renderer\Renderable.hpp" />
+    <ClInclude Include="include\renderer\Renderer.hpp" />
+    <ClInclude Include="include\renderer\RenderPass.hpp" />
+    <ClInclude Include="include\renderer\RenderScene.hpp" />
+    <ClInclude Include="include\renderer\Shader.hpp" />
+    <ClInclude Include="include\renderer\Texture.hpp" />
+    <ClInclude Include="include\renderer\Vertex.hpp" />
+    <ClInclude Include="include\renderer\VertexArray.hpp" />
+    <ClInclude Include="include\renderer\VertexBuffer.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\renderer\Camera.cpp" />
+    <ClCompile Include="src\renderer\Framebuffer.cpp" />
+    <ClCompile Include="src\renderer\Frustum.cpp" />
+    <ClCompile Include="src\renderer\glad.c" />
+    <ClCompile Include="src\renderer\IndexBuffer.cpp" />
+    <ClCompile Include="src\renderer\Material.cpp" />
+    <ClCompile Include="src\renderer\Mesh.cpp" />
+    <ClCompile Include="src\renderer\OBJLoader.cpp" />
+    <ClCompile Include="src\renderer\OpenGLBackend.cpp" />
+    <ClCompile Include="src\renderer\Renderer.cpp" />
+    <ClCompile Include="src\renderer\Shader.cpp" />
+    <ClCompile Include="src\renderer\Texture.cpp" />
+    <ClCompile Include="src\renderer\VertexArray.cpp" />
+    <ClCompile Include="src\renderer\VertexBuffer.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

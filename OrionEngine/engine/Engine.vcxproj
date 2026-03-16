@@ -132,6 +132,7 @@
     <ClInclude Include="include\renderer\Camera.hpp" />
     <ClInclude Include="include\renderer\DirectionalLight.hpp" />
     <ClInclude Include="include\renderer\EditorCamera.hpp" />
+    <ClInclude Include="include\renderer\EditorCameraInput.hpp" />
     <ClInclude Include="include\renderer\Framebuffer.hpp" />
     <ClInclude Include="include\renderer\Frustum.hpp" />
     <ClInclude Include="include\renderer\IndexBuffer.hpp" />
@@ -153,6 +154,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\renderer\Camera.cpp" />
+    <ClCompile Include="src\renderer\EditorCamera.cpp" />
+    <ClCompile Include="src\renderer\EditorCameraInput.cpp" />
     <ClCompile Include="src\renderer\Framebuffer.cpp" />
     <ClCompile Include="src\renderer\Frustum.cpp" />
     <ClCompile Include="src\renderer\glad.c" />

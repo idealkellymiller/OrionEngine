@@ -1,16 +1,2 @@
-﻿  Camera.cpp
-  Framebuffer.cpp
-  Frustum.cpp
-  IndexBuffer.cpp
-  Material.cpp
-  Mesh.cpp
-  OBJLoader.cpp
-  OpenGLBackend.cpp
-  Renderer.cpp
-  Shader.cpp
-  Texture.cpp
-  VertexArray.cpp
-  VertexBuffer.cpp
-  Generating Code...
-  glad.c
+﻿  EditorCamera.cpp
   Engine.vcxproj -> C:\dev\OrionEngine\OrionEngine\x64\Debug\Engine.lib

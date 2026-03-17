@@ -3,6 +3,8 @@
 bin/
 bin-int/
 OrionEngine/build/
+OrionEngine/editor/x64/
+OrionEngine/engine/x64/
 
 # Files
 *.user

@@ -90,7 +90,11 @@ private:
 	static glm::mat4 BuildLightSpaceMatrix();
 
 private:
-	static IRenderBackend* s_Backend;
+	// static IRenderBackend* s_Backend;
+	
+	// Store the clear color so the backend has a consistent state.
+	static float m_ClearColor[4];
+
 	static int s_WindowWidth;
 	static int s_WindowHeight;
 

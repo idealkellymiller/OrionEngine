@@ -1,6 +1,6 @@
 #include "Renderer.hpp"
-#include "IRenderBackend.hpp"
-#include "OpenGLBackend.hpp"
+// #include "IRenderBackend.hpp"
+// #include "OpenGLBackend.hpp"
 #include "Shader.hpp"
 #include "VertexArray.hpp"
 #include "Mesh.hpp"
@@ -17,7 +17,10 @@
 
 
 // Static member definitions
-IRenderBackend* Renderer::s_Backend = nullptr;
+// IRenderBackend* Renderer::s_Backend = nullptr;
+
+float Renderer::m_ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+
 int Renderer::s_WindowWidth;
 int Renderer::s_WindowHeight;
 std::vector<Renderer::DrawCommand> Renderer::s_OpaqueQueue;
@@ -37,20 +40,31 @@ bool Renderer::Init() {
 	// Create the backend object.
 	// For now, we are hardcoding OpenGL.
 	// Later this could be chosen from config, platform settings, etc.
-	s_Backend = new OpenGLBackend();
+	// s_Backend = new OpenGLBackend();
 
 	InitShadowResources();
 
-	return s_Backend->Init();
+	// Enables depth testing.
+	// This tells OpenGL to compate fragment depth values so that.
+	// closer objects appear in front of farther ones.
+	glEnable(GL_DEPTH_TEST);
+
+	// Set the depth comparison rule.
+	// GL_LESS means a fragment passes if its depth is less than
+	// the value already stored in the depth buffer.
+	glDepthFunc(GL_LESS);
+
+	// Set the initial clear color.
+	// glClearColor does NOT immediately change the screen.
+	// It onlt tells OpenGL waht color to use next time the
+	// color buffer is cleared with glClear(GL_COLOR_BUFFER_BIT).
+	glClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]);
+
+	return true; //s_Backend->Init();
 }
 
 void Renderer::Shutdown()
 {
-	if (s_Backend){
-		s_Backend->Shutdown();
-		delete s_Backend;
-		s_Backend = nullptr;
-	}
 
 	ShutdownShadowResources();
 }
@@ -66,20 +80,34 @@ void Renderer::SetViewport(int x, int y, int width, int height)
 
 void Renderer::SetClearColor(float r, float g, float b, float a)
 {
-	if (s_Backend) 
-		s_Backend->SetClearColor(r, g, b, a);
+	// Update the stored clear color.
+	m_ClearColor[0] = r;
+	m_ClearColor[1] = g;
+	m_ClearColor[2] = b;
+	m_ClearColor[3] = a;
+
+	// Stores the RGBA color OpenGL should use during a color-buffer clear.
+	// Again, this does not paint the window by itself.
+	glClearColor(r, g, b, a);
 }
 
 void Renderer::BeginFrame()
 {
-	if (s_Backend) 
-		s_Backend->BeginFrame();
+	glEnable(GL_DEPTH_TEST);
+
+	// Clear the color buffer using the color previously set by glClearColor.
+	// The color buffer is what ends up being displayed on screen.
+	//
+	// Clears the depth buffer as well.
+	// The depth buffer stores per-pixel depth information used for
+	// proper 3D visibilty testing.
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Renderer::EndFrame()
 {
-	if (s_Backend) 
-		s_Backend->EndFrame();
+	// Nothing here rn
+	// TODO: add frame stats 
 }
 
 void Renderer::DrawMesh(Mesh& mesh, Material& material, const glm::mat4& modelMatrix)
@@ -93,7 +121,7 @@ void Renderer::DrawMesh(Mesh& mesh, Material& material, const glm::mat4& modelMa
 	// Ask the material which shader it uses
 	Shader* shader = material.GetShader();
 	// Validate draw state before touching OpenGL
-	if (shader == nullptr || !s_Backend || !mesh.IsValid())
+	if (shader == nullptr || !mesh.IsValid())
 		return;
 
 	// Upload per-object transform data.
@@ -333,8 +361,46 @@ void Renderer::SetupShaderForPass(Shader& shader, const Camera& camera)
 
 void Renderer::ApplyMaterialRenderState(const Material& material)
 {
-	if (s_Backend)
-		s_Backend->ApplyMaterialRenderState(material);
+	const MaterialRenderState& state = material.GetRenderState();
+
+
+	// Depth testing controls whether fragments are compared against the depth buffer.
+	if (state.DepthTest)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
+
+	// Depth write controls whether the fragment updates the depth buffer.
+	glDepthMask(state.DepthWrite ? GL_TRUE : GL_FALSE);
+
+	// Configure face culling
+	switch (state.Cull) {
+	case CullMode::None:
+		glDisable(GL_CULL_FACE);
+		break;
+
+	case CullMode::Back:
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);	// Cull back-facing triangles
+		break;
+
+	case CullMode::Front:
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);	// Cull front-facing trianlges
+		break;
+	}
+
+	// Configure blending.
+	if (state.Blend == BlendMode::Transparent) {
+		glEnable(GL_BLEND);
+
+		// Standard alpha blending:
+		// finalColor = srcColor * srcAlpha + dstColor * (1-srcAlpha)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	else {
+		glDisable(GL_BLEND);
+	}
 }
 
 
@@ -386,11 +452,31 @@ void Renderer::IssueDraw(const Mesh& mesh)
 
 	if (mesh.HasIndices()) {
 		// Draw indexed triangles using the bound element/index buffer.
-		s_Backend->DrawIndexed(mesh.GetVertexArray(), mesh.GetIndexCount());
+
+		mesh.GetVertexArray().Bind();
+
+		// Indexed draw: read indices fro the element array buffer currently associated with the VAO.
+		//
+		// Parameters:
+		// - GL_TRIANGLES: topology
+		// - indexCount: how many indices to consume
+		// - GL_UNSIGNED_INT: type of each index in the index buffer
+		// - nullptr: start at offset 0 in the bound index buffer
+		glDrawElements(GL_TRIANGLES, mesh.GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+
+		mesh.GetVertexArray().Unbind();
 	}
 	else {
 		// Draw non-indexed triangles directly from the buffer.
-		s_Backend->Draw(mesh.GetVertexArray(), mesh.GetVertexCount());
+
+		// Bind the VAO, which contains the vertex layout configuration.
+		mesh.GetVertexArray().Bind();
+
+		// non-indexed draw: read vertices sequentially from the bound vertex buffer.
+		glDrawArrays(GL_TRIANGLES, 0, mesh.GetVertexCount());
+
+		// Optional cleanup
+		mesh.GetVertexArray().Unbind();
 	}
 }
 

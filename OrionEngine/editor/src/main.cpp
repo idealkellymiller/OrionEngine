@@ -14,7 +14,7 @@
 #include "EditorCameraInput.hpp"
 
 
-
+// For EditorCamera scrolling ot change speed
 void ScrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 {
     (void)window;
@@ -420,9 +420,9 @@ int main()
         monkey.MeshPtr = &monkeyMesh;
         monkey.MaterialPtr = &glassMat;
         glm::mat4 modelB = glm::mat4(1.0f);
-        modelB = glm::translate(modelB, glm::vec3(50.0f, 25.0f, -80.0f));
+        modelB = glm::translate(modelB, glm::vec3(3.5f, 0.0f, -2.0f));
         modelB = glm::rotate(modelB, cos((float)glfwGetTime() * 3), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelB = glm::scale(modelB, glm::vec3(6.0f, 6.0f, 6.0f));
+        modelB = glm::scale(modelB, glm::vec3(1.0f, 1.0f, 1.0f));
         monkey.ModelMatrix = modelB;
         renderScene.AddRenderable(monkey);
 

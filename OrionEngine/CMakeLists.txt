@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+# set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 project(OrionEngine LANGUAGES CXX C)
 
     # include all external dependency libraries' CMake files to build them
-    add_subdirectory("engine/external/GLFW")
 
     add_library(Glad STATIC "engine/external/Glad/src/glad.c")
         target_include_directories(Glad PUBLIC 
@@ -11,6 +10,9 @@ project(OrionEngine LANGUAGES CXX C)
         "engine/external/Glad/include/glad"
         "engine/external/Glad/include/KHR"
     )
+
+    add_subdirectory("engine/external/GLFW")
+    add_subdirectory("engine/external/spdlog")
 
     # Engine .dll
     add_library(Engine SHARED)
@@ -21,24 +23,6 @@ project(OrionEngine LANGUAGES CXX C)
         set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR})
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 
-        # source files that define the engine library 
-        # (PUT ALL OUR WRITTEN .CPPs HERE)
-        target_sources(Engine PRIVATE
-            "engine/src/Core/Console.cpp"
-
-            "engine/src/ECS/ECS.cpp"
-            
-            "engine/src/Renderer/Renderer.cpp"
-            "engine/src/Renderer/Mesh.cpp"
-
-            "engine/src/Scene/Scene.cpp"
-        )
-
-        target_link_libraries(Engine PUBLIC
-            glfw
-            Glad
-        )
-
         # include all headers from the include directory
         target_include_directories(Engine 
         PUBLIC 
@@ -47,16 +31,45 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src"
         )
 
+        # source files that define the engine library 
+        # (PUT ALL OUR WRITTEN .CPPs HERE)
+        target_sources(Engine PRIVATE
+            "engine/src/Core/Console.cpp"
+            "engine/src/Application.cpp"
+            "engine/src/AppWindow.cpp"
+
+            "engine/src/Layers/Layer.cpp"
+            "engine/src/Layers/LayerStack.cpp"
+
+            "engine/src/Log/Log.cpp"
+        )
+
+        target_compile_definitions(Engine PRIVATE ORN_BUILD_DLL
+        PUBLIC
+            ORN_PLATFORM_WINDOWS
+            ORN_ENABLE_ASSERTS
+        )
+
+        target_compile_definitions(Engine INTERFACE ORION_PLATFORM_WINDOWS)
+
+        target_link_libraries(Engine PUBLIC
+            Glad
+            glfw
+            spdlog
+        )
+
+        get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)
+        message(STATUS "Engine Definitions: ${OUT_DEFS}")
+
     # Editor .exe
     add_executable(Editor "editor/src/main.cpp")
-
+        
         target_include_directories(Editor PRIVATE
-            "engine/src"
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
         
         # link Editor.exe to Engine.dll
-        target_link_libraries(Editor PRIVATE 
-            Engine)
+        target_link_libraries(Editor PRIVATE Engine)
 
 # this post-build command copies Engine.dll to the dir where Editor.exe is
 # for easy Windows execution!

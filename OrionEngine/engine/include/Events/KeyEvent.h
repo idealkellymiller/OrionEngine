@@ -4,7 +4,7 @@
 
 namespace Orion {
 
-    class KeyEvent : public Event 
+    class ORION_API KeyEvent : public Event 
     {
         public:
             inline int GetKeyCode() const { return KeyCode; }
@@ -15,39 +15,41 @@ namespace Orion {
             KeyEvent(int keycode) : KeyCode(keycode) {}
     };
 
-    class KeyPressedEvent : KeyEvent
+    class ORION_API KeyPressedEvent : public KeyEvent
     {
-        // constructor
-        KeyPressedEvent(int keycode, int repeatCnt) : KeyEvent(keycode), RepeatCount(repeatCnt) {}
+        public:
+            // constructor
+            KeyPressedEvent(int keycode, int repeatCnt) : KeyEvent(keycode), RepeatCount(repeatCnt) {}
 
-        inline int GetRepeatCount() const { return RepeatCount; }
+            inline int GetRepeatCount() const { return RepeatCount; }
 
-        EVENT_CLASS_TYPE(KeyPressed)
+            EVENT_CLASS_TYPE(KeyPressed)
 
-        std::string ToString() const override
-        {
-	        std::stringstream ss;
-	        ss << "KeyPressedEvent: " << GetKeyCode() << " (repeated " << GetRepeatCount() << " times)";
-	        return ss.str();
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "KeyPressedEvent: " << GetKeyCode() << " (repeated " << GetRepeatCount() << " times)";
+                return ss.str();
+            }
         
         private:
             int RepeatCount;
     };
 
-    class KeyReleasedEvent : KeyEvent
+    class ORION_API KeyReleasedEvent : public KeyEvent
     {
-        // constructor
-        KeyReleasedEvent(int keycode) : KeyEvent(keycode) {}
+        public:
+            // constructor
+            KeyReleasedEvent(int keycode) : KeyEvent(keycode) {}
 
-        EVENT_CLASS_TYPE(KeyReleased)
+            EVENT_CLASS_TYPE(KeyReleased)
 
-        std::string ToString() const override
-        {
-	        std::stringstream ss;
-	        ss << "KeyReleasedEvent: " << GetKeyCode();
-	        return ss.str();
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "KeyReleasedEvent: " << GetKeyCode();
+                return ss.str();
+            }
     };
 
 }

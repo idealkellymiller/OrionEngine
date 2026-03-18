@@ -1,43 +1,46 @@
 #pragma once
 
 #include "Event.h"
+#include <sstream>
 
 namespace Orion
 {
-    class WindowResizeEvent : public Event
+    class ORION_API WindowResizeEvent : public Event
     {
-        // constructor
-        WindowResizeEvent(unsigned int width, unsigned int height) :
-            Width(width), Height(height) {}
+        public:
+            // constructor
+            WindowResizeEvent(unsigned int width, unsigned int height) :
+                Width(width), Height(height) {}
 
-        unsigned int GetWidth() const { return Width; }
-        unsigned int GetHeight() const { return Height; }
-        
-        EVENT_CLASS_TYPE(WindowResize)
-        
-        std::string ToString() const override
-        {
-            std::stringstream ss;
-	        ss << "WindowResizeEvent: " << "Width- " << GetWidth() << ", Height- " << GetHeight();
-	        return ss.str();
-        }
+            unsigned int GetWidth() const { return Width; }
+            unsigned int GetHeight() const { return Height; }
+            
+            EVENT_CLASS_TYPE(WindowResize)
+            
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "WindowResizeEvent: " << "Width- " << GetWidth() << ", Height- " << GetHeight();
+                return ss.str();
+            }
 
         private:
             unsigned int Width, Height;
     };
 
-    class WindowCloseEvent : public Event
+    class ORION_API WindowCloseEvent : public Event
     {
-        // constructor
-        WindowCloseEvent() = default;
+        public: 
+            // constructor
+            WindowCloseEvent() = default;
 
-        EVENT_CLASS_TYPE(WindowClose)
+            EVENT_CLASS_TYPE(WindowClose)
 
-        std::string ToString() const override
-        {
-            std::stringstream ss;
-	        ss << "WindowCloseEvent - closing window";
-	        return ss.str();
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "WindowCloseEvent - closing window";
+                return ss.str();
+            }
     };
 }

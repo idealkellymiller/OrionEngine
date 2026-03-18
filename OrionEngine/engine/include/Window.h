@@ -1,7 +1,8 @@
 #pragma once
 
-#include <functional>
+#include "EngineCore.h"
 #include "Events/Event.h"
+#include <functional>
 
 namespace Orion
 {
@@ -18,7 +19,7 @@ namespace Orion
             unsigned int height = 1080) : Title(title), Width(width), Height(height) {}
     };
 
-    class Window
+    class ORION_API Window
     {
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;

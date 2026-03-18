@@ -1,13 +1,15 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include "Window.h"
+#include "glad/glad.h"
+#include <GLFW/glfw3.h>
 
 namespace Orion
 {
     class AppWindow : public Window
     {
 	    public:
+            AppWindow(const WindowProperties& props);
             virtual ~AppWindow();
 
             void OnUpdate() override;
@@ -19,6 +21,8 @@ namespace Orion
             inline void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
 
         private:
+            virtual void Init(const WindowProperties& props);
+            virtual void Shutdown();
             GLFWwindow* m_Window;
 
             struct WindowData

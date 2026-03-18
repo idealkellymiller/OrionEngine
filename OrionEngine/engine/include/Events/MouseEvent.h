@@ -4,51 +4,53 @@
 
 namespace Orion 
 {
-    class MouseMovedEvent : public Event
+    class ORION_API MouseMovedEvent : public Event
     {
-        // constructor
-        MouseMovedEvent(float x, float y) : MouseX(x), MouseY(y) {}
+        public: 
+            // constructor
+            MouseMovedEvent(float x, float y) : MouseX(x), MouseY(y) {}
 
-        inline float GetX() const { return MouseX; }
-        inline float GetY() const { return MouseY; }  
+            inline float GetX() const { return MouseX; }
+            inline float GetY() const { return MouseY; }  
 
-        EVENT_CLASS_TYPE(MouseMoved)
+            EVENT_CLASS_TYPE(MouseMoved)
 
-        std::string ToString() const override
-        {
-	        std::stringstream ss;
-	        ss << "MouseMovedEvent: " << GetX() << ", " << GetY();
-	        return ss.str();
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "MouseMovedEvent: " << GetX() << ", " << GetY();
+                return ss.str();
+            }
 
         private:
             float MouseX;
             float MouseY;
     };
 
-    class MouseScrolledEvent : public Event
+    class ORION_API MouseScrolledEvent : public Event
     {
-        // constructor
-        MouseScrolledEvent(float xOffset, float yOffset) : XOffset(xOffset), YOffset(yOffset) {}
+        public:
+            // constructor
+            MouseScrolledEvent(float xOffset, float yOffset) : XOffset(xOffset), YOffset(yOffset) {}
 
-        inline float GetXOffset() const { return XOffset; }
-        inline float GetYOffset() const { return YOffset; }
+            inline float GetXOffset() const { return XOffset; }
+            inline float GetYOffset() const { return YOffset; }
 
-        EVENT_CLASS_TYPE(MouseScrolled)
+            EVENT_CLASS_TYPE(MouseScrolled)
 
-        std::string ToString() const override
-        {
-	        std::stringstream ss;
-	        ss << "MouseScrolledEvent: " << GetXOffset() << ", " << GetYOffset();
-	        return ss.str();        
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "MouseScrolledEvent: " << GetXOffset() << ", " << GetYOffset();
+                return ss.str();        
+            }
 
         private:
             float XOffset;
             float YOffset;
     };
 
-    class MouseBtnEvent : public Event
+    class ORION_API MouseBtnEvent : public Event
     {
         public:
             inline int GetMouseBtn() const { return MouseBtn; }
@@ -59,35 +61,37 @@ namespace Orion
             MouseBtnEvent(int button) : MouseBtn(button) {}
     };
 
-    class MouseBtnPressedEvent : MouseBtnEvent
+    class ORION_API MouseBtnPressedEvent : public MouseBtnEvent
     {
-        // constructor
-        MouseBtnPressedEvent(int button) : MouseBtnEvent(button) {}
+        public:
+            // constructor
+            MouseBtnPressedEvent(int button) : MouseBtnEvent(button) {}
 
-        EVENT_CLASS_TYPE(MouseButtonPressed)
+            EVENT_CLASS_TYPE(MouseButtonPressed)
 
-        std::string ToString() const override
-        {
-            std::stringstream ss;
-            ss << "MouseButtonPressedEvent: " << GetMouseBtn();
-            return ss.str();
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "MouseButtonPressedEvent: " << GetMouseBtn();
+                return ss.str();
+            }
 
     };
 
-    class MouseBtnReleasedEvent : MouseBtnEvent
+    class ORION_API MouseBtnReleasedEvent : public MouseBtnEvent
     {
-        // constructor
-        MouseBtnReleasedEvent(int button) : MouseBtnEvent(button) {}
+        public: 
+            // constructor
+            MouseBtnReleasedEvent(int button) : MouseBtnEvent(button) {}
 
-        EVENT_CLASS_TYPE(MouseButtonReleased)
+            EVENT_CLASS_TYPE(MouseButtonReleased)
 
-        std::string ToString() const override
-        {
-            std::stringstream ss;
-            ss << "MouseButtonReleasedEvent: " << GetMouseBtn();
-            return ss.str();
-        }
+            std::string ToString() const override
+            {
+                std::stringstream ss;
+                ss << "MouseButtonReleasedEvent: " << GetMouseBtn();
+                return ss.str();
+            }
     };
 
 }

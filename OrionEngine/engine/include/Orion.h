@@ -8,9 +8,9 @@
 #include <string> 
 #include <vector>
 
-#include "Renderer/Renderer.h"
+#include "Application.h"
+#include "Layers/Layer.h"
+#include "Log/Log.h"
 #include "Scene/Scene.h"
 #include "ECS/ECSSystem.h"
 #include "Core/Core.h"
-
-#include "../external/GLFW/include/GLFW/glfw3.h"

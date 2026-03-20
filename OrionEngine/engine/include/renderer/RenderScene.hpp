@@ -1,3 +1,6 @@
+// <Summary>
+// RenderScene is jsut a submission packet for the renderer.
+// <Summary>
 #pragma once
 
 #include <vector>
@@ -9,25 +12,11 @@ class Camera;
 class RenderScene
 {
 public:
-    void SetActiveCamera(Camera* camera)
-    {
-        m_ActiveCamera = camera;
-    }
+    void SetActiveCamera(Camera* camera) { m_ActiveCamera = camera; }
+    Camera* GetActiveCamera() const { return m_ActiveCamera; }
 
-    Camera* GetActiveCamera() const
-    {
-        return m_ActiveCamera;
-    }
-
-    void AddRenderable(const Renderable& renderable)
-    {
-        m_Renderables.push_back(renderable);
-    }
-
-    const std::vector<Renderable>& GetRenderables() const
-    {
-        return m_Renderables;
-    }
+    void AddRenderable(const Renderable& renderable) { m_Renderables.push_back(renderable); }
+    const std::vector<Renderable>& GetRenderables() const { return m_Renderables; }
 
     void Clear()
     {

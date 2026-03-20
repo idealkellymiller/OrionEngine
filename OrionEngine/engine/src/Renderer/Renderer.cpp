@@ -137,36 +137,41 @@ void Renderer::Render(const RenderScene& scene)
 	if (camera == nullptr)
 		return;
 
-	// Cache scene lighting for this frame
+	// Cache scene lighting for this frame.
 	s_HasDirectionalLight = scene.HasDirectionalLight();
 	if (s_HasDirectionalLight) {
 		s_DirectionalLight = scene.GetDirectionalLight();
 	}
 
+	// Start from a clean frame state
+	s_OpaqueQueue.clear();
+	s_TransparentQueue.clear();
+
 	// Build internal queues from the submitted renderables
 	BuildRenderQueue(scene);
 
-	// Render light-space depth first
-	ExecuteShadowPass();
+	// Organize commands for efficient and correct rendering.
+	SortDrawQueues();
 
-	// Return viewport  for normal rendering to the window framebuffer
-	SetViewport(0, 0, s_WindowWidth, s_WindowHeight);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// Shadow pass first so lighting passes can sample the shadow map.
+	if (scene.HasDirectionalLight())
+	{
+		ExecuteShadowPass();
+	}
 
-	// Describe the passes we want to run this frame.
+	// Build the pass descriptions for the main forward renderer
 	RenderPassDesc opaquePass;
 	opaquePass.Type = RenderPassType::Opaque;
-
 	RenderPassDesc transparentPass;
 	transparentPass.Type = RenderPassType::Transparent;
 
-	// Execute passes in forward-rendering order
+	// Execute passes in the correct order.
 	ExecutePass(opaquePass, s_OpaqueQueue, *camera);
 	ExecutePass(transparentPass, s_TransparentQueue, *camera);
 
-	// Clear temporary per-frame queues.
-	ClearQueues();
+	// Optional: clear temporary queues after the frame.
+	s_OpaqueQueue.clear();
+	s_TransparentQueue.clear();
 }
 
 void Renderer::BuildRenderQueue(const RenderScene& scene)
@@ -175,7 +180,10 @@ void Renderer::BuildRenderQueue(const RenderScene& scene)
 	if (!camera)
 		return;
 
-	// Build frustum once for the whole frame
+	
+
+	// Build frustum once for this frame.
+	// We use it to reject objects outside of the visible region
 	glm::mat4 view = camera->GetViewMatrix();
 	glm::mat4 projection = camera->GetProjectionMatrix();
 	glm::mat4 viewProjection = projection * view;
@@ -183,45 +191,66 @@ void Renderer::BuildRenderQueue(const RenderScene& scene)
 	Frustum frustum;
 	frustum.Build(viewProjection);
 
-	// Cache scene lighting for this frame
-	s_HasDirectionalLight = scene.HasDirectionalLight();
-	if (s_HasDirectionalLight) {
-		s_DirectionalLight = scene.GetDirectionalLight();
-	}
-
 	const std::vector<Renderable>& renderables = scene.GetRenderables();
 
 	for (const Renderable& renderable : renderables) {
 
-		// Skip invalid entries
-		if (!renderable.IsValid()) {
+		// Skip invalid entries or culled objects before creating draw commands.
+		if (!ShouldSubmitRenderable(renderable, frustum)) 
 			continue;
-		}
 
-		// Skip invisible (out of view) objects before they enter render queues.
-		if (!IsRenderableVisible(renderable, frustum)) {
-			continue;
-		}
+		// Convert scene submission into renderer-owned frame data
+		DrawCommand cmd = BuildDrawCommand(renderable, *camera);
 
+		// Send the command into the correct queue
+		ClassifyDrawCommand(cmd);
+	}
+}
 
-		DrawCommand cmd;
-		cmd.MeshPtr = renderable.MeshPtr;
-		cmd.MaterialPtr = renderable.MaterialPtr;
-		cmd.ModelMatrix = renderable.ModelMatrix;
+bool Renderer::ShouldSubmitRenderable(const Renderable& renderable, const Frustum& frustum)
+{
+	// Skip bad scene entries
+	if (!renderable.IsValid())
+		return false;
 
-		// Extract object world position from model matrix.
-		// In  standard transform matrix, column 3 stores tranlation.
-		glm::vec3 objectWorldPos = glm::vec3(renderable.ModelMatrix[3]);
+	// Skip invisible objects outside the camera frustum.
+	if (!IsRenderableVisible(renderable, frustum))
+		return false;
 
-		// Compute distance to camer afor future sorting.
-		cmd.CameraDistance = glm::length(camera->GetPosition() - objectWorldPos);
+	return true;
+}
 
-		if (renderable.MaterialPtr->IsTransparent()) {
-			s_TransparentQueue.push_back(cmd);
-		}
-		else {
-			s_OpaqueQueue.push_back(cmd);
-		}
+Renderer::DrawCommand Renderer::BuildDrawCommand(const Renderable& renderable, const Camera& camera)
+{
+	DrawCommand cmd;
+	cmd.MeshPtr = renderable.MeshPtr;
+	cmd.MaterialPtr = renderable.MaterialPtr;
+	cmd.ModelMatrix = renderable.ModelMatrix;
+
+	// Extract world position from the matrix translation column
+	glm::vec3 objectWorldPos = glm::vec3(renderable.ModelMatrix[3]);
+
+	// Used for transparent back-to-front sorting
+	cmd.CameraDistance = glm::length(camera.GetPosition() - objectWorldPos);
+
+	// Placeholder for future shadow control
+	cmd.CastsShadows = true;
+
+	// Placeholder for future packed sort key
+	cmd.SortKey = 0;
+
+	return cmd;
+}
+
+void Renderer::ClassifyDrawCommand(const DrawCommand& cmd)
+{
+	if (cmd.MaterialPtr->IsTransparent()) {
+		// Transparent objects are handled separately so they can be sorted back-to-front.
+		s_TransparentQueue.push_back(cmd);
+	}
+	else {
+		// Opaque objects are grouped for front-end state reduction.
+		s_OpaqueQueue.push_back(cmd);
 	}
 }
 
@@ -283,42 +312,34 @@ void Renderer::TeardownPass(const RenderPassDesc& pass)
 	}
 }
 
-void Renderer::SortDrawQueue(const RenderPassDesc& pass, std::vector<DrawCommand>& queue)
+void Renderer::SortDrawQueues()
 {
-	switch (pass.Type) {
-	case RenderPassType::Opaque: {
-		// Opaque objects are sorted to reduce shader/material/mesh changes.
-		std::sort(queue.begin(), queue.end(),
-			[](const DrawCommand& a, const DrawCommand& b)
-			{
-				if (a.MaterialPtr != b.MaterialPtr)
-					return a.MaterialPtr < b.MaterialPtr;
+	std::sort(s_OpaqueQueue.begin(), s_OpaqueQueue.end(),
+		[](const DrawCommand& a, const DrawCommand& b)
+		{
+			// First try to reduce material changes.
+			if (a.MaterialPtr != b.MaterialPtr)
+				return a.MaterialPtr < b.MaterialPtr;
 
+			// Then reduce mesh/VAO changes.
+			if (a.MeshPtr != b.MeshPtr)
 				return a.MeshPtr < b.MeshPtr;
-			});
-		break;
-	}
 
-	case RenderPassType::Transparent:
-	{
-		// Transparent objects must render back-to-front for blending.
-		std::sort(queue.begin(), queue.end(),
-			[](const DrawCommand& a, const DrawCommand& b)
-			{
-				return a.CameraDistance > b.CameraDistance;
-			});
-		break;
-	}
-	}
+			return false;
+		});
+
+	std::sort(s_TransparentQueue.begin(), s_TransparentQueue.end(),
+		[](const DrawCommand& a, const DrawCommand& b)
+		{
+			// Back-to-front for alpha blending.
+			return a.CameraDistance > b.CameraDistance;
+		});
 }
 
 void Renderer::ExecutePass(const RenderPassDesc& pass, std::vector<DrawCommand>& queue, const Camera& camera)
 {
 	// Configure high-level GPU state for this pass.
 	SetupPass(pass);
-
-	// Sort the queue based on the pass rules
-	SortDrawQueue(pass, queue);
 
 	Shader* currentShader = nullptr;
 
@@ -330,7 +351,7 @@ void Renderer::ExecutePass(const RenderPassDesc& pass, std::vector<DrawCommand>&
 		if (!shader)
 			continue;
 
-		// When switching shaders, upload shared pass/frame data once.
+		// Only re-upload shared frame/pass uniforms when the shader changes.
 		if (shader != currentShader) {
 			shader->Bind();
 			SetupShaderForPass(*shader, camera);
@@ -574,38 +595,31 @@ void Renderer::ExecuteShadowPass()
 		return;
 	}
 
-	// Save the framebuffer and viewport that were active before the shadow pass.
-	// This is important because the main renderer may be targeting an  editor viewport FBO,
-	// not the default window framebuffer.
+	// Save the currently bound framebuffer and viewport
 	GLint previousFBO = 0;
 	GLint previousViewport[4] = { 0, 0, 0, 0 };
 
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
 	glGetIntegerv(GL_VIEWPORT, previousViewport);
 
-	// Compute and cache the light-space matrix for this frame.
+	// Build and cache the light-space matrix for this frame
 	s_LightSpaceMatrix = BuildLightSpaceMatrix();
 
-	// Bind the shadow framebuffer so rendering writes into the depth texture.
+	// Render into the shadow map depth texure.
 	glViewport(0, 0, s_ShadowMapWidth, s_ShadowMapHeight);
 	glBindFramebuffer(GL_FRAMEBUFFER, s_ShadowFBO);
-
-	// Clear previous dept hvalues from the shadow map.
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	// Shadow pass typically only need sdepth testing and depth writes.
+	// Shadow pass state.
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 
-	// Cull front faces sometimes helps reduce shadow acne.
-	// this is optional but common for basic first implementations
+	// Front-face culling can reduce shadow acne.
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 
 	s_ShadowShader->Bind();
-
-	// Upload the light-space matrix once for the whole shadow pass.
 	s_ShadowShader->SetMat4("u_LightSpaceMatrix", s_LightSpaceMatrix);
 
 	for (const DrawCommand& cmd : s_OpaqueQueue) {

@@ -52,7 +52,14 @@ private:
 		Mesh* MeshPtr = nullptr;
 		Material* MaterialPtr = nullptr;
 		glm::mat4 ModelMatrix = glm::mat4(1.0f);
+
+		// Distance to camera for transparent sorting
 		float CameraDistance = 0.0f;
+
+		// Future batching key
+		unsigned int SortKey = 0;
+
+		bool CastsShadows = true;
 	};
 
 	struct RenderPassDesc {
@@ -60,6 +67,9 @@ private:
 	};
 
 	static void BuildRenderQueue(const RenderScene& scene);
+	static bool ShouldSubmitRenderable(const Renderable& renderable, const Frustum& frustum);
+	static DrawCommand BuildDrawCommand(const Renderable& renderabl, const Camera& camera);
+	static void ClassifyDrawCommand(const DrawCommand& cmd);
 	static void ClearQueues();
 
 	// Returns true if the renderable is visible to the camera frustum.
@@ -81,7 +91,7 @@ private:
 	static void ExecutePass(const RenderPassDesc& pass, std::vector<DrawCommand>& queue, const Camera& camera);
 	static void SetupPass(const RenderPassDesc& pass);
 	static void TeardownPass(const RenderPassDesc& pass);
-	static void SortDrawQueue(const RenderPassDesc& pass, std::vector<DrawCommand>& queue);
+	static void SortDrawQueues();
 
 	// Shadow system
 	static void InitShadowResources();

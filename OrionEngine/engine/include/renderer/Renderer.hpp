@@ -19,6 +19,7 @@
 #include "DirectionalLight.hpp"
 #include "RenderPass.hpp"
 #include "Framebuffer.hpp"
+#include "DrawCommand.hpp"
 
 
 
@@ -31,6 +32,7 @@ class Camera;
 
 class Renderer {
 public:
+
 	static bool Init();
 	static void Shutdown();
 
@@ -42,30 +44,9 @@ public:
 
 	static void Render(const RenderScene& scene);
 
-	static void DrawMesh(Mesh& mesh, Material& material, const glm::mat4& modelMatrix);
-
 	static void SetShadowShader(Shader* shader) { s_ShadowShader = shader; }
 
 private:
-
-	struct DrawCommand {
-		Mesh* MeshPtr = nullptr;
-		Material* MaterialPtr = nullptr;
-		glm::mat4 ModelMatrix = glm::mat4(1.0f);
-
-		// Distance to camera for transparent sorting
-		float CameraDistance = 0.0f;
-
-		// Future batching key
-		unsigned int SortKey = 0;
-
-		bool CastsShadows = true;
-	};
-
-	struct RenderPassDesc {
-		RenderPassType Type = RenderPassType::Opaque;
-	};
-
 	static void BuildRenderQueue(const RenderScene& scene);
 	static bool ShouldSubmitRenderable(const Renderable& renderable, const Frustum& frustum);
 	static DrawCommand BuildDrawCommand(const Renderable& renderabl, const Camera& camera);
@@ -74,34 +55,14 @@ private:
 
 	// Returns true if the renderable is visible to the camera frustum.
 	static bool IsRenderableVisible(const Renderable& renderable, const Frustum& frustum);
-	// Apply material state before drawing
-	static void ApplyMaterialRenderState(const Material& material);
-
-	// New uniform upload stages.
-	static void UploadFrameUniforms(Shader& shader, const Camera& camera);
-	static void UploadLightingUniforms(Shader& shader);
-	static void UploadObjectUniforms(Shader& shader, const glm::mat4& modelMatrix);
-
-	// Actual OpenGL drawsubmission.
-	static void IssueDraw(const Mesh& mesh);
-	// Help for "Shader changed" pass setup
-	static void SetupShaderForPass(Shader& shader, const Camera& camera);
-
-	// Pass abstraction helpers.
-	static void ExecutePass(const RenderPassDesc& pass, std::vector<DrawCommand>& queue, const Camera& camera);
-	static void SetupPass(const RenderPassDesc& pass);
-	static void TeardownPass(const RenderPassDesc& pass);
 	static void SortDrawQueues();
 
-	// Shadow system
+	// Shadow resource lifetime.
 	static void InitShadowResources();
 	static void ShutdownShadowResources();
-	static void ExecuteShadowPass();
 	static glm::mat4 BuildLightSpaceMatrix();
 
 private:
-	// static IRenderBackend* s_Backend;
-	
 	// Store the clear color so the backend has a consistent state.
 	static float m_ClearColor[4];
 
@@ -126,5 +87,4 @@ private:
 	static int s_ShadowMapHeight;
 	// Shadow-only shader
 	static Shader* s_ShadowShader;
-
 };

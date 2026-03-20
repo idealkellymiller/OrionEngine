@@ -4,6 +4,7 @@ c:\dev\orionengine\orionengine\engine\x64\debug\vertexbuffer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\vertexarray.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\texture.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\shader.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\renderer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\openglbackend.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\objloader.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\mesh.obj
@@ -12,13 +13,11 @@ c:\dev\orionengine\orionengine\engine\x64\debug\indexbuffer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\frustum.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\framebuffer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\camera.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\editorcamerainput.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\editorcamera.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\glad.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\renderpass.obj
 c:\dev\orionengine\orionengine\x64\debug\engine.lib
-c:\dev\orionengine\orionengine\engine\x64\debug\engine.ilk
-c:\dev\orionengine\orionengine\engine\x64\debug\imgui.obj
-c:\dev\orionengine\orionengine\engine\x64\debug\renderer.obj
-c:\dev\orionengine\orionengine\engine\x64\debug\vc145.idb
-c:\dev\orionengine\orionengine\engine\x64\debug\vc145.pdb
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\cl.command.1.tlog
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\cl.items.tlog
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\cl.read.1.tlog
@@ -26,5 +25,3 @@ c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\cl.write.1.tlog
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\lib-link.read.1.tlog
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\lib-link.write.1.tlog
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\lib.command.1.tlog
-c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\link.command.1.tlog
-c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\link.secondary.1.tlog

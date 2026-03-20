@@ -1,3 +1,4 @@
-﻿  Editor.vcxproj -> C:\dev\OrionEngine\OrionEngine\x64\Debug\Editor.exe
+﻿  main.cpp
+  Editor.vcxproj -> C:\dev\OrionEngine\OrionEngine\x64\Debug\Editor.exe
   'pwsh.exe' is not recognized as an internal or external command,
   operable program or batch file.

@@ -1,6 +1,7 @@
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Camera.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Camera.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\EditorCamera.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\EditorCamera.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\EditorCameraInput.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\EditorCameraInput.obj
+C:\dev\OrionEngine\OrionEngine\engine\src\renderer\RenderPass.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\RenderPass.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Framebuffer.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Framebuffer.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Frustum.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Frustum.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\glad.c;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\glad.obj

@@ -1,6 +1,5 @@
 #include "Renderer.hpp"
-// #include "IRenderBackend.hpp"
-// #include "OpenGLBackend.hpp"
+
 #include "Shader.hpp"
 #include "VertexArray.hpp"
 #include "Mesh.hpp"
@@ -8,6 +7,7 @@
 #include "Camera.hpp"
 #include "RenderScene.hpp"
 #include "Renderable.hpp"
+#include "RenderPass.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -16,15 +16,13 @@
 #include <glad/glad.h>
 
 
-// Static member definitions
-// IRenderBackend* Renderer::s_Backend = nullptr;
-
+// Static declarations.
 float Renderer::m_ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 int Renderer::s_WindowWidth;
 int Renderer::s_WindowHeight;
-std::vector<Renderer::DrawCommand> Renderer::s_OpaqueQueue;
-std::vector<Renderer::DrawCommand> Renderer::s_TransparentQueue;
+std::vector<DrawCommand> Renderer::s_OpaqueQueue;
+std::vector<DrawCommand> Renderer::s_TransparentQueue;
 
 DirectionalLight Renderer::s_DirectionalLight;
 bool Renderer::s_HasDirectionalLight;
@@ -110,27 +108,6 @@ void Renderer::EndFrame()
 	// TODO: add frame stats 
 }
 
-void Renderer::DrawMesh(Mesh& mesh, Material& material, const glm::mat4& modelMatrix)
-{
-	// Apply fixed-function/OpenGL pipeline state like depth test, blending, and culling before binding and drawing.
-	ApplyMaterialRenderState(material);
-
-	// Bind shader, textures, and per-material uniforms
-	material.Bind();
-
-	// Ask the material which shader it uses
-	Shader* shader = material.GetShader();
-	// Validate draw state before touching OpenGL
-	if (shader == nullptr || !mesh.IsValid())
-		return;
-
-	// Upload per-object transform data.
-	UploadObjectUniforms(*shader, modelMatrix);
-
-	// Submit geometry to OpenGL.
-	IssueDraw(mesh);
-}
-
 void Renderer::Render(const RenderScene& scene)
 {
 	Camera* camera = scene.GetActiveCamera();
@@ -144,34 +121,57 @@ void Renderer::Render(const RenderScene& scene)
 	}
 
 	// Start from a clean frame state
-	s_OpaqueQueue.clear();
-	s_TransparentQueue.clear();
+	ClearQueues();
 
-	// Build internal queues from the submitted renderables
+	// Build internal draw commands from the submitted scene.
 	BuildRenderQueue(scene);
 
-	// Organize commands for efficient and correct rendering.
+	// Sort once before running passes.
 	SortDrawQueues();
 
-	// Shadow pass first so lighting passes can sample the shadow map.
-	if (scene.HasDirectionalLight())
+	// Build the light-space matrix once for both shadow and main passes.
+	if (s_HasDirectionalLight)
 	{
-		ExecuteShadowPass();
+		s_LightSpaceMatrix = BuildLightSpaceMatrix();
 	}
 
-	// Build the pass descriptions for the main forward renderer
+	// Shadow pass first so the main pass can sample the shadow map.
+	RenderPass::ExecuteShadowPass(
+		reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
+		s_ShadowShader,
+		s_HasDirectionalLight,
+		s_ShadowFBO,
+		s_ShadowMapWidth,
+		s_ShadowMapHeight,
+		s_LightSpaceMatrix
+	);
+
 	RenderPassDesc opaquePass;
 	opaquePass.Type = RenderPassType::Opaque;
 	RenderPassDesc transparentPass;
 	transparentPass.Type = RenderPassType::Transparent;
 
-	// Execute passes in the correct order.
-	ExecutePass(opaquePass, s_OpaqueQueue, *camera);
-	ExecutePass(transparentPass, s_TransparentQueue, *camera);
+	RenderPass::ExecutePass(
+		opaquePass,
+		reinterpret_cast<std::vector<DrawCommand>&>(s_OpaqueQueue),
+		*camera,
+		s_DirectionalLight,
+		s_HasDirectionalLight,
+		s_ShadowDepthTexture,
+		s_LightSpaceMatrix
+	);
 
-	// Optional: clear temporary queues after the frame.
-	s_OpaqueQueue.clear();
-	s_TransparentQueue.clear();
+	RenderPass::ExecutePass(
+		transparentPass,
+		reinterpret_cast<std::vector<DrawCommand>&>(s_TransparentQueue),
+		*camera,
+		s_DirectionalLight,
+		s_HasDirectionalLight,
+		s_ShadowDepthTexture,
+		s_LightSpaceMatrix
+	);
+
+	ClearQueues();
 }
 
 void Renderer::BuildRenderQueue(const RenderScene& scene)
@@ -220,7 +220,7 @@ bool Renderer::ShouldSubmitRenderable(const Renderable& renderable, const Frustu
 	return true;
 }
 
-Renderer::DrawCommand Renderer::BuildDrawCommand(const Renderable& renderable, const Camera& camera)
+DrawCommand Renderer::BuildDrawCommand(const Renderable& renderable, const Camera& camera)
 {
 	DrawCommand cmd;
 	cmd.MeshPtr = renderable.MeshPtr;
@@ -275,43 +275,6 @@ bool Renderer::IsRenderableVisible(const Renderable& renderable, const Frustum& 
 	return frustum.IntersectsSphere(worldCenter, worldRadius);
 }
 
-void Renderer::SetupPass(const RenderPassDesc& pass)
-{
-	switch (pass.Type) {
-	case RenderPassType::Opaque: {
-		// Opaque pass usually writes depth and does not blend
-		glDepthMask(GL_TRUE);
-		glDisable(GL_BLEND);
-		break;
-	}
-
-	case RenderPassType::Transparent: {
-		// Transparent pass usually keeps depth testing on,
-		// but most materials will disable depth writes.
-		// We do not force blending on here because material state
-		// still controls the exact blend behavior
-		break;
-	}
-	}
-}
-
-void Renderer::TeardownPass(const RenderPassDesc& pass)
-{
-	switch (pass.Type) {
-	case RenderPassType::Opaque: {
-		// Nothing special needed right now.
-		break;
-	}
-
-	case RenderPassType::Transparent: {
-		// Restore safe defaults after transparent rendering.
-		glDepthMask(GL_TRUE);
-		glDisable(GL_BLEND);
-		break;
-	}
-	}
-}
-
 void Renderer::SortDrawQueues()
 {
 	std::sort(s_OpaqueQueue.begin(), s_OpaqueQueue.end(),
@@ -336,172 +299,12 @@ void Renderer::SortDrawQueues()
 		});
 }
 
-void Renderer::ExecutePass(const RenderPassDesc& pass, std::vector<DrawCommand>& queue, const Camera& camera)
-{
-	// Configure high-level GPU state for this pass.
-	SetupPass(pass);
-
-	Shader* currentShader = nullptr;
-
-	for (const DrawCommand& cmd : queue) {
-		if (!cmd.MeshPtr || !cmd.MaterialPtr)
-			continue;
-
-		Shader* shader = cmd.MaterialPtr->GetShader();
-		if (!shader)
-			continue;
-
-		// Only re-upload shared frame/pass uniforms when the shader changes.
-		if (shader != currentShader) {
-			shader->Bind();
-			SetupShaderForPass(*shader, camera);
-			currentShader = shader;
-		}
-
-		// Draw this object using its material and model transform
-		DrawMesh(*cmd.MeshPtr, *cmd.MaterialPtr, cmd.ModelMatrix);
-	}
-
-	// Restore any state this pass may have changed
-	TeardownPass(pass);
-}
-
 void Renderer::ClearQueues()
 {
 	s_OpaqueQueue.clear();
 	s_TransparentQueue.clear();
-	s_HasDirectionalLight = false;
+	// s_HasDirectionalLight = false;
 }
-
-void Renderer::SetupShaderForPass(Shader& shader, const Camera& camera)
-{
-	// Upload data shared by all using this shader in the current pass.
-	UploadFrameUniforms(shader, camera);
-	UploadLightingUniforms(shader);
-}
-
-void Renderer::ApplyMaterialRenderState(const Material& material)
-{
-	const MaterialRenderState& state = material.GetRenderState();
-
-
-	// Depth testing controls whether fragments are compared against the depth buffer.
-	if (state.DepthTest)
-		glEnable(GL_DEPTH_TEST);
-	else
-		glDisable(GL_DEPTH_TEST);
-
-	// Depth write controls whether the fragment updates the depth buffer.
-	glDepthMask(state.DepthWrite ? GL_TRUE : GL_FALSE);
-
-	// Configure face culling
-	switch (state.Cull) {
-	case CullMode::None:
-		glDisable(GL_CULL_FACE);
-		break;
-
-	case CullMode::Back:
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);	// Cull back-facing triangles
-		break;
-
-	case CullMode::Front:
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);	// Cull front-facing trianlges
-		break;
-	}
-
-	// Configure blending.
-	if (state.Blend == BlendMode::Transparent) {
-		glEnable(GL_BLEND);
-
-		// Standard alpha blending:
-		// finalColor = srcColor * srcAlpha + dstColor * (1-srcAlpha)
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-	else {
-		glDisable(GL_BLEND);
-	}
-}
-
-
-// ------ Uniforms ------
-void Renderer::UploadFrameUniforms(Shader& shader, const Camera& camera)
-{
-	// Upload camera matrices used by every object this frame.
-	shader.SetMat4("u_View", camera.GetViewMatrix());
-	shader.SetMat4("u_Projection", camera.GetProjectionMatrix());
-
-	// Camera position is useful for specular lighting and other view-dependent effects.
-	shader.SetVec3("u_CameraPos", camera.GetPosition());
-}
-
-void Renderer::UploadLightingUniforms(Shader& shader)
-{
-	if (s_HasDirectionalLight) {
-		// Normalize direction so lighting math is stable and predictable
-		glm::vec3 lightDir = glm::normalize(s_DirectionalLight.Direction);
-
-		shader.SetInt("u_HasDirectionalLight", 1);
-		shader.SetVec3("u_DirectionalLight.direction", lightDir);
-		shader.SetVec3("u_DirectionalLight.color", s_DirectionalLight.Color);
-		shader.SetFloat("u_DirectionalLight.intensity", s_DirectionalLight.Intensity);
-		
-		// Upload the matrix used to transform world positions into light space.
-		shader.SetMat4("u_LightSpaceMatrix", s_LightSpaceMatrix);
-
-		// Bind the shadow map to texture unit 1.
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, s_ShadowDepthTexture);
-
-		shader.SetInt("u_ShadowMap", 1);
-	}
-	else {
-		// Shader can fall back to ambient-only behavior
-		shader.SetInt("u_HasDirectionalLight", 0);
-	}
-}
-
-void Renderer::UploadObjectUniforms(Shader& shader, const glm::mat4& modelMatrix)
-{
-	// Model matrix is unique per rendered object.
-	shader.SetMat4("u_Model", modelMatrix);
-}
-
-void Renderer::IssueDraw(const Mesh& mesh)
-{
-
-	if (mesh.HasIndices()) {
-		// Draw indexed triangles using the bound element/index buffer.
-
-		mesh.GetVertexArray().Bind();
-
-		// Indexed draw: read indices fro the element array buffer currently associated with the VAO.
-		//
-		// Parameters:
-		// - GL_TRIANGLES: topology
-		// - indexCount: how many indices to consume
-		// - GL_UNSIGNED_INT: type of each index in the index buffer
-		// - nullptr: start at offset 0 in the bound index buffer
-		glDrawElements(GL_TRIANGLES, mesh.GetIndexCount(), GL_UNSIGNED_INT, nullptr);
-
-		mesh.GetVertexArray().Unbind();
-	}
-	else {
-		// Draw non-indexed triangles directly from the buffer.
-
-		// Bind the VAO, which contains the vertex layout configuration.
-		mesh.GetVertexArray().Bind();
-
-		// non-indexed draw: read vertices sequentially from the bound vertex buffer.
-		glDrawArrays(GL_TRIANGLES, 0, mesh.GetVertexCount());
-
-		// Optional cleanup
-		mesh.GetVertexArray().Unbind();
-	}
-}
-
-
 
 // ----- Shadows and Shit ------
 void Renderer::InitShadowResources()
@@ -586,62 +389,4 @@ glm::mat4 Renderer::BuildLightSpaceMatrix()
 		1.0f, 50.0f);
 
 	return lightProjection * lightView;
-}
-
-void Renderer::ExecuteShadowPass()
-{
-	if (!s_HasDirectionalLight || !s_ShadowShader)
-	{
-		return;
-	}
-
-	// Save the currently bound framebuffer and viewport
-	GLint previousFBO = 0;
-	GLint previousViewport[4] = { 0, 0, 0, 0 };
-
-	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
-	glGetIntegerv(GL_VIEWPORT, previousViewport);
-
-	// Build and cache the light-space matrix for this frame
-	s_LightSpaceMatrix = BuildLightSpaceMatrix();
-
-	// Render into the shadow map depth texure.
-	glViewport(0, 0, s_ShadowMapWidth, s_ShadowMapHeight);
-	glBindFramebuffer(GL_FRAMEBUFFER, s_ShadowFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	// Shadow pass state.
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
-
-	// Front-face culling can reduce shadow acne.
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
-
-	s_ShadowShader->Bind();
-	s_ShadowShader->SetMat4("u_LightSpaceMatrix", s_LightSpaceMatrix);
-
-	for (const DrawCommand& cmd : s_OpaqueQueue) {
-		if (!cmd.MeshPtr)
-			continue;
-
-		// Only model matrix changes per object in the shadow pass.
-		s_ShadowShader->SetMat4("u_Model", cmd.ModelMatrix);
-
-		// Bind the geometry and issue the draw.
-		IssueDraw(*cmd.MeshPtr);
-	}
-	
-	// Restore defaults
-	glCullFace(GL_BACK);
-
-	// Restore the framebuffer and viewport that were active before the shadow rendering.
-	glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
-	SetViewport(
-		previousViewport[0],
-		previousViewport[1],
-		previousViewport[2],
-		previousViewport[3]
-	);
 }

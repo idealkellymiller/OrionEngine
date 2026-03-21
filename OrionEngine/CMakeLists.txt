@@ -6,10 +6,16 @@ project(OrionEngine LANGUAGES CXX C)
 
     add_library(Glad STATIC "engine/external/Glad/src/glad.c")
         target_include_directories(Glad PUBLIC 
-        "engine/external/Glad/include"
-        "engine/external/Glad/include/glad"
-        "engine/external/Glad/include/KHR"
-    )
+            "engine/external/Glad/include"
+            "engine/external/Glad/include/glad"
+            "engine/external/Glad/include/KHR"
+        )
+
+   set(IMGUI_PATH "engine/external/ImGUI")
+
+    file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp)
+    add_library(ImGUI STATIC ${IMGUI_SOURCES})
+        target_include_directories(ImGUI PUBLIC ${IMGUI_PATH})
 
     add_subdirectory("engine/external/GLFW")
     add_subdirectory("engine/external/spdlog")
@@ -54,6 +60,7 @@ project(OrionEngine LANGUAGES CXX C)
 
         target_link_libraries(Engine PUBLIC
             Glad
+            ImGUI
             glfw
             spdlog
         )

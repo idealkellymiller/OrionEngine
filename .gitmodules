@@ -4,3 +4,7 @@
 [submodule "OrionEngine/engine/external/spdlog"]
 	path = OrionEngine/engine/external/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "OrionEngine/engine/external/ImGUI"]
+	path = OrionEngine/engine/external/ImGUI
+	url = https://github.com/ocornut/imgui
+	branch = docking

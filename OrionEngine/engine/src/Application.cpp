@@ -30,7 +30,7 @@ namespace Orion {
 	void Application::PushOverlay(Layer* layer)
 	{
 		m_LayerStack.PushOverlay(layer);
-		layer->OnDetach();
+		layer->OnAttach();
 	}
 
 	// after receiving an event, dispatch to the layers of the app

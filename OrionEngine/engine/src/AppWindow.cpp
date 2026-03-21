@@ -157,6 +157,7 @@ namespace Orion {
 	void AppWindow::Shutdown()
 	{
 		glfwDestroyWindow(m_Window);
+		glfwTerminate();
 	}
 
 	void AppWindow::OnUpdate()

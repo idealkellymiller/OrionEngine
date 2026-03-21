@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.23)
 # set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 project(OrionEngine LANGUAGES CXX C)
 
+    set(CMAKE_CXX_STANDARD 20)
+
     # include all external dependency libraries' CMake files to build them
 
     add_library(Glad STATIC "engine/external/Glad/src/glad.c")
@@ -12,7 +14,6 @@ project(OrionEngine LANGUAGES CXX C)
         )
 
    set(IMGUI_PATH "engine/external/ImGUI")
-
     file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp)
     add_library(ImGUI STATIC ${IMGUI_SOURCES})
         target_include_directories(ImGUI PUBLIC ${IMGUI_PATH})
@@ -46,6 +47,7 @@ project(OrionEngine LANGUAGES CXX C)
 
             "engine/src/Layers/Layer.cpp"
             "engine/src/Layers/LayerStack.cpp"
+            "engine/src/Layers/ImGuiLayer.cpp"
 
             "engine/src/Log/Log.cpp"
         )

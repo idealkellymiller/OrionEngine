@@ -17,7 +17,7 @@ namespace Orion
             Application();
             virtual ~Application();
 
-            inline Application& Get() { return *s_Instance; }
+            inline static Application& Get() { return *s_Instance; }
             inline Window& GetWindow() { return *m_Window; }
 
             void PushLayer(Layer* layer);

@@ -57,6 +57,6 @@ int main(int argc, char** argv)
 	// create app automatically
 	printf("Orion Engine\n");
 	auto app = Orion::CreateApplication();
-	app->Run();
+	app->Run(); // starts main loop
 	delete app;
 }

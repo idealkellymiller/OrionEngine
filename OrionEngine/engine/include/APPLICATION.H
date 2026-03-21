@@ -16,6 +16,10 @@ namespace Orion
         public:
             Application();
             virtual ~Application();
+
+            inline Application& Get() { return *s_Instance; }
+            inline Window& GetWindow() { return *m_Window; }
+
             void PushLayer(Layer* layer);
             void PushOverlay(Layer* layer);
 
@@ -26,6 +30,7 @@ namespace Orion
 
 
         private:
+            static Application* s_Instance; // static singleton instance of Application
             bool OnWindowClose(WindowCloseEvent& e);
             std::unique_ptr<Window> m_Window; // points to main app window
             bool m_Running = true;

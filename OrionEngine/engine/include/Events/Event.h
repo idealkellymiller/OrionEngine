@@ -48,7 +48,7 @@ namespace Orion {
                 // make sure event's type matches EventFn T type
                 if (m_Event.GetEventType() == T::GetStaticType())
                 {
-                    // dispatch to the corresponding function for this type of event
+                    // dispatch to the given EventFn for this type of event
                     m_Event.Handled = func(*(T*)&m_Event);
                     return true;
                 }

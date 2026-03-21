@@ -6,8 +6,11 @@ namespace Orion {
 
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
 
+	Application* Application::s_Instance = nullptr;
+
 	Application::Application()
 	{
+		s_Instance = this;
 		// sets this application's Window reference to Window instance
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		// sets this application's window event callback to Application's OnEvent.
@@ -21,11 +24,13 @@ namespace Orion {
 	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack.PushLayer(layer);
+		layer->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* layer)
 	{
 		m_LayerStack.PushOverlay(layer);
+		layer->OnDetach();
 	}
 
 	// after receiving an event, dispatch to the layers of the app
@@ -33,7 +38,7 @@ namespace Orion {
 	{
 		EventDispatcher dispatcher(e);
 
-		// bind WindowCloseEvent's function to be called when it happens to OnWindowClose
+		// bind WindowCloseEvent's function to be Application's OnWindowClose
 		// this allows the app window to close when user clicks the X button
 		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
 

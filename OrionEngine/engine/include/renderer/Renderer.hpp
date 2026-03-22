@@ -44,7 +44,10 @@ public:
 
 	static void Render(const RenderScene& scene);
 
-	static void SetShadowShader(Shader* shader) { s_ShadowShader = shader; }
+	// static void SetShadowShader(Shader* shader) { s_ShadowShader = shader; }
+
+	static Shader* GetLitShader() { return &s_LitShader; }
+	static Shader* GetShadowShader() { return &s_ShadowShader; }
 
 private:
 	static void BuildRenderQueue(const RenderScene& scene);
@@ -69,6 +72,8 @@ private:
 	static int s_WindowWidth;
 	static int s_WindowHeight;
 
+	static Shader s_LitShader;
+
 	// internal queues built fresh every frame
 	static std::vector<DrawCommand> s_OpaqueQueue;
 	static std::vector<DrawCommand> s_TransparentQueue;
@@ -86,5 +91,5 @@ private:
 	static int s_ShadowMapWidth;
 	static int s_ShadowMapHeight;
 	// Shadow-only shader
-	static Shader* s_ShadowShader;
+	static Shader s_ShadowShader;
 };

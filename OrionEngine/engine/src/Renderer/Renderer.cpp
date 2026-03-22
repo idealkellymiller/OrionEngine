@@ -6,8 +6,8 @@
 #include "Material.hpp"
 #include "Camera.hpp"
 #include "RenderScene.hpp"
-#include "Renderable.hpp"
 #include "RenderPass.hpp"
+#include "Scene.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -21,6 +21,9 @@ float Renderer::m_ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 int Renderer::s_WindowWidth;
 int Renderer::s_WindowHeight;
+
+Shader Renderer::s_LitShader;
+
 std::vector<DrawCommand> Renderer::s_OpaqueQueue;
 std::vector<DrawCommand> Renderer::s_TransparentQueue;
 
@@ -32,13 +35,9 @@ unsigned int Renderer::s_ShadowDepthTexture = 0;
 glm::mat4 Renderer::s_LightSpaceMatrix = glm::mat4(1.0f);
 int Renderer::s_ShadowMapWidth = 2048;
 int Renderer::s_ShadowMapHeight = 2048;
-Shader* Renderer::s_ShadowShader = nullptr;
+Shader Renderer::s_ShadowShader;
 
 bool Renderer::Init() {
-	// Create the backend object.
-	// For now, we are hardcoding OpenGL.
-	// Later this could be chosen from config, platform settings, etc.
-	// s_Backend = new OpenGLBackend();
 
 	InitShadowResources();
 
@@ -57,6 +56,31 @@ bool Renderer::Init() {
 	// It onlt tells OpenGL waht color to use next time the
 	// color buffer is cleared with glClear(GL_COLOR_BUFFER_BIT).
 	glClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]);
+
+
+
+	// Create the Shaders.
+	Shader litShader;
+	if (!litShader.CreateFromFiles(
+		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.vert",
+		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.frag"))
+	{
+		std::cout << "Failed to create lit Shader\n";
+	}
+
+	Shader shadowShader;
+	if (!shadowShader.CreateFromFiles(
+		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.vert",
+		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.frag"))
+	{
+			std::cout << "Failed to create shadow Shader\n";
+	}
+
+	
+
+	s_LitShader = litShader;
+	s_ShadowShader = shadowShader;
+	
 
 	return true; //s_Backend->Init();
 }
@@ -100,6 +124,16 @@ void Renderer::BeginFrame()
 	// The depth buffer stores per-pixel depth information used for
 	// proper 3D visibilty testing.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Read the Json .scene
+	// 
+	// Load the assets used in it from their files (only once. Don't want to load erato every frame):
+	// - Textures
+	// - Meshes
+	// 
+	// Create the Meshes and Materials
+	// Collect Rendables into a RenderScene from Scene
+	RenderScene scene;
 }
 
 void Renderer::EndFrame()
@@ -138,7 +172,7 @@ void Renderer::Render(const RenderScene& scene)
 	// Shadow pass first so the main pass can sample the shadow map.
 	RenderPass::ExecuteShadowPass(
 		reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
-		s_ShadowShader,
+		&s_ShadowShader,
 		s_HasDirectionalLight,
 		s_ShadowFBO,
 		s_ShadowMapWidth,

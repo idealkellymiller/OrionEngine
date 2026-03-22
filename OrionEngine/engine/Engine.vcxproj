@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>include;$(SolutionDir)external;include/renderer;include/ecs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(SolutionDir)external;include/renderer;include/ecs;include/assets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -128,7 +128,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\ecs\Entity.hpp" />
+    <ClInclude Include="include\assets\AssetManager.h" />
+    <ClInclude Include="include\assets\AssetTypes.h" />
+    <ClInclude Include="include\ecs\Component.h" />
+    <ClInclude Include="include\ecs\ComponentPool.h" />
+    <ClInclude Include="include\ecs\Entity.h" />
+    <ClInclude Include="include\ecs\Scene.h" />
     <ClInclude Include="include\renderer\BoundingSphere.hpp" />
     <ClInclude Include="include\renderer\Camera.hpp" />
     <ClInclude Include="include\renderer\DirectionalLight.hpp" />
@@ -143,7 +148,6 @@
     <ClInclude Include="include\renderer\Mesh.hpp" />
     <ClInclude Include="include\renderer\OBJLoader.hpp" />
     <ClInclude Include="include\renderer\OpenGLBackend.hpp" />
-    <ClInclude Include="include\renderer\Renderable.hpp" />
     <ClInclude Include="include\renderer\Renderer.hpp" />
     <ClInclude Include="include\renderer\RenderPass.hpp" />
     <ClInclude Include="include\renderer\RenderScene.hpp" />
@@ -155,6 +159,7 @@
     <ClInclude Include="include\renderer\DrawCommand.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\assets\AssetManager.cpp" />
     <ClCompile Include="src\renderer\Camera.cpp" />
     <ClCompile Include="src\renderer\EditorCamera.cpp" />
     <ClCompile Include="src\renderer\EditorCameraInput.cpp" />
@@ -168,10 +173,14 @@
     <ClCompile Include="src\renderer\OBJLoader.cpp" />
     <ClCompile Include="src\renderer\OpenGLBackend.cpp" />
     <ClCompile Include="src\renderer\Renderer.cpp" />
+    <ClCompile Include="src\renderer\RenderScene.cpp" />
     <ClCompile Include="src\renderer\Shader.cpp" />
     <ClCompile Include="src\renderer\Texture.cpp" />
     <ClCompile Include="src\renderer\VertexArray.cpp" />
     <ClCompile Include="src\renderer\VertexBuffer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="engineAssets\scenes\default.scene" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

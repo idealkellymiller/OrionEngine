@@ -1,3 +1,4 @@
+C:\dev\OrionEngine\OrionEngine\engine\src\assets\AssetManager.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\AssetManager.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Camera.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Camera.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\EditorCamera.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\EditorCamera.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\EditorCameraInput.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\EditorCameraInput.obj
@@ -11,6 +12,7 @@ C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Mesh.cpp;C:\dev\OrionEngine\O
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\OBJLoader.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\OBJLoader.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\OpenGLBackend.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\OpenGLBackend.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Renderer.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Renderer.obj
+C:\dev\OrionEngine\OrionEngine\engine\src\renderer\RenderScene.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\RenderScene.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Shader.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Shader.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Texture.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Texture.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\VertexArray.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\VertexArray.obj

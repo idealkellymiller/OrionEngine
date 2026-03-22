@@ -1,0 +1,11 @@
+{
+  "entities": [
+    {
+      "name": "Cube",
+      "components": {
+        "transform": { ... },
+        "mesh": { ... }
+      }
+    }
+  ]
+}

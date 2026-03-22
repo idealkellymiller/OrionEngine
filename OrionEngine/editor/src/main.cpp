@@ -122,9 +122,6 @@ int main()
         return -1;
     }
 
-    // Set an initial clear color.
-    // This is the background color you will see every frame
-    // when the renderer clears the screen.
     Renderer::SetClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 
 
@@ -150,37 +147,44 @@ int main()
         return -1;
     }
 
+    //Mesh eratoMesh;
+    //OBJLoader::Load("C:/dev/OrionRenderer/engine/engineAssets/primitives/erato.obj", vertices, indices);
+    //if (!eratoMesh.Create(vertices, indices)) {
+    //    std::cout << "Couldn't make eratoMesh\n";
+    //    return -1;
+    //}
 
 
 
 
 
 
-    Shader litShader;
-    if (!litShader.CreateFromFiles(
-        "C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.vert",
-        "C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.frag"))
-    {
-        std::cout << "Failed to create lit Shader\n";
-        Renderer::Shutdown();
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return -1;
-    }
 
-    Shader shadowShader;
-    if (!shadowShader.CreateFromFiles(
-        "C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.vert",
-        "C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.frag"))
-    {
-        std::cout << "Failed to create shadow shader\n";
-        Renderer::Shutdown();
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return -1;
-    }
-    // Send shadow shader reference to the renderer.
-    Renderer::SetShadowShader(&shadowShader);
+    //Shader litShader;
+    //if (!litShader.CreateFromFiles(
+    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.vert",
+    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.frag"))
+    //{
+    //    std::cout << "Failed to create lit Shader\n";
+    //    Renderer::Shutdown();
+    //    glfwDestroyWindow(window);
+    //    glfwTerminate();
+    //    return -1;
+    //}
+
+    //Shader shadowShader;
+    //if (!shadowShader.CreateFromFiles(
+    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.vert",
+    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.frag"))
+    //{
+    //    std::cout << "Failed to create shadow shader\n";
+    //    Renderer::Shutdown();
+    //    glfwDestroyWindow(window);
+    //    glfwTerminate();
+    //    return -1;
+    //}
+    //// Send shadow shader reference to the renderer.
+    //Renderer::SetShadowShader(&shadowShader);
 
 
 
@@ -192,7 +196,7 @@ int main()
     }
 
     Material defaultMat;
-    defaultMat.SetShader(&litShader);
+    defaultMat.SetShader(Renderer::GetLitShader());
     defaultMat.SetDiffuseTexture(nullptr);
     defaultMat.SetColor(glm::vec4(0.9f, 0.9f, 0.9f, 1.0f));
     defaultMat.SetSpecularColor(glm::vec3(0.5f, 0.5f, 0.5f));      // painted/plastic-ish
@@ -200,7 +204,7 @@ int main()
     defaultMat.SetTransparent(false);
 
     Material stoneMat;
-    stoneMat.SetShader(&litShader);
+    stoneMat.SetShader(Renderer::GetLitShader());
     stoneMat.SetDiffuseTexture(&stoneTex);
     stoneMat.SetColor(glm::vec4(1.0f)); // white tint = original texture colors
     stoneMat.SetSpecularColor(glm::vec3(0.15f, 0.15f, 0.15f));    // stone = low specular
@@ -208,7 +212,7 @@ int main()
     stoneMat.SetTransparent(false);
 
     Material glassMat;
-    glassMat.SetShader(&litShader);
+    glassMat.SetShader(Renderer::GetLitShader());
     glassMat.SetDiffuseTexture(nullptr);
     glassMat.SetColor(glm::vec4(0.0157f, 0.9059f, 1.0f, 0.3f));
     glassMat.SetSpecularColor(glm::vec3(1.0f, 1.0f, 1.0f));     // glass = strong highlight

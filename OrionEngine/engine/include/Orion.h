@@ -10,6 +10,7 @@
 
 #include "Application.h"
 #include "Layers/Layer.h"
+#include "Layers/ImGuiLayer.h"
 #include "Log/Log.h"
 #include "Scene/Scene.h"
 #include "ECS/ECSSystem.h"

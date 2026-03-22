@@ -31,6 +31,8 @@ namespace Orion
 
         virtual unsigned int GetWidth() const = 0;
         virtual unsigned int GetHeight() const = 0;
+        virtual void* GetNativeWindow() const = 0;
+
         // used to set this window's event callback to Application's OnEvent
         virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
 

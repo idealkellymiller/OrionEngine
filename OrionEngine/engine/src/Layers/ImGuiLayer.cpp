@@ -1,3 +1,4 @@
+#include "EngineCore.h"
 #include "Layers/ImGuiLayer.h"
 #include "Application.h"
 
@@ -7,7 +8,9 @@
 #include "../external/ImGUI/backends/imgui_impl_opengl3.h"
 
 // TODO: remove glfw include here
-#include "GLFW/glfw3.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include <format>
 
 namespace Orion {
@@ -20,7 +23,7 @@ namespace Orion {
 	{
 	}
 
-	void OnAttach()
+	void ImGuiLayer::OnAttach()
 	{
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
@@ -35,31 +38,98 @@ namespace Orion {
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
-		//ImGui_ImplOpenGL3_Init("#version 460");
+
+		Application& app = Application::Get();
+		ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow()), true);
+		ImGui_ImplOpenGL3_Init("#version 460");
 	}
 
-	void OnDetach()
+	void ImGuiLayer::OnDetach()
 	{
-		//ImGui_ImplOpenGL3_Shutdown();
-		//ImGui_ImplGlfw_Shutdown();
-		//ImGui::DestroyContext();
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
 	}
 
 	void ImGuiLayer::OnUpdate()
 	{
-		//ImGui_ImplOpenGL3_NewFrame();
-		//ImGui::NewFrame();
+		// TEMPORARY-to be added to Renderer: clear the previous frame from the screen to draw new stuff
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		//ImGuiIO& io = ImGui::GetIO();
-		//Application& app = Application::Get();
-		//io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+		ImGuiIO& io = ImGui::GetIO();
+		Application& app = Application::Get();
+		io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+
+		float time = (float)glfwGetTime();
+		io.DeltaTime = m_Time > 0.0f ? (time - m_Time) : (1.0f / 60.0f);
+		m_Time = time;
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		static bool show = true;
+		ImGui::ShowDemoWindow(&show);
+		ShowMainMenuBar();
+		ShowInspectorModule();
+		ShowViewportModule();
+		ShowConsoleModule();
+		ShowControlsModule();
 
 		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		// Update and render additional platform Windows
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			// for OpenGL: restore current GL context.
+			glfwMakeContextCurrent(backup_current_context);
+		}
 	}
 
 	void ImGuiLayer::OnEvent(Event& event)
 	{
+		ImGuiIO& io = ImGui::GetIO();
 
+		switch (event.GetEventType())
+		{
+			case EventType::KeyPressed:
+			case EventType::KeyReleased:
+			{
+				if (io.WantCaptureKeyboard)
+				{
+					// imgui wants to capture this event
+					// mark it as handled so it doesn't propogate down to other app layers.
+					event.Handled = true;
+				}
+				break;
+			}
+			case EventType::MouseButtonPressed:
+			case EventType::MouseButtonReleased:
+			case EventType::MouseMoved:
+			case EventType::MouseScrolled:
+			{
+				if (io.WantCaptureMouse)
+				{
+					event.Handled = true;
+				}
+				break;
+			}
+			case EventType::WindowResize:
+			{
+				WindowResizeEvent& e = (WindowResizeEvent&)event;
+
+				// tell imgui the new app window size
+				io.DisplaySize = ImVec2((float)e.GetWidth(), e.GetHeight());
+				break;
+			}
+			default:
+				break;
+		}
 	}
 
 	// -------------------------IMGUI MODULE DEFINITIONS-------------------------
@@ -74,7 +144,7 @@ namespace Orion {
 
 #define CHECKED_MENU_ITEM(menuItemName, checkedState) if (ImGui::MenuItem(menuItemName, NULL, checkedState)) { checkedState = !checkedState; }
 
-	void ShowMainMenuBar()
+	void ImGuiLayer::ShowMainMenuBar()
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
@@ -112,7 +182,7 @@ namespace Orion {
 	static float scale[3];
 	static bool scaleUniform;
 
-	void ShowTransformComponent()
+	void ImGuiLayer::ShowTransformComponent()
 	{
 		//TODO: transform component
 		if (ImGui::CollapsingHeader("Transform"))
@@ -157,7 +227,7 @@ namespace Orion {
 
 	static bool isTrigger;
 
-	void ShowMeshColliderComponent()
+	void ImGuiLayer::ShowMeshColliderComponent()
 	{
 		if (ImGui::CollapsingHeader("Mesh Collider"))
 		{
@@ -165,7 +235,7 @@ namespace Orion {
 		}
 	}
 
-	void ShowInspectorModule()
+	void ImGuiLayer::ShowInspectorModule()
 	{
 
 		if (showInspectorModule)
@@ -183,28 +253,7 @@ namespace Orion {
 	int viewportWidth = 800;
 	int viewportHeight = 600;
 
-	//void CreateViewportTexture()
-	//{
-	//	glGenTextures(1, &viewportTexture);
-	//	glBindTexture(GL_TEXTURE_2D, viewportTexture);
-
-	//	glTexImage2D(
-	//		GL_TEXTURE_2D,
-	//		0,
-	//		GL_RGB,
-	//		viewportWidth,
-	//		viewportHeight,
-	//		0,
-	//		GL_RGB,
-	//		GL_UNSIGNED_BYTE,
-	//		nullptr // there no data yet
-	//	);
-
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//}
-
-	void ShowViewportModule()
+	void ImGuiLayer::ShowViewportModule()
 	{
 		if (showViewportModule)
 		{
@@ -265,30 +314,30 @@ namespace Orion {
 	}
 
 
-	void ShowHierarchyModule()
-	{
-		if (showHierarchyModule)
-		{
-			if (ImGui::Begin("Hierarchy", &showHierarchyModule))
-			{
-				//TODO: myca
-				if (ImGui::BeginTable("HierarchyTable", 1))
-				{
-					for (const auto& node : hierarchy)
-					{
-						DrawHierarchyNode(node);
-					}
+	//void ImGuiLayer::ShowHierarchyModule()
+	//{
+	//	if (showHierarchyModule)
+	//	{
+	//		if (ImGui::Begin("Hierarchy", &showHierarchyModule))
+	//		{
+	//			//TODO: myca
+	//			if (ImGui::BeginTable("HierarchyTable", 1))
+	//			{
+	//				for (const auto& node : hierarchy)
+	//				{
+	//					DrawHierarchyNode(node);
+	//				}
 
-					ImGui::EndTable();
-				}
-			}
-			ImGui::End();
-		}
-	}
+	//				ImGui::EndTable();
+	//			}
+	//		}
+	//		ImGui::End();
+	//	}
+	//}
 
 	////holds the files
 	//namespace fs = std::filesystem;
-	//void DrawDirectoryTree(const fs::path& path)
+	//void ImGuiLayer::DrawDirectoryTree(const fs::path& path)
 	//{
 	//	for (const auto& entry : fs::directory_iterator(path))
 	//	{
@@ -310,7 +359,7 @@ namespace Orion {
 	//}
 
 	////search bar for files
-	//void DrawDirectorySearch(const fs::path& path, ImGuiTextFilter& filter)
+	//void ImGuiLayer::DrawDirectorySearch(const fs::path& path, ImGuiTextFilter& filter)
 	//{
 	//	for (const auto& entry : fs::recursive_directory_iterator(path))
 	//	{
@@ -327,7 +376,7 @@ namespace Orion {
 	//}
 
 	////puts them together
-	//void DrawDirectory(const fs::path& path)
+	//void ImGuiLayer::DrawDirectory(const fs::path& path)
 	//{
 	//	static ImGuiTextFilter filter;
 	//	filter.Draw("Search");
@@ -338,7 +387,7 @@ namespace Orion {
 	//		DrawDirectoryTree(path);
 	//}
 
-	//void ShowFileDirectoryModule()
+	//void ImGuiLayer::ShowFileDirectoryModule()
 	//{
 	//	if (showFileDirectoryModule)
 	//	{
@@ -354,28 +403,28 @@ namespace Orion {
 	//	}
 	//}
 
-	void ShowConsoleTraceOutput(const char* source, const char* message)
+	void ImGuiLayer::ShowConsoleTraceOutput(const char* source, const char* message)
 	{
 		ImU32 consoleTraceGray = ImGui::GetColorU32(ImVec4(0.7f, 0.7f, 0.7f, 0.65f));
 		ImGui::Text("[%s] : %s", source, message);
 		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, consoleTraceGray);
 	}
 
-	void ShowConsoleWarningOutput(const char* source, const char* message)
+	void ImGuiLayer::ShowConsoleWarningOutput(const char* source, const char* message)
 	{
 		ImU32 consoleWarningYellow = ImGui::GetColorU32(ImVec4(0.6f, 0.4f, 0.04f, 0.85f));
 		ImGui::Text("[%s] : %s", source, message);
 		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, consoleWarningYellow);
 	}
 
-	void ShowConsoleErrorOutput(const char* source, const char* message)
+	void ImGuiLayer::ShowConsoleErrorOutput(const char* source, const char* message)
 	{
 		ImU32 consoleErrorRed = ImGui::GetColorU32(ImVec4(0.8f, 0.1f, 0.04f, 0.65f));
 		ImGui::Text("[%s] : %s", source, message);
 		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, consoleErrorRed);
 	}
 
-	void ShowConsoleModule()
+	void ImGuiLayer::ShowConsoleModule()
 	{
 		if (showConsoleModule)
 		{
@@ -426,7 +475,7 @@ namespace Orion {
 		}
 	}
 
-	void ShowControlsModule()
+	void ImGuiLayer::ShowControlsModule()
 	{
 		// control keybinds - hardcoded because not planning on being customizable
 		std::vector<std::pair<const char*, const char*>> ControlTextMap =
@@ -478,4 +527,5 @@ namespace Orion {
 			}
 		}
 	}
+
 }

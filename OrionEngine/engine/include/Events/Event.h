@@ -21,6 +21,7 @@ namespace Orion {
 								virtual EventType GetEventType() const override { return GetStaticType(); }\
 								virtual const char* GetName() const override { return #type; }
 
+
     class ORION_API Event 
     {
         friend class EventDispatcher;

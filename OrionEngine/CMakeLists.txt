@@ -14,7 +14,7 @@ project(OrionEngine LANGUAGES CXX C)
         )
 
    set(IMGUI_PATH "engine/external/ImGUI")
-    file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp)
+    file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp)
     add_library(ImGUI STATIC ${IMGUI_SOURCES})
         target_include_directories(ImGUI PUBLIC ${IMGUI_PATH})
 

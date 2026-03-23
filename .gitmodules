@@ -6,5 +6,5 @@
 	url = https://github.com/gabime/spdlog
 [submodule "OrionEngine/engine/external/ImGUI"]
 	path = OrionEngine/engine/external/ImGUI
-	url = https://github.com/ocornut/imgui
+	url = https://github.com/idealkellymiller/imgui
 	branch = docking

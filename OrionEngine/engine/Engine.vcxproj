@@ -130,10 +130,8 @@
   <ItemGroup>
     <ClInclude Include="include\assets\AssetManager.h" />
     <ClInclude Include="include\assets\AssetTypes.h" />
-    <ClInclude Include="include\ecs\Component.h" />
-    <ClInclude Include="include\ecs\ComponentPool.h" />
-    <ClInclude Include="include\ecs\Entity.h" />
     <ClInclude Include="include\ecs\Scene.h" />
+    <ClInclude Include="include\ecs\SceneManager.h" />
     <ClInclude Include="include\renderer\BoundingSphere.hpp" />
     <ClInclude Include="include\renderer\Camera.hpp" />
     <ClInclude Include="include\renderer\DirectionalLight.hpp" />
@@ -178,9 +176,8 @@
     <ClCompile Include="src\renderer\Texture.cpp" />
     <ClCompile Include="src\renderer\VertexArray.cpp" />
     <ClCompile Include="src\renderer\VertexBuffer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="engineAssets\scenes\default.scene" />
+    <ClCompile Include="src\ecs\Scene.cpp" />
+    <ClCompile Include="src\ecs\SceneManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

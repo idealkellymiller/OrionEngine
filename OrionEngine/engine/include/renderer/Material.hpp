@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 
 #include "MaterialRenderState.hpp"
+#include <memory>
+#include <string>
 
 
 class Shader;
@@ -22,12 +24,16 @@ public:
 	// Binds shader, textures, and uniforms needed for rendering
 	void Bind() const;
 
+	bool LoadFromFile(std::string filePath);
+
 	// Assign the shader used by this material
 	void SetShader(Shader* shader) { m_Shader = shader; }
 	// Assign the main diffuse texture
-	void SetDiffuseTexture(Texture* texture) { m_DiffuseTexture = texture; }
+	void SetDiffuseTexture(std::shared_ptr<Texture> texture) { m_DiffuseTexture = texture; }
+	std::string GetDiffusePath() { return m_DiffusePath; }
 	// Set a tint color for the material
 	void SetColor(const glm::vec4& color) { m_Color = color; }
+	
 
 	// specular highlight color
 	void SetSpecularColor(const glm::vec3& specularColor) { m_SpecularColor = specularColor; }
@@ -36,7 +42,7 @@ public:
 	void SetShininess(float shininess) { m_Shininess = shininess; }
 
 	Shader* GetShader() const { return m_Shader; }
-	Texture* GetDiffuseTexture() const { return m_DiffuseTexture; }
+	std::shared_ptr<Texture> GetDiffuseTexture() const { return m_DiffuseTexture; }
 
 	const glm::vec4& GetColor() const { return m_Color; }
 	const glm::vec3& GetSpecularColor() const { return m_SpecularColor; }
@@ -57,7 +63,8 @@ public:
 
 private:
 	Shader* m_Shader;			// Shader program used by this material
-	Texture* m_DiffuseTexture;	// Main color texture (albedo/diffuse)
+	std::shared_ptr<Texture> m_DiffuseTexture;	// Main color texture (albedo/diffuse)
+	std::string m_DiffusePath;
 	
 	// Diffuse/base surface color
 	glm::vec4 m_Color;

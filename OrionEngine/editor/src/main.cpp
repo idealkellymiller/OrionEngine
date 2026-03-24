@@ -12,6 +12,8 @@
 #include "Renderer.hpp"
 #include "EditorCamera.hpp"
 #include "EditorCameraInput.hpp"
+#include "AssetManager.h"
+#include "SceneManager.h"
 
 
 // For EditorCamera scrolling ot change speed
@@ -122,117 +124,25 @@ int main()
         return -1;
     }
 
-    Renderer::SetClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 
 
 
 
 
 
-
-
-    Mesh cubeMesh;
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-    OBJLoader::Load("C:/dev/OrionRenderer/engine/engineAssets/primitives/cube.obj", vertices, indices);
-    if (!cubeMesh.Create(vertices, indices)) {
-        std::cout << "Couldn't make cubeMesh\n";
-        return -1;
-    }
-
-    Mesh monkeyMesh;
-    OBJLoader::Load("C:/dev/OrionRenderer/engine/engineAssets/primitives/monkey.obj", vertices, indices);
-    if (!monkeyMesh.Create(vertices, indices)) {
-        std::cout << "Couldn't make monkeyMesh\n";
-        return -1;
-    }
-
-    //Mesh eratoMesh;
-    //OBJLoader::Load("C:/dev/OrionRenderer/engine/engineAssets/primitives/erato.obj", vertices, indices);
-    //if (!eratoMesh.Create(vertices, indices)) {
-    //    std::cout << "Couldn't make eratoMesh\n";
-    //    return -1;
-    //}
-
-
-
-
-
-
-
-    //Shader litShader;
-    //if (!litShader.CreateFromFiles(
-    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.vert",
-    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.frag"))
-    //{
-    //    std::cout << "Failed to create lit Shader\n";
-    //    Renderer::Shutdown();
-    //    glfwDestroyWindow(window);
-    //    glfwTerminate();
-    //    return -1;
-    //}
-
-    //Shader shadowShader;
-    //if (!shadowShader.CreateFromFiles(
-    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.vert",
-    //    "C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.frag"))
-    //{
-    //    std::cout << "Failed to create shadow shader\n";
-    //    Renderer::Shutdown();
-    //    glfwDestroyWindow(window);
-    //    glfwTerminate();
-    //    return -1;
-    //}
-    //// Send shadow shader reference to the renderer.
-    //Renderer::SetShadowShader(&shadowShader);
-
-
-
-
-
-    Texture stoneTex;
-    if (!stoneTex.LoadFromFile("C:/dev/OrionRenderer/engine/engineAssets/textures/mossy_stones.png")) {
-        std::cout << "Failed to load texture\n";
-    }
-
-    Material defaultMat;
-    defaultMat.SetShader(Renderer::GetLitShader());
-    defaultMat.SetDiffuseTexture(nullptr);
-    defaultMat.SetColor(glm::vec4(0.9f, 0.9f, 0.9f, 1.0f));
-    defaultMat.SetSpecularColor(glm::vec3(0.5f, 0.5f, 0.5f));      // painted/plastic-ish
-    defaultMat.SetShininess(32.0f);
-    defaultMat.SetTransparent(false);
-
-    Material stoneMat;
-    stoneMat.SetShader(Renderer::GetLitShader());
-    stoneMat.SetDiffuseTexture(&stoneTex);
-    stoneMat.SetColor(glm::vec4(1.0f)); // white tint = original texture colors
-    stoneMat.SetSpecularColor(glm::vec3(0.15f, 0.15f, 0.15f));    // stone = low specular
-    stoneMat.SetShininess(8.0f);                                  // broad dull highlight
-    stoneMat.SetTransparent(false);
-
-    Material glassMat;
-    glassMat.SetShader(Renderer::GetLitShader());
-    glassMat.SetDiffuseTexture(nullptr);
-    glassMat.SetColor(glm::vec4(0.0157f, 0.9059f, 1.0f, 0.3f));
-    glassMat.SetSpecularColor(glm::vec3(1.0f, 1.0f, 1.0f));     // glass = strong highlight
-    glassMat.SetShininess(128.0f);                              // tight sharp highlight
-    glassMat.SetTransparent(true);
-
-
-
-
-    // Create and configure camera once.
-    Camera camera;
-    camera.SetPosition(glm::vec3(0.0f, 0.0f, 10.0f));
-    camera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-    camera.SetUp(glm::vec3(0.0f, 1.0f, 0.0f));
 
     EditorCamera editorCamera;
     editorCamera.SetPosition(glm::vec3(0.0f, 2.0f, 8.0f));
     editorCamera.SetYawPitch(-90.0f, -10.0f);
 
 
+    // Load assets
+    // Working directory is "OrionEngine/editor/"
+    AssetManager::SetAssetsFolderPath("assets\\");
+    AssetManager::LoadAssetsFolder();
+
+    // Load scene
+    SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + "default.scene");
 
 
     // Game loop
@@ -377,7 +287,6 @@ int main()
         Renderer::SetViewport(0, 0, viewportFramebuffer.GetWidth(), viewportFramebuffer.GetHeight());
         Renderer::BeginFrame();
 
-
         static float lastFrameTime = 0.0f;
         float currentTime = (float)glfwGetTime();
         float deltaTime = currentTime - lastFrameTime;
@@ -386,72 +295,18 @@ int main()
         // Update editor camera using viewport interaction state
         editorCamera.Update(
             window,
-            camera,
+            *Renderer::GetActiveCamera(),
             deltaTime,
             viewportHovered,
             viewportFocused
         );
 
-
         // Update camera projection if window size changes
         float aspectRatio = (float)viewportFramebuffer.GetWidth() / (float)viewportFramebuffer.GetHeight();
-        camera.SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
-
-        RenderScene renderScene;
-        renderScene.SetActiveCamera(&camera);
+        Renderer::GetActiveCamera()->SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
 
 
-        // Create a sun-like directional light.
-        DirectionalLight sun;
-        sun.Direction = glm::vec3(-0.5f, -1.0f, -0.2f);
-        sun.Color = glm::vec3(1.0f, 0.95f, 0.85f);
-        sun.Intensity = 1.2f;
-
-        renderScene.SetDirectionalLight(sun);
-
-
-        Renderable stone;
-        stone.MeshPtr = &cubeMesh;
-        stone.MaterialPtr = &stoneMat;
-        glm::mat4 modelA = glm::mat4(1.0f);
-        modelA = glm::translate(modelA, glm::vec3(sin((float)glfwGetTime() * 3), -1.0f, 0.0f));
-        modelA = glm::rotate(modelA, (float)glfwGetTime(), glm::vec3(3.0f, 2.5f, 2.0f));
-        modelA = glm::scale(modelA, glm::vec3(1.0f, 1.0f, 1.0f));
-        stone.ModelMatrix = modelA;
-        renderScene.AddRenderable(stone);
-
-        Renderable monkey;
-        monkey.MeshPtr = &monkeyMesh;
-        monkey.MaterialPtr = &glassMat;
-        glm::mat4 modelB = glm::mat4(1.0f);
-        modelB = glm::translate(modelB, glm::vec3(3.5f, 0.0f, -2.0f));
-        modelB = glm::rotate(modelB, cos((float)glfwGetTime() * 3), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelB = glm::scale(modelB, glm::vec3(1.0f, 1.0f, 1.0f));
-        monkey.ModelMatrix = modelB;
-        renderScene.AddRenderable(monkey);
-
-        Renderable floor;
-        floor.MeshPtr = &cubeMesh;
-        floor.MaterialPtr = &defaultMat;
-        glm::mat4 modelC = glm::mat4(1.0f);
-        modelC = glm::translate(modelC, glm::vec3(0.0f, -4.0f, 0.0f));
-        modelC = glm::rotate(modelC, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        modelC = glm::scale(modelC, glm::vec3(5.0f, 1.0f, 5.0f));
-        floor.ModelMatrix = modelC;
-        renderScene.AddRenderable(floor);
-
-        Renderable box;
-        box.MeshPtr = &cubeMesh;
-        box.MaterialPtr = &defaultMat;
-        glm::mat4 modelD = glm::mat4(1.0f);
-        modelD = glm::translate(modelD, glm::vec3(3.5f, -2.0f, -2.0f));
-        modelD = glm::rotate(modelD, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        modelD = glm::scale(modelD, glm::vec3(1.0f, 1.0f, 1.0f));
-        box.ModelMatrix = modelD;
-        renderScene.AddRenderable(box);
-
-
-        Renderer::Render(renderScene);
+        Renderer::Render();
         Renderer::EndFrame();
 
         viewportFramebuffer.Unbind();
@@ -495,4 +350,6 @@ int main()
     glfwTerminate();
 
     return 0;
+    
+    
 }

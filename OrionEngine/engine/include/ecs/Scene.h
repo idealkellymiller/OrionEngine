@@ -1,32 +1,86 @@
+// Owns entities/components
+
 #pragma once
-#include "Entity.h"
-#include "ComponentPool.h"
-#include "Component.h"
+#include <cstdint>
+#include <vector>
+#include <unordered_map>
+#include <glm/glm.hpp>
+
+#include "AssetTypes.h"
+
+
+using EntityID = uint32_t;
+static constexpr EntityID INVALID_ENTITY = 0;
+
+// metadata for this entity
+struct EntityDataComponent {
+    std::string name = "Entity";
+    bool enabled = true;
+};
+
+struct TransformComponent {
+    glm::vec3 position = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
+};
+
+struct MeshComponent {
+    // References to the mesh and material assets loaded in the file directory.
+    AssetID mesh = INVALID_ASSET_ID;
+};
+
+struct MaterialComponent {
+    AssetID material = INVALID_ASSET_ID;
+};
+
+
+
+
+
 
 
 class Scene {
 public:
-	Entity CreateEntity(const std::string& name = "SceneObject");
-	void DestroyEntity(Entity entity);
+    Scene();
+    ~Scene();
 
-    template<typename T>
-    bool HasComponent(Entity entity) const;
+    // Entity Management
+    EntityID CreateEntity();
+    EntityID CreateEntityWithID(EntityID entityID);
+    void DestroyEntity(EntityID entityID);
+    bool IsValidEntity(EntityID entityID) const;
 
-    template<typename T>
-    T& AddComponent(Entity entity, const T& component = T{});
+    const std::vector<EntityID>& GetEntities() const { return m_Entities; }
+    
+    void Clear();
 
-    template<typename T>
-    T* GetComponent(Entity entity);
+    // Entity data
+    void AddEntityDataComponent(EntityID entityID, const EntityDataComponent& component);
+    EntityDataComponent* GetEntityDataComponent(EntityID entityID);
+    bool HasEntityDataComponent(EntityID entityID) const;
 
-    template<typename T>
-    void RemoveComponent(Entity entity);
+    // Transform
+    void AddTransformComponent(EntityID entityID, const TransformComponent& component);
+    TransformComponent* GetTransformComponent(EntityID entityID);
+    bool HasTransformComponent(EntityID entityID) const;
+
+    // Mesh
+    void AddMeshComponent(EntityID entityID, const MeshComponent& component);
+    MeshComponent* GetMeshComponent(EntityID entityID);
+    bool HasMeshComponent(EntityID entityID) const;
+
+    // Material
+    void AddMaterialComponent(EntityID entityID, const MaterialComponent& component);
+    MaterialComponent* GetMaterialComponent(EntityID entityID);
+    bool HasMaterialComponent(EntityID entityID) const;
 
 private:
     EntityID m_NextEntityID = 1;
-    std::unordered_map<EntityID, EntityRecord> m_Entities;
 
-    ComponentPool<TransformComponent> m_Transforms;
-    ComponentPool<MeshComponent> m_Meshes;
-    ComponentPool<CameraComponent> m_Cameras;
-    ComponentPool<ScriptComponent> m_Scripts;
+    std::vector<EntityID> m_Entities;
+
+    std::unordered_map<EntityID, EntityDataComponent> m_EntityDataComponents;
+    std::unordered_map<EntityID, TransformComponent> m_TransformComponents;
+    std::unordered_map<EntityID, MeshComponent> m_MeshComponents;
+    std::unordered_map<EntityID, MaterialComponent> m_MaterialComponents;
 };

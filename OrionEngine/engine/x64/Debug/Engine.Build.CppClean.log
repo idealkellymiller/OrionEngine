@@ -4,6 +4,7 @@ c:\dev\orionengine\orionengine\engine\x64\debug\vertexbuffer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\vertexarray.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\texture.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\shader.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\renderscene.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\renderer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\openglbackend.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\objloader.obj
@@ -12,11 +13,14 @@ c:\dev\orionengine\orionengine\engine\x64\debug\material.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\indexbuffer.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\frustum.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\framebuffer.obj
-c:\dev\orionengine\orionengine\engine\x64\debug\camera.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\renderpass.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\editorcamerainput.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\editorcamera.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\camera.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\assetmanager.obj
 c:\dev\orionengine\orionengine\engine\x64\debug\glad.obj
-c:\dev\orionengine\orionengine\engine\x64\debug\renderpass.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\scene.obj
+c:\dev\orionengine\orionengine\engine\x64\debug\scenemanager.obj
 c:\dev\orionengine\orionengine\x64\debug\engine.lib
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\cl.command.1.tlog
 c:\dev\orionengine\orionengine\engine\x64\debug\engine.tlog\cl.items.tlog

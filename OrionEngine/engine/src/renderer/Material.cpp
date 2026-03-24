@@ -2,9 +2,98 @@
 #include "Shader.hpp"
 #include "Texture.hpp"
 
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <iostream>
+
+#include <Renderer.hpp> // ======= DEPENDENCY LOOPS ========
+#include "AssetManager.h"
+
 
 Material::Material() : m_Shader(nullptr), m_DiffuseTexture(nullptr), m_Color(1.0f, 1.0f, 1.0f, 1.0f)
 {
+}
+
+bool Material::LoadFromFile(std::string filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open())
+    {
+        std::cout << "Failed to open material file: " << filePath << "\n";
+        return false;
+    }
+
+    // 1. Set defaults
+    SetShader(Renderer::GetLitShader());
+    SetDiffuseTexture(nullptr);
+    SetColor(glm::vec4(0.9f, 0.9f, 0.9f, 1.0f));
+    SetSpecularColor(glm::vec3(0.5f, 0.5f, 0.5f));
+    SetShininess(32.0f);
+    SetTransparent(false);
+
+    // 2. Parse file
+    std::string tag;
+
+    while (file >> tag) {
+        // Ignore comments
+        if (tag[0] == '#')
+        {
+            std::string line;
+            std::getline(file, line);
+            continue;
+        }
+
+        // Diffuse texture
+        // dt brick.png
+        if (tag == "dt") {
+            std::string texturePath;
+            file >> texturePath;
+            // Add the assets folder path onto the front of it
+            texturePath = AssetManager::GetAssetsFolderPath() + texturePath;
+
+            if (texturePath != "0" && texturePath != "none") {
+                AssetID textureID = AssetManager::GetTextureID(texturePath);
+                SetDiffuseTexture(AssetManager::GetTexture(textureID));
+
+                m_DiffusePath = texturePath;
+            }
+        }
+        // Color (vec4)
+        // c r g b a
+        else if (tag == "c") {
+            float r, g, b, a;
+            file >> r >> g >> b >> a;
+
+            SetColor(glm::vec4(r, g, b, a));
+        }
+        // Specular color (vec3)
+        // sc r g b
+        else if (tag == "sc") {
+            float r, g, b;
+            file >> r >> g >> b;
+
+            SetSpecularColor(glm::vec3(r, g, b));
+        }
+        else if (tag == "ss") {
+            float shininess;
+            file >> shininess;
+
+            SetShininess(shininess);
+        }
+        else if (tag == "it") {
+            int val;
+            file >> val;
+
+            if (val == 0) 
+                SetTransparent(false);
+            
+            if (val == 1)
+                SetTransparent(true);
+        }
+    }
+
+    std::cout << "Material loaded successfully: " << filePath << "\n";
+    return true;
 }
 
 void Material::Bind() const

@@ -16,7 +16,7 @@ public:
 
     // Non-copyable for now because it owns GPU resources.
     Mesh(const Mesh&) = delete;
-    Mesh& operator=(const Mesh&) = delete;
+    // Mesh& operator=(const Mesh&) = delete;
 
     // Create from vertices only (fallback path)
     // bool Create(const std::vector<Vertex>& vertices);

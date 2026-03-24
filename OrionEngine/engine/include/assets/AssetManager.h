@@ -6,6 +6,7 @@
 #include "AssetTypes.h"
 #include "Mesh.hpp"
 #include "Texture.hpp"
+#include "Material.hpp"
 
 
 // Manages asset metadata and loaded runtime resources.
@@ -14,46 +15,56 @@ public:
     AssetManager() = default;
     ~AssetManager() = default;
 
-    // --- Asset registration ---
-    // Adds metadata for a texture asset to the database
-    void RegisterTextureAsset(const TextureAsset& asset);
+    static void LoadAssetsFolder();
 
-    // Adds metadata for a material asset to the database.
-    void RegisterMaterialAsset(const MaterialAsset& asset);
+    //// --- Asset registration ---
+    //// Adds metadata for a texture asset to the database
+    //static void RegisterTextureAsset(const TextureAsset& asset);
 
-    // Adds metadata for a mesh asset to the database.
-    void RegisterMeshAsset(const MeshAsset& asset);
+    //// Adds metadata for a material asset to the database.
+    //static void RegisterMaterialAsset(const MaterialAsset& asset);
+
+    //// Adds metadata for a mesh asset to the database.
+    //static void RegisterMeshAsset(const MeshAsset& asset);
 
     // --- Metadata lookup ---
-    TextureAsset* GetTextureAsset(AssetID assetID);
-    MaterialAsset* GetMaterialAsset(AssetID assetID);
-    MeshAsset* GetMeshAsset(AssetID assetID);
+    static std::shared_ptr<Texture> GetTexture(AssetID assetID);
+    static std::shared_ptr<Material> GetMaterial(AssetID assetID);
+    static std::shared_ptr<Mesh> GetMesh(AssetID assetID);
 
-    const TextureAsset* GetTextureAsset(AssetID assetID) const;
-    const MaterialAsset* GetMaterialAsset(AssetID assetID) const;
-    const MeshAsset* GetMeshAsset(AssetID assetID) const;
+    static MeshAsset* GetMeshAsset(AssetID assetID) { return &m_MeshAssets[assetID]; }
+    static TextureAsset* GetTextureAsset(AssetID assetID) { return &m_TextureAssets[assetID]; }
+    static MaterialAsset* GetMaterialAsset(AssetID assetID) { return &m_MaterialAssets[assetID]; }
 
     // --- Runtime loading ---
-    // Loads the texture if needed, then returns the runtime texture object.
-    std::shared_ptr<Texture> LoadTexture(AssetID assetID);
+    static void LoadTexture(const std::string filePath);
+    static void LoadMesh(const std::string filePath);
+    static void LoadMaterial(const std::string filePath);
 
-    // Loads the mesh if needed, then returns the runtime mesh object.
-    std::shared_ptr<Mesh> LoadMesh(AssetID assetID);
+    static AssetID GetMeshID(const std::string filePath) { return m_MeshPathToID[filePath]; }
+    static AssetID GetTextureID(const std::string filePath) { return m_TexturePathToID[filePath]; }
+    static AssetID GetMaterialID(const std::string filePath) { return m_MaterialPathToID[filePath]; }
 
-    // --- Utility ---
-    bool HasTextureAsset(AssetID assetID) const;
-    bool HasMaterialAsset(AssetID assetID) const;
-    bool HasMeshAsset(AssetID assetID) const;
-
-    void Clear();
+    static void SetAssetsFolderPath(std::string filePath) { m_AssetsFolderPath = filePath; }
+    static std::string GetAssetsFolderPath() { return m_AssetsFolderPath; }
 
 private:
-    // Metadata database
-    std::unordered_map<AssetID, TextureAsset> m_TextureAssets;
-    std::unordered_map<AssetID, MaterialAsset> m_MaterialAssets;
-    std::unordered_map<AssetID, MeshAsset> m_MeshAssets;
+    static std::string m_AssetsFolderPath;
 
-    // Loaded runtime cache
-    std::unordered_map<AssetID, std::shared_ptr<Texture>> m_LoadedTextures;
-    std::unordered_map<AssetID, std::shared_ptr<Mesh>> m_LoadedMeshes;
+    static AssetID m_NextAssetID;
+
+    // Metadata database
+    static std::unordered_map<AssetID, MeshAsset>     m_MeshAssets;
+    static std::unordered_map<AssetID, TextureAsset>  m_TextureAssets;
+    static std::unordered_map<AssetID, MaterialAsset> m_MaterialAssets;
+
+    // Runtime cache
+    static std::unordered_map<AssetID, std::shared_ptr<Mesh>>     m_LoadedMeshes;
+    static std::unordered_map<AssetID, std::shared_ptr<Texture>>  m_LoadedTextures;
+    static std::unordered_map<AssetID, std::shared_ptr<Material>> m_LoadedMaterials;
+
+    // Lookup helpers
+    static std::unordered_map<std::string, AssetID> m_MeshPathToID;
+    static std::unordered_map<std::string, AssetID> m_TexturePathToID;
+    static std::unordered_map<std::string, AssetID> m_MaterialPathToID;
 };

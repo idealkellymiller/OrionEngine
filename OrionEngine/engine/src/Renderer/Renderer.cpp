@@ -37,6 +37,11 @@ int Renderer::s_ShadowMapWidth = 2048;
 int Renderer::s_ShadowMapHeight = 2048;
 Shader Renderer::s_ShadowShader;
 
+Camera Renderer::s_ActiveCamera;
+
+RenderScene Renderer::s_ActiveRenderScene;
+
+
 bool Renderer::Init() {
 
 	InitShadowResources();
@@ -76,11 +81,15 @@ bool Renderer::Init() {
 			std::cout << "Failed to create shadow Shader\n";
 	}
 
-	
-
 	s_LitShader = litShader;
 	s_ShadowShader = shadowShader;
-	
+
+
+
+
+
+
+	SetClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 
 	return true; //s_Backend->Init();
 }
@@ -125,15 +134,12 @@ void Renderer::BeginFrame()
 	// proper 3D visibilty testing.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Read the Json .scene
-	// 
-	// Load the assets used in it from their files (only once. Don't want to load erato every frame):
-	// - Textures
-	// - Meshes
-	// 
-	// Create the Meshes and Materials
+
+
 	// Collect Rendables into a RenderScene from Scene
 	RenderScene scene;
+	scene.BuildRenderScene();
+	s_ActiveRenderScene = scene;
 }
 
 void Renderer::EndFrame()
@@ -142,23 +148,25 @@ void Renderer::EndFrame()
 	// TODO: add frame stats 
 }
 
-void Renderer::Render(const RenderScene& scene)
+void Renderer::Render()
 {
-	Camera* camera = scene.GetActiveCamera();
+
+
+	Camera* camera = GetActiveCamera();
 	if (camera == nullptr)
 		return;
 
 	// Cache scene lighting for this frame.
-	s_HasDirectionalLight = scene.HasDirectionalLight();
+	s_HasDirectionalLight = s_ActiveRenderScene.HasDirectionalLight();
 	if (s_HasDirectionalLight) {
-		s_DirectionalLight = scene.GetDirectionalLight();
+		s_DirectionalLight = s_ActiveRenderScene.GetDirectionalLight();
 	}
 
 	// Start from a clean frame state
 	ClearQueues();
 
 	// Build internal draw commands from the submitted scene.
-	BuildRenderQueue(scene);
+	BuildRenderQueue(s_ActiveRenderScene);	// dereference the pointer
 
 	// Sort once before running passes.
 	SortDrawQueues();
@@ -210,16 +218,16 @@ void Renderer::Render(const RenderScene& scene)
 
 void Renderer::BuildRenderQueue(const RenderScene& scene)
 {
-	Camera* camera = scene.GetActiveCamera();
-	if (!camera)
-		return;
+	//Camera* camera = scene.GetActiveCamera();
+	//if (!camera)
+	//	return;
 
 	
 
 	// Build frustum once for this frame.
 	// We use it to reject objects outside of the visible region
-	glm::mat4 view = camera->GetViewMatrix();
-	glm::mat4 projection = camera->GetProjectionMatrix();
+	glm::mat4 view = s_ActiveCamera.GetViewMatrix();
+	glm::mat4 projection = s_ActiveCamera.GetProjectionMatrix();
 	glm::mat4 viewProjection = projection * view;
 
 	Frustum frustum;
@@ -234,7 +242,7 @@ void Renderer::BuildRenderQueue(const RenderScene& scene)
 			continue;
 
 		// Convert scene submission into renderer-owned frame data
-		DrawCommand cmd = BuildDrawCommand(renderable, *camera);
+		DrawCommand cmd = BuildDrawCommand(renderable, s_ActiveCamera);
 
 		// Send the command into the correct queue
 		ClassifyDrawCommand(cmd);
@@ -243,10 +251,6 @@ void Renderer::BuildRenderQueue(const RenderScene& scene)
 
 bool Renderer::ShouldSubmitRenderable(const Renderable& renderable, const Frustum& frustum)
 {
-	// Skip bad scene entries
-	if (!renderable.IsValid())
-		return false;
-
 	// Skip invisible objects outside the camera frustum.
 	if (!IsRenderableVisible(renderable, frustum))
 		return false;
@@ -257,12 +261,12 @@ bool Renderer::ShouldSubmitRenderable(const Renderable& renderable, const Frustu
 DrawCommand Renderer::BuildDrawCommand(const Renderable& renderable, const Camera& camera)
 {
 	DrawCommand cmd;
-	cmd.MeshPtr = renderable.MeshPtr;
-	cmd.MaterialPtr = renderable.MaterialPtr;
-	cmd.ModelMatrix = renderable.ModelMatrix;
+	cmd.MeshPtr = renderable.mesh;
+	cmd.MaterialPtr = renderable.material;
+	cmd.ModelMatrix = renderable.worldTransform;
 
 	// Extract world position from the matrix translation column
-	glm::vec3 objectWorldPos = glm::vec3(renderable.ModelMatrix[3]);
+	glm::vec3 objectWorldPos = glm::vec3(renderable.worldTransform[3]);
 
 	// Used for transparent back-to-front sorting
 	cmd.CameraDistance = glm::length(camera.GetPosition() - objectWorldPos);
@@ -290,17 +294,17 @@ void Renderer::ClassifyDrawCommand(const DrawCommand& cmd)
 
 bool Renderer::IsRenderableVisible(const Renderable& renderable, const Frustum& frustum)
 {
-	const BoundingSphere& localBounds = renderable.MeshPtr->GetBounds();
+	const BoundingSphere& localBounds = renderable.mesh->GetBounds();
 
 	// Transform local center into world space.
-	glm::vec4 worldCenter4 = renderable.ModelMatrix * glm::vec4(localBounds.Center, 1.0f);
+	glm::vec4 worldCenter4 = renderable.worldTransform * glm::vec4(localBounds.Center, 1.0f);
 	glm::vec3 worldCenter = glm::vec3(worldCenter4);
 
 	// Extract scale from model matrix basis vectors.
 	// The length of each basis vector gives scale on that axis.
-	float scaleX = glm::length(glm::vec3(renderable.ModelMatrix[0]));
-	float scaleY = glm::length(glm::vec3(renderable.ModelMatrix[1]));
-	float scaleZ = glm::length(glm::vec3(renderable.ModelMatrix[2]));
+	float scaleX = glm::length(glm::vec3(renderable.worldTransform[0]));
+	float scaleY = glm::length(glm::vec3(renderable.worldTransform[1]));
+	float scaleZ = glm::length(glm::vec3(renderable.worldTransform[2]));
 
 	// use the largest scale so the sphere still fully conatins the mesh.
 	float maxScale = std::max(scaleX, std::max(scaleY, scaleZ));

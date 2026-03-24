@@ -4,8 +4,9 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "DirectionalLight.hpp"
-#include "Entity.h"
+#include "Scene.h"
 
 
 class Mesh;
@@ -15,33 +16,22 @@ class AssetManager;
 
 
 struct Renderable {
-    EntityID Entity = INVALID_ENTITY;
-    Mesh* MeshPtr = nullptr;					// Geometry to draw
-    Material* MaterialPtr = nullptr;			// Appearance to use
-    glm::mat4 ModelMatrix = glm::mat4(1.0f);	// Final world transform
+    EntityID entity = INVALID_ENTITY;
 
-    // Optional future-facing fields:
-    // Layer or render group lets you filter objects later
-    // without touching the ECS.
-    unsigned int RenderLayer = 0;
+    glm::mat4 worldTransform = glm::mat4(1.0f);	            // model matrix
 
-    // usefule for skipping hidden editor/debug objects.
-    bool Visible = true;
-
-    bool IsValid() const {
-        // A renerable is drawable only of it has both a mesh and a material
-        return Visible && MeshPtr != nullptr && MaterialPtr != nullptr;
-    }
+    std::shared_ptr<Mesh> mesh = nullptr;					// Geometry to draw
+    std::shared_ptr<Material> material = nullptr;			// Appearance to use
 };
 
 
 class RenderScene {
 public:  
-    void Clear();
-    void BuildRenderScene(const Scene& scene, AssetManager& assetManager);
+    void Clear() { m_Renderables.clear(); }
+    void BuildRenderScene();//const Scene& scene, AssetManager& assetManager);
 
-    void SetActiveCamera(Camera* camera) { m_ActiveCamera = camera; }
-    Camera* GetActiveCamera() const { return m_ActiveCamera; }
+    //void SetActiveCamera(Camera* camera) { m_ActiveCamera = camera; }
+    //Camera* GetActiveCamera() const { return m_ActiveCamera; }
 
     void AddRenderable(const Renderable& renderable) { m_Renderables.push_back(renderable); }
     const std::vector<Renderable>& GetRenderables() const { return m_Renderables; }

@@ -17,3 +17,5 @@ C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Shader.cpp;C:\dev\OrionEngine
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\Texture.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Texture.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\VertexArray.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\VertexArray.obj
 C:\dev\OrionEngine\OrionEngine\engine\src\renderer\VertexBuffer.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\VertexBuffer.obj
+C:\dev\OrionEngine\OrionEngine\engine\src\ecs\Scene.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\Scene.obj
+C:\dev\OrionEngine\OrionEngine\engine\src\ecs\SceneManager.cpp;C:\dev\OrionEngine\OrionEngine\engine\x64\Debug\SceneManager.obj

@@ -42,12 +42,15 @@ public:
 	static void BeginFrame();
 	static void EndFrame();
 
-	static void Render(const RenderScene& scene);
+	static void Render();
 
 	// static void SetShadowShader(Shader* shader) { s_ShadowShader = shader; }
 
 	static Shader* GetLitShader() { return &s_LitShader; }
 	static Shader* GetShadowShader() { return &s_ShadowShader; }
+
+	static Camera* GetActiveCamera() { return &s_ActiveCamera; } 
+	static void SetActiveCamera(Camera camera) { s_ActiveCamera = camera; }
 
 private:
 	static void BuildRenderQueue(const RenderScene& scene);
@@ -92,4 +95,8 @@ private:
 	static int s_ShadowMapHeight;
 	// Shadow-only shader
 	static Shader s_ShadowShader;
+
+	static Camera s_ActiveCamera;
+
+	static RenderScene s_ActiveRenderScene;
 };

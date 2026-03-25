@@ -68,12 +68,14 @@ namespace Orion {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGui::DockSpaceOverViewport();
 
 		static bool show = true;
 		ImGui::ShowDemoWindow(&show);
 		ShowMainMenuBar();
 		ShowInspectorModule();
 		ShowViewportModule();
+		ShowHierarchyModule();
 		ShowConsoleModule();
 		ShowControlsModule();
 
@@ -259,8 +261,6 @@ namespace Orion {
 		{
 			if (ImGui::Begin("Viewport", &showViewportModule))
 			{
-				//TODO: myca
-				// luke requests this holds a 2d image so it can be updated by the renderer later for now
 				ImVec2 size = ImGui::GetContentRegionAvail();
 
 				ImGui::Image(
@@ -274,11 +274,7 @@ namespace Orion {
 		}
 	}
 
-	struct HierarchyNode
-	{
-		std::string name;
-		std::vector<HierarchyNode> children;
-	};
+
 	//testing 
 	std::vector<HierarchyNode> hierarchy =
 	{
@@ -295,7 +291,29 @@ namespace Orion {
 			}
 		}
 	};
-	void DrawHierarchyNode(const HierarchyNode& node)
+
+	void ImGuiLayer::ShowHierarchyModule()
+	{
+		if (showHierarchyModule)
+		{
+			if (ImGui::Begin("Hierarchy", &showHierarchyModule))
+			{
+				//TODO: myca
+				if (ImGui::BeginTable("HierarchyTable", 1))
+				{
+					for (auto& node : hierarchy)
+					{
+						DrawHierarchyNode(node);
+					}
+
+					ImGui::EndTable();
+				}
+			}
+			ImGui::End();
+		}
+	}
+
+	void ImGuiLayer::DrawHierarchyNode(HierarchyNode& node)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
@@ -304,36 +322,23 @@ namespace Orion {
 
 		if (open)
 		{
-			for (const auto& child : node.children)
+			for (auto& child : node.children)
 			{
 				DrawHierarchyNode(child);
 			}
 
 			ImGui::TreePop();
 		}
+
+		if (ImGui::Button("Add primitive to scene")) {
+			// temporary
+			AddPrimitive();
+		}
 	}
 
+	void ImGuiLayer::AddPrimitive() {
 
-	//void ImGuiLayer::ShowHierarchyModule()
-	//{
-	//	if (showHierarchyModule)
-	//	{
-	//		if (ImGui::Begin("Hierarchy", &showHierarchyModule))
-	//		{
-	//			//TODO: myca
-	//			if (ImGui::BeginTable("HierarchyTable", 1))
-	//			{
-	//				for (const auto& node : hierarchy)
-	//				{
-	//					DrawHierarchyNode(node);
-	//				}
-
-	//				ImGui::EndTable();
-	//			}
-	//		}
-	//		ImGui::End();
-	//	}
-	//}
+	}
 
 	////holds the files
 	//namespace fs = std::filesystem;

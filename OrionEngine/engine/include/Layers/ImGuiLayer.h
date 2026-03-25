@@ -6,6 +6,11 @@
 #include "Events/MouseEvent.h"
 
 namespace Orion {
+	struct HierarchyNode
+	{
+		std::string name;
+		std::vector<HierarchyNode> children;
+	};
 
 	class ORION_API ImGuiLayer : public Layer {
 
@@ -26,7 +31,7 @@ namespace Orion {
 		void ShowMeshColliderComponent();
 		void ShowInspectorModule();
 		void ShowViewportModule();
-		void DrawHierarchyNode();
+		void DrawHierarchyNode(HierarchyNode& node);
 		void ShowHierarchyModule();
 		void DrawDirectoryTree();
 		void DrawDirectorySearch();
@@ -36,6 +41,9 @@ namespace Orion {
 		void ShowConsoleErrorOutput(const char* source, const char* message);
 		void ShowConsoleModule();
 		void ShowControlsModule();
+
+		// temporary
+		void AddPrimitive();
 
 	};
 }

@@ -1,0 +1,14 @@
+# diffuse texture path. "none" = no texture
+dt none
+
+# color tint
+c 0.0157 0.9059 1.0 0.3
+
+# specular color
+sc 1.0 1.0 1.0
+
+# specular shininess
+ss 128.0
+
+# is transparent. 0 = false     1 = true
+it 1

@@ -54,7 +54,7 @@ namespace Orion {
 	void ImGuiLayer::OnUpdate()
 	{
 		// TEMPORARY-to be added to Renderer: clear the previous frame from the screen to draw new stuff
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.6f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -71,7 +71,7 @@ namespace Orion {
 		ImGui::DockSpaceOverViewport();
 
 		static bool show = true;
-		ImGui::ShowDemoWindow(&show);
+		// ImGui::ShowDemoWindow(&show);
 		ShowMainMenuBar();
 		ShowInspectorModule();
 		ShowViewportModule();

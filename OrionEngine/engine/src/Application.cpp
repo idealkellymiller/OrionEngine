@@ -1,6 +1,7 @@
 #pragma once
 #include "Application.h"
 #include "Log/Log.h"
+#include "Renderer/Renderer.h"
 
 namespace Orion {
 
@@ -59,14 +60,24 @@ namespace Orion {
 
 	void Application::Run()
 	{
+		// Load Assets
+
+		// Load (startup) Scene
+
+
 		//--------------------------MAIN APP LOOP--------------------------
 		while (m_Running) {
+			// Compute deltaTime;
+
+			// Renderer::BeginFrame();
 
 			// update every layer in the stack in order
 			for (Layer* layer : m_LayerStack)
 			{
 				layer->OnUpdate();
 			}
+
+			// Renderer::EndFrame();
 
 			// update app window
 			m_Window->OnUpdate();

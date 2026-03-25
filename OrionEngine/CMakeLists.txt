@@ -20,12 +20,14 @@ project(OrionEngine LANGUAGES CXX C)
 
     add_subdirectory("engine/external/GLFW")
     add_subdirectory("engine/external/spdlog")
+    add_subdirectory("engine/external/glm")
+    add_subdirectory(engine/external/json-3.12.0)
 
     # Engine .dll
     add_library(Engine SHARED)
 
         # sets output directory to something like OrionEngine/bin/Debug-x64-Windows
-        set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>-${CMAKE_GENERATOR_PLAFORM}-$<PLATFORM_ID>")
+        set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>-${CMAKE_GENERATOR_PLATFORM}-$<PLATFORM_ID>")
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
         set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR})
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR})
@@ -34,6 +36,7 @@ project(OrionEngine LANGUAGES CXX C)
         target_include_directories(Engine 
         PUBLIC 
             "engine/include"
+            ${CMAKE_CURRENT_SOURCE_DIR}/engine/external
         PRIVATE
             "engine/src"
         )
@@ -41,22 +44,50 @@ project(OrionEngine LANGUAGES CXX C)
         # source files that define the engine library 
         # (PUT ALL OUR WRITTEN .CPPs HERE)
         target_sources(Engine PRIVATE
-            "engine/src/Core/Console.cpp"
             "engine/src/Application.cpp"
             "engine/src/AppWindow.cpp"
+
+            "engine/src/Core/Console.cpp"
 
             "engine/src/Layers/Layer.cpp"
             "engine/src/Layers/LayerStack.cpp"
             "engine/src/Layers/ImGuiLayer.cpp"
 
             "engine/src/Log/Log.cpp"
+
+            "engine/src/Renderer/Camera.cpp"
+            "engine/src/Renderer/EditorCamera.cpp"
+            "engine/src/Renderer/EditorCameraInput.cpp"
+            "engine/src/Renderer/Framebuffer.cpp"
+            "engine/src/Renderer/Frustum.cpp"
+            "engine/src/Renderer/IndexBuffer.cpp"
+            "engine/src/Renderer/Material.cpp"
+            "engine/src/Renderer/Mesh.cpp"
+            "engine/src/Renderer/OBJLoader.cpp"
+            "engine/src/Renderer/Renderer.cpp"
+            "engine/src/Renderer/RenderPass.cpp"
+            "engine/src/Renderer/RenderScene.cpp"
+            "engine/src/Renderer/Shader.cpp"
+            "engine/src/Renderer/stb_image.cpp"
+            "engine/src/Renderer/Texture.cpp"
+            "engine/src/Renderer/VertexArray.cpp"
+            "engine/src/Renderer/VertexBuffer.cpp"
+            
+            "engine/src/Assets/AssetManager.cpp"
+
+            "engine/src/ECS/Scene.cpp"
+            "engine/src/ECS/SceneManager.cpp"
         )
 
-        target_compile_definitions(Engine PRIVATE ORN_BUILD_DLL
+        target_compile_definitions(Engine 
+        PRIVATE 
+            ORN_BUILD_DLL
         PUBLIC
             ORN_PLATFORM_WINDOWS
             ORN_ENABLE_ASSERTS
         )
+
+        
 
         target_compile_definitions(Engine INTERFACE ORION_PLATFORM_WINDOWS)
 
@@ -65,6 +96,7 @@ project(OrionEngine LANGUAGES CXX C)
             ImGUI
             glfw
             spdlog
+            nlohmann_json::nlohmann_json
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)
@@ -74,7 +106,7 @@ project(OrionEngine LANGUAGES CXX C)
     add_executable(Editor "editor/src/main.cpp")
         
         target_include_directories(Editor PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/src
+            ${CMAKE_CURRENT_SOURCE_DIR}/editor/src
         )
         
         # link Editor.exe to Engine.dll

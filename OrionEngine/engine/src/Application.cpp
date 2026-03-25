@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "Log/Log.h"
 #include "Renderer/Renderer.h"
+#include "Assets/AssetManager.h"
+#include "ECS/SceneManager.h"
 
 namespace Orion {
 
@@ -61,9 +63,11 @@ namespace Orion {
 	void Application::Run()
 	{
 		// Load Assets
+		AssetManager::SetAssetsFolderPath("..\\editor\\assets\\");
+		AssetManager::LoadAssetsFolder();
 
 		// Load (startup) Scene
-
+		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + "default.scene");
 
 		//--------------------------MAIN APP LOOP--------------------------
 		while (m_Running) {

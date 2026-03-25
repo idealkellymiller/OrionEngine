@@ -23,6 +23,8 @@ float Renderer::m_ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 int Renderer::s_WindowWidth;
 int Renderer::s_WindowHeight;
 
+Framebuffer Renderer::s_ViewportFramebuffer;
+
 Shader Renderer::s_LitShader;
 Shader Renderer::s_ShadowShader;
 Shader Renderer::s_PickingShader;
@@ -49,6 +51,8 @@ unsigned int Renderer::s_PickingDepthRBO = 0;
 
 
 bool Renderer::Init() {
+	// Create the editor viewport framebuffer
+	s_ViewportFramebuffer.Create(1280, 720);
 
 	InitShadowResources();
 	InitPickingResources();

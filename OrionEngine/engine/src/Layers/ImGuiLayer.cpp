@@ -1,6 +1,7 @@
 #include "EngineCore.h"
 #include "Layers/ImGuiLayer.h"
 #include "Application.h"
+#include "Renderer/Renderer.h"
 
 #include "imgui.h"
 // #include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
@@ -257,19 +258,66 @@ namespace Orion {
 
 	void ImGuiLayer::ShowViewportModule()
 	{
+
+
 		if (showViewportModule)
 		{
-			if (ImGui::Begin("Viewport", &showViewportModule))
-			{
-				ImVec2 size = ImGui::GetContentRegionAvail();
+			//if (ImGui::Begin("Viewport", &showViewportModule))
+			//{
+			//	ImVec2 size = ImGui::GetContentRegionAvail();
 
-				ImGui::Image(
-					(ImTextureID)(intptr_t)viewportTexture,
-					size,
-					ImVec2(0, 1),
-					ImVec2(1, 0)
-				);
-			}
+			//	ImGui::Image(
+			//		(ImTextureID)(intptr_t)viewportTexture,
+			//		size,
+			//		ImVec2(0, 1),
+			//		ImVec2(1, 0)
+			//	);
+			//}
+			//ImGui::End();
+
+			// Viewport window
+			static ImVec2 viewportSize = ImVec2(0.0f, 0.0f);
+			bool viewportHovered = false;
+			bool viewportFocused = false;
+
+			ImGui::Begin("Viewport");
+
+			viewportHovered = ImGui::IsWindowHovered();
+			viewportFocused = ImGui::IsWindowFocused();
+
+			// Get the size available inside this window for content
+			viewportSize = ImGui::GetContentRegionAvail();
+
+			// Prevent weird zero-cases when minimized/collapsed
+			if (viewportSize.x < 1.0f) viewportSize.x = 1.0f;
+			if (viewportSize.y < 1.0f) viewportSize.y = 1.0f;
+
+			// Resize the framebuffer if panel size changed
+			// TODO: make viewportframebuffer static variable that is accessed through renderer facade
+			Renderer::GetViewportFramebuffer()->Resize(
+				static_cast<unsigned int>(viewportSize.x),
+				static_cast<unsigned int>(viewportSize.y)
+			);
+
+			// IMPORTANT for picking
+			// Top-left of where the image will be drawn in screen coordinates
+			ImVec2 viewportImageMin = ImGui::GetCursorScreenPos();
+			ImVec2 viewportImageMax = ImVec2(
+				viewportImageMin.x + viewportSize.x,
+				viewportImageMin.y + viewportSize.y
+			);
+
+			// Show the framebuffer's color texture inside ImGui
+			// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
+			// UVs are flipped vertically because OpenGL texture origin is bottom-left,
+			// while ImGui expects top-left style display.
+			ImGui::Image(
+				(ImTextureID)(intptr_t)Renderer::GetViewportFramebuffer()->GetColorAttachment(),
+				ImVec2(viewportSize.x, viewportSize.y),
+				ImVec2(0, 1),   // UV top-left
+				ImVec2(1, 0)    // UV bottom-right
+			);
+
 			ImGui::End();
 		}
 	}

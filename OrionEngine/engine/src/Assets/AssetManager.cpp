@@ -27,6 +27,10 @@ std::unordered_map<std::string, AssetID> AssetManager::m_MaterialPathToID;
 namespace fs = std::filesystem;
 void AssetManager::LoadAssetsFolder()
 {
+
+    // std::cout << "m_AssetsFolderPath = " << m_AssetsFolderPath << "\n";
+    std::cout << "Current working directory = " << fs::current_path().string() << "\n";
+
     if (m_AssetsFolderPath.empty())
     {
         std::cout << "Asset folder path is empty.\n";
@@ -35,8 +39,6 @@ void AssetManager::LoadAssetsFolder()
 
     fs::path assetRoot = m_AssetsFolderPath;
 
-    std::cout << "m_AssetsFolderPath = " << m_AssetsFolderPath << "\n";
-    std::cout << "Current working directory = " << fs::current_path().string() << "\n";
 
     if (!fs::exists(assetRoot) || !fs::is_directory(assetRoot))
     {

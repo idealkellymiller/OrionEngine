@@ -52,6 +52,8 @@ public:
 	static Camera* GetActiveCamera() { return &s_ActiveCamera; } 
 	static void SetActiveCamera(Camera camera) { s_ActiveCamera = camera; }
 
+	static Framebuffer* GetViewportFramebuffer() { return &s_ViewportFramebuffer; }
+
 	static EntityID PickEntity(int mouseX, int mouseY);
 
 private:
@@ -82,6 +84,8 @@ private:
 
 	static int s_WindowWidth;
 	static int s_WindowHeight;
+
+	static Framebuffer s_ViewportFramebuffer;
 
 	static Shader s_LitShader;
 	static Shader s_ShadowShader;

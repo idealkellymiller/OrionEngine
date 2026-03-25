@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <memory>
+#include "Scene.h"
 
 class Mesh;
 class Material;
@@ -13,4 +14,6 @@ struct DrawCommand
     float CameraDistance = 0.0f;
     unsigned int SortKey = 0;
     bool CastsShadows = true;
+
+    EntityID Entity = INVALID_ENTITY;
 };

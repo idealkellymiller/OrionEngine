@@ -23,6 +23,8 @@ int Renderer::s_WindowWidth;
 int Renderer::s_WindowHeight;
 
 Shader Renderer::s_LitShader;
+Shader Renderer::s_ShadowShader;
+Shader Renderer::s_PickingShader;
 
 std::vector<DrawCommand> Renderer::s_OpaqueQueue;
 std::vector<DrawCommand> Renderer::s_TransparentQueue;
@@ -35,16 +37,20 @@ unsigned int Renderer::s_ShadowDepthTexture = 0;
 glm::mat4 Renderer::s_LightSpaceMatrix = glm::mat4(1.0f);
 int Renderer::s_ShadowMapWidth = 2048;
 int Renderer::s_ShadowMapHeight = 2048;
-Shader Renderer::s_ShadowShader;
 
 Camera Renderer::s_ActiveCamera;
 
 RenderScene Renderer::s_ActiveRenderScene;
 
+unsigned int Renderer::s_PickingFBO = 0;
+unsigned int Renderer::s_PickingColorTexture = 0;
+unsigned int Renderer::s_PickingDepthRBO = 0;
+
 
 bool Renderer::Init() {
 
 	InitShadowResources();
+	InitPickingResources();
 
 	// Enables depth testing.
 	// This tells OpenGL to compate fragment depth values so that.
@@ -67,23 +73,31 @@ bool Renderer::Init() {
 	// Create the Shaders.
 	Shader litShader;
 	if (!litShader.CreateFromFiles(
-		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.vert",
-		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Lit.frag"))
+		"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Lit.vert",
+		"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Lit.frag"))
 	{
 		std::cout << "Failed to create lit Shader\n";
 	}
 
 	Shader shadowShader;
 	if (!shadowShader.CreateFromFiles(
-		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.vert",
-		"C:/dev/OrionRenderer/engine/engineAssets/shaders/Shadow.frag"))
+		"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Shadow.vert",
+		"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Shadow.frag"))
 	{
 			std::cout << "Failed to create shadow Shader\n";
 	}
 
+	Shader pickingShader;
+	if (!pickingShader.CreateFromFiles(
+		"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Picking.vert",
+		"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Picking.frag"))
+	{
+		std::cout << "Failed to create picking Shader\n";
+	}
+
 	s_LitShader = litShader;
 	s_ShadowShader = shadowShader;
-
+	s_PickingShader = pickingShader;
 
 
 
@@ -98,6 +112,7 @@ void Renderer::Shutdown()
 {
 
 	ShutdownShadowResources();
+	ShutdownPickingResources();
 }
 
 void Renderer::SetViewport(int x, int y, int width, int height)
@@ -107,6 +122,8 @@ void Renderer::SetViewport(int x, int y, int width, int height)
 
 
 	glViewport(x, y, width, height);
+
+	ResizePickingResources(width, height);
 }
 
 void Renderer::SetClearColor(float r, float g, float b, float a)
@@ -213,6 +230,8 @@ void Renderer::Render()
 		s_LightSpaceMatrix
 	);
 
+	RenderPickingPass();
+
 	ClearQueues();
 }
 
@@ -261,6 +280,7 @@ bool Renderer::ShouldSubmitRenderable(const Renderable& renderable, const Frustu
 DrawCommand Renderer::BuildDrawCommand(const Renderable& renderable, const Camera& camera)
 {
 	DrawCommand cmd;
+	cmd.Entity = renderable.entity;
 	cmd.MeshPtr = renderable.mesh;
 	cmd.MaterialPtr = renderable.material;
 	cmd.ModelMatrix = renderable.worldTransform;
@@ -427,4 +447,184 @@ glm::mat4 Renderer::BuildLightSpaceMatrix()
 		1.0f, 50.0f);
 
 	return lightProjection * lightView;
+}
+
+
+void Renderer::InitPickingResources() {
+	glGenFramebuffers(1, &s_PickingFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, s_PickingFBO);
+
+	// Integer texture storing one EntityID per pixel
+	glGenTextures(1, &s_PickingColorTexture);
+	glBindTexture(GL_TEXTURE_2D, s_PickingColorTexture);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_R32UI,
+		std::max(1, s_WindowWidth),
+		std::max(1, s_WindowHeight),
+		0,
+		GL_RED_INTEGER,
+		GL_UNSIGNED_INT,
+		nullptr);
+
+	// No filtering for ID textures
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glFramebufferTexture2D(
+		GL_FRAMEBUFFER,
+		GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D,
+		s_PickingColorTexture,
+		0);
+
+	// Depth renderbuffer so nearest visible object wins
+	glGenRenderbuffers(1, &s_PickingDepthRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, s_PickingDepthRBO);
+	glRenderbufferStorage(
+		GL_RENDERBUFFER,
+		GL_DEPTH24_STENCIL8,
+		std::max(1, s_WindowWidth),
+		std::max(1, s_WindowHeight));
+
+	glFramebufferRenderbuffer(
+		GL_FRAMEBUFFER,
+		GL_DEPTH_STENCIL_ATTACHMENT,
+		GL_RENDERBUFFER,
+		s_PickingDepthRBO);
+
+	GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, drawBuffers);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Picking framebuffer is incomplete\n";
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::ShutdownPickingResources()
+{
+	if (s_PickingDepthRBO != 0) {
+		glDeleteRenderbuffers(1, &s_PickingDepthRBO);
+		s_PickingDepthRBO = 0;
+	}
+
+	if (s_PickingColorTexture != 0) {
+		glDeleteTextures(1, &s_PickingColorTexture);
+		s_PickingColorTexture = 0;
+	}
+
+	if (s_PickingFBO != 0) {
+		glDeleteFramebuffers(1, &s_PickingFBO);
+		s_PickingFBO = 0;
+	}
+}
+
+void Renderer::ResizePickingResources(int width, int height)
+{
+	width = std::max(1, width);
+	height = std::max(1, height);
+
+	if (s_PickingColorTexture != 0) {
+		glBindTexture(GL_TEXTURE_2D, s_PickingColorTexture);
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_R32UI,
+			width,
+			height,
+			0,
+			GL_RED_INTEGER,
+			GL_UNSIGNED_INT,
+			nullptr);
+	}
+
+	if (s_PickingDepthRBO != 0) {
+		glBindRenderbuffer(GL_RENDERBUFFER, s_PickingDepthRBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void Renderer::RenderPickingPass()
+{
+	GLint previousFBO = 0;
+	GLint previousViewport[4] = { 0, 0, 0, 0 };
+
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+	glGetIntegerv(GL_VIEWPORT, previousViewport);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, s_PickingFBO);
+	glViewport(0, 0, s_WindowWidth, s_WindowHeight);
+
+	// Clear ID target to 0 = no entity
+	GLuint clearValue = 0;
+	glClearBufferuiv(GL_COLOR, 0, &clearValue);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// Render both queues. For picking, transparent can be treated like opaque.
+	RenderPass::ExecutePickingPass(
+		reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
+		&s_PickingShader,
+		s_ActiveCamera
+	);
+
+	RenderPass::ExecutePickingPass(
+		reinterpret_cast<const std::vector<DrawCommand>&>(s_TransparentQueue),
+		&s_PickingShader,
+		s_ActiveCamera
+	);
+
+	// re-bind back to the editor viewport to be rendered to after rendering this pass to this framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
+	glViewport(
+		previousViewport[0],
+		previousViewport[1],
+		previousViewport[2],
+		previousViewport[3]
+	);
+}
+
+EntityID Renderer::PickEntity(int mouseX, int mouseY) 
+{
+	if (s_PickingFBO == 0)
+		return 0;
+
+	if (mouseX < 0 || mouseX >= s_WindowWidth || mouseY < 0 || mouseY >= s_WindowHeight)
+		return 0;
+
+	// OpenGL framebuffer origin is bottom-left
+	const int readY = s_WindowHeight - 1 - mouseY;
+
+	GLuint pickedID = 0;
+
+	// GLint previousFBO = 0;
+	// GLint previousViewport[4] = { 0, 0, 0, 0 };
+
+	// glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+	// glGetIntegerv(GL_VIEWPORT, previousViewport);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, s_PickingFBO);
+	// glViewport(0, 0, s_WindowHeight, s_WindowHeight);
+
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	glReadPixels(
+		mouseX,
+		readY,
+		1,
+		1,
+		GL_RED_INTEGER,
+		GL_UNSIGNED_INT,
+		&pickedID);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
+
+	return static_cast<EntityID>(pickedID);
 }

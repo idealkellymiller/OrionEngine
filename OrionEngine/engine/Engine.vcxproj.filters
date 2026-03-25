@@ -162,4 +162,8 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="engineAssets\shaders\Picking.vert" />
+    <None Include="engineAssets\shaders\Picking.frag" />
+  </ItemGroup>
 </Project>

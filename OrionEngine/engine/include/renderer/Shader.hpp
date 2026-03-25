@@ -25,6 +25,8 @@ public:
 	void SetMat4(const char* name, const glm::mat4& value) const;
 	void SetVec4(const char* name, const glm::vec4& value) const;
 	void SetVec3(const char* name, const glm::vec3& value) const;
+	void SetUInt(const char* name, unsigned int value) const;
+
 
 	unsigned int GetProgramID() const { return m_ProgramID; }
 	bool IsValid() const { return m_ProgramID != 0; }

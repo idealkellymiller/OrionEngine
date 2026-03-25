@@ -20,10 +20,11 @@
 #include "RenderPass.hpp"
 #include "Framebuffer.hpp"
 #include "DrawCommand.hpp"
+#include "Scene.h"
 
 
 
-class IRenderBackend;
+// class IRenderBackend;
 class Shader;
 class Mesh;
 class Material;
@@ -44,13 +45,13 @@ public:
 
 	static void Render();
 
-	// static void SetShadowShader(Shader* shader) { s_ShadowShader = shader; }
-
 	static Shader* GetLitShader() { return &s_LitShader; }
 	static Shader* GetShadowShader() { return &s_ShadowShader; }
 
 	static Camera* GetActiveCamera() { return &s_ActiveCamera; } 
 	static void SetActiveCamera(Camera camera) { s_ActiveCamera = camera; }
+
+	static EntityID PickEntity(int mouseX, int mouseY);
 
 private:
 	static void BuildRenderQueue(const RenderScene& scene);
@@ -68,6 +69,12 @@ private:
 	static void ShutdownShadowResources();
 	static glm::mat4 BuildLightSpaceMatrix();
 
+	// Picking pass
+	static void InitPickingResources();
+	static void ShutdownPickingResources();
+	static void ResizePickingResources(int width, int height);
+	static void RenderPickingPass();
+
 private:
 	// Store the clear color so the backend has a consistent state.
 	static float m_ClearColor[4];
@@ -76,6 +83,8 @@ private:
 	static int s_WindowHeight;
 
 	static Shader s_LitShader;
+	static Shader s_ShadowShader;
+	static Shader s_PickingShader;
 
 	// internal queues built fresh every frame
 	static std::vector<DrawCommand> s_OpaqueQueue;
@@ -93,10 +102,13 @@ private:
 	// Shadow map resolution
 	static int s_ShadowMapWidth;
 	static int s_ShadowMapHeight;
-	// Shadow-only shader
-	static Shader s_ShadowShader;
 
 	static Camera s_ActiveCamera;
 
 	static RenderScene s_ActiveRenderScene;
+
+	// Picking framebuffer and attachments
+	static unsigned int s_PickingFBO;
+	static unsigned int s_PickingColorTexture;	// stores EntityID (interger texture)
+	static unsigned int s_PickingDepthRBO;
 };

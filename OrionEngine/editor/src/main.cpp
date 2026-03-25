@@ -224,6 +224,14 @@ int main()
             static_cast<unsigned int>(viewportSize.y)
         );
 
+        // IMPORTANT for picking
+        // Top-left of where the image will be drawn in screen coordinates
+        ImVec2 viewportImageMin = ImGui::GetCursorScreenPos();
+        ImVec2 viewportImageMax = ImVec2(
+            viewportImageMin.x + viewportSize.x,
+            viewportImageMin.y + viewportSize.y
+        );
+
         // Show the framebuffer's color texture inside ImGui
         // ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
         // UVs are flipped vertically because OpenGL texture origin is bottom-left,
@@ -307,6 +315,25 @@ int main()
 
 
         Renderer::Render();
+
+
+        // Object Picking:
+        ImVec2 mousePos = ImGui::GetMousePos();
+        bool mouseInsideViewportImage = 
+            mousePos.x >= viewportImageMin.x &&
+            mousePos.x < viewportImageMax.x &&
+            mousePos.y >= viewportImageMin.y &&
+            mousePos.y < viewportImageMax.y;
+        if (mouseInsideViewportImage) {
+            int localMouseX = static_cast<int>(mousePos.x - viewportImageMin.x);
+            int localMouseY = static_cast<int>(mousePos.y - viewportImageMin.y);
+            EntityID hovered = Renderer::PickEntity(localMouseX, localMouseY);
+            std::cout << "Hovered entity: " << hovered << " at (" << localMouseX << "," << localMouseY << ")\n";
+        }
+        else {
+            std::cout << "Hovered entity: 000\n";
+        }
+
         Renderer::EndFrame();
 
         viewportFramebuffer.Unbind();

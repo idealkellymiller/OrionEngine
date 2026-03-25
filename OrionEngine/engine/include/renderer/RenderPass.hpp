@@ -47,6 +47,13 @@ public:
         const glm::mat4& lightSpaceMatrix
     );
 
+    // Runs picking pass (writes EntityID instead of shading)
+    static void ExecutePickingPass(
+        const std::vector<DrawCommand>& queue,
+        Shader* pickingShader,
+        const Camera& camera
+    );
+
 private:
     static void SetupPass(const RenderPassDesc& pass);
     static void TeardownPass(const RenderPassDesc& pass);
@@ -73,4 +80,7 @@ private:
     static void UploadObjectUniforms(Shader& shader, const glm::mat4& modelMatrix);
     static void ApplyMaterialRenderState(const Material& material);
     static void IssueDraw(const Mesh& mesh);
+
+
+    static void UploadPickingUniforms(Shader& shader, const glm::mat4& modelMatrix, EntityID entityID);
 };

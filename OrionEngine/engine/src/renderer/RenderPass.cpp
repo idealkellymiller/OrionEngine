@@ -304,3 +304,50 @@ void RenderPass::ExecuteShadowPass(
 		previousViewport[3]
 	);
 }
+
+
+// --- Picking ---
+void RenderPass::UploadPickingUniforms(Shader& shader, const glm::mat4& modelMatrix, EntityID entityID)
+{
+	// Per-object transform
+	shader.SetMat4("u_Model", modelMatrix);
+
+	// Unsigned integer ID written into picking target
+	shader.SetUInt("u_EntityID", entityID);
+}
+
+void RenderPass::ExecutePickingPass(
+	const std::vector<DrawCommand>& queue,
+	Shader* pickingShader,
+	const Camera& camera)
+{
+	if (pickingShader == nullptr)
+		return;
+
+	// Picking should behave like a solid visibility pass.
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BACK);
+
+	// For consistant face culling with normal rendering
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	pickingShader->Bind();
+
+	// frame-level camera matrices
+	pickingShader->SetMat4("u_View", camera.GetViewMatrix());
+	pickingShader->SetMat4("u_Projection", camera.GetProjectionMatrix());
+
+	for (const DrawCommand& cmd : queue)
+	{
+		if (!cmd.MeshPtr)
+			continue;
+
+		if (cmd.Entity == 0)
+			continue;
+
+		UploadPickingUniforms(*pickingShader, cmd.ModelMatrix, cmd.Entity);
+		IssueDraw(*cmd.MeshPtr);
+	}
+}

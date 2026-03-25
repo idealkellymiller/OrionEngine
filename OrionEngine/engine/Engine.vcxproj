@@ -179,6 +179,10 @@
     <ClCompile Include="src\ecs\Scene.cpp" />
     <ClCompile Include="src\ecs\SceneManager.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="engineAssets\shaders\Picking.frag" />
+    <None Include="engineAssets\shaders\Picking.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

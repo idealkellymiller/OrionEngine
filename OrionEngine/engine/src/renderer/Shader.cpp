@@ -47,7 +47,7 @@ bool Shader::Create(const char* vertexSrc, const char* fragmentSrc)
 		return false;
 	}
 
-	// Once the program is linked, the standalone shader objects can eb deleted.
+	// Once the program is linked, the standalone shader objects can be deleted.
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
@@ -144,6 +144,12 @@ void Shader::SetVec3(const char* name, const glm::vec3& value) const
 {
 	int location = glGetUniformLocation(m_ProgramID, name);
 	glUniform3f(location, value.x, value.y, value.z);
+}
+
+void Shader::SetUInt(const char* name, unsigned int value) const
+{
+	int location = glGetUniformLocation(m_ProgramID, name);
+	glUniform1ui(location, value);
 }
 
 

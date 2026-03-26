@@ -10,6 +10,8 @@
 
 #include "ECS/Scene.h"
 
+#include "Application.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <algorithm>	// for std::sort
@@ -57,6 +59,7 @@ namespace Orion {
 		// Create the editor viewport framebuffer
 		s_ViewportFramebuffer.Create(1280, 720);
 
+
 		InitShadowResources();
 		InitPickingResources();
 
@@ -81,24 +84,24 @@ namespace Orion {
 		// Create the Shaders.
 		Shader litShader;
 		if (!litShader.CreateFromFiles(
-			"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Lit.vert",
-			"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Lit.frag"))
+			"../engine/engineAssets/shaders/Lit.vert",
+			"../engine/engineAssets/shaders/Lit.frag"))
 		{
 			std::cout << "Failed to create lit Shader\n";
 		}
 
 		Shader shadowShader;
 		if (!shadowShader.CreateFromFiles(
-			"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Shadow.vert",
-			"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Shadow.frag"))
+			"../engine/engineAssets/shaders/Shadow.vert",
+			"../engine/engineAssets/shaders/Shadow.frag"))
 		{
 			std::cout << "Failed to create shadow Shader\n";
 		}
 
 		Shader pickingShader;
 		if (!pickingShader.CreateFromFiles(
-			"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Picking.vert",
-			"C:/dev/OrionEngine/OrionEngine/engine/engineAssets/shaders/Picking.frag"))
+			"../engine/engineAssets/shaders/Picking.vert",
+			"../engine/engineAssets/shaders/Picking.frag"))
 		{
 			std::cout << "Failed to create picking Shader\n";
 		}
@@ -112,7 +115,7 @@ namespace Orion {
 
 
 		SetClearColor(0.6f, 0.6f, 0.6f, 1.0f);
-
+		printf("Renderer Initialized.\n");
 		return true; //s_Backend->Init();
 	}
 
@@ -149,7 +152,21 @@ namespace Orion {
 
 	void Renderer::BeginFrame()
 	{
+		s_ViewportFramebuffer.Bind();
+
+		
+		// SetViewport(0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
+
 		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Set viewport as the framebuffer size
+		// Keep viewport synced to the frame
+		SetViewport(0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
+
+
+		// glEnable(GL_DEPTH_TEST);
 
 		// Clear the color buffer using the color previously set by glClearColor.
 		// The color buffer is what ends up being displayed on screen.
@@ -157,7 +174,7 @@ namespace Orion {
 		// Clears the depth buffer as well.
 		// The depth buffer stores per-pixel depth information used for
 		// proper 3D visibilty testing.
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 
@@ -171,6 +188,30 @@ namespace Orion {
 	{
 		// Nothing here rn
 		// TODO: add frame stats 
+
+
+
+		s_ViewportFramebuffer.Unbind();
+
+		// -------- UI RENDERER --------
+		Application& app = Application::Get();
+		// io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+
+		// Render ImGui to the actual window backbuffer
+		int displayW, displayH;
+		glfwGetFramebufferSize(static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow()), &displayW, &displayH);
+
+		// Set viewport back to the real windwo size
+		glViewport(0, 0, displayW, displayH);
+		// Usually editor background does not need depth test
+		glDisable(GL_DEPTH_TEST);
+
+		// Clear the actual screen
+		glClearColor(0.1f, 0.1f, 0.12f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// Draw all ImGui windows, including the Viewport image
+		//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
 	void Renderer::Render()

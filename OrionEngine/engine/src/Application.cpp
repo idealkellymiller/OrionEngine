@@ -62,6 +62,9 @@ namespace Orion {
 
 	void Application::Run()
 	{
+		// initialize Renderer here, after window creation in main.
+		Orion::Renderer::Init();
+
 		// Load Assets
 		AssetManager::SetAssetsFolderPath("..\\editor\\assets\\");
 		AssetManager::LoadAssetsFolder();

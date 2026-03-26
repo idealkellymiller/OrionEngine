@@ -4,6 +4,7 @@
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
+#include "imgui.h"
 
 namespace Orion {
 	struct HierarchyNode
@@ -24,6 +25,8 @@ namespace Orion {
 
 	private:
 		float m_Time = 0.0f;
+		ImVec2 m_ViewportImageMin = { 0, 0 };
+		ImVec2 m_ViewportImageMax = { 0, 0 };
 
 		// --------ImGui Module Definitions-----------
 		void ShowMainMenuBar();

@@ -13,8 +13,10 @@
 #include <GLFW/glfw3.h>
 
 #include <format>
+#include <iostream>
 
 namespace Orion {
+
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGuiLayer")
 	{
@@ -54,10 +56,12 @@ namespace Orion {
 
 	void ImGuiLayer::OnUpdate()
 	{
-		// TEMPORARY-to be added to Renderer: clear the previous frame from the screen to draw new stuff
-		glClearColor(0.1f, 0.1f, 0.6f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
+		// --------------- Call Renderer for this frame and render to the ImGui viewport ------------------
+		
+		
+		// -------------------------------- ImGui ------------------------------------
+		
+		
 		ImGuiIO& io = ImGui::GetIO();
 		Application& app = Application::Get();
 		io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
@@ -80,7 +84,42 @@ namespace Orion {
 		ShowConsoleModule();
 		ShowControlsModule();
 
+		// Tell ImGui to finalize all UI draw data
 		ImGui::Render();
+
+
+
+		Renderer::BeginFrame();
+
+		// Update camera projection if window size changes
+		float aspectRatio = (float)Renderer::GetViewportFramebuffer()->GetWidth() / (float)Renderer::GetViewportFramebuffer()->GetHeight();
+		Renderer::GetActiveCamera()->SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
+
+		Renderer::Render();
+
+		// Object Picking:
+		// TODO: mousePos is being overwritten so this bool will always be false. Get mouse input through event system
+		ImVec2 mousePos = ImGui::GetMousePos();
+		bool mouseInsideViewportImage =
+			mousePos.x >= m_ViewportImageMin.x &&
+			mousePos.x < m_ViewportImageMax.x &&
+			mousePos.y >= m_ViewportImageMin.y &&
+			mousePos.y < m_ViewportImageMax.y;
+		if (mouseInsideViewportImage) {
+			int localMouseX = static_cast<int>(mousePos.x - m_ViewportImageMin.x);
+			int localMouseY = static_cast<int>(mousePos.y - m_ViewportImageMin.y);
+			EntityID hovered = Renderer::PickEntity(localMouseX, localMouseY);
+			std::cout << "Hovered entity: " << hovered << " at (" << localMouseX << "," << localMouseY << ")\n";
+		}
+		else {
+			// std::cout << "Hovered entity: 000\n";
+		}
+
+		Renderer::EndFrame();
+
+
+
+		// Draw all ImGui windows, including the Viewport image
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		// Update and render additional platform Windows
@@ -299,13 +338,7 @@ namespace Orion {
 				static_cast<unsigned int>(viewportSize.y)
 			);
 
-			// IMPORTANT for picking
-			// Top-left of where the image will be drawn in screen coordinates
-			ImVec2 viewportImageMin = ImGui::GetCursorScreenPos();
-			ImVec2 viewportImageMax = ImVec2(
-				viewportImageMin.x + viewportSize.x,
-				viewportImageMin.y + viewportSize.y
-			);
+			
 
 			// Show the framebuffer's color texture inside ImGui
 			// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
@@ -316,6 +349,14 @@ namespace Orion {
 				ImVec2(viewportSize.x, viewportSize.y),
 				ImVec2(0, 1),   // UV top-left
 				ImVec2(1, 0)    // UV bottom-right
+			);
+
+			// IMPORTANT for picking
+			// Top-left of where the image will be drawn in screen coordinates
+			m_ViewportImageMin = ImGui::GetCursorScreenPos();
+			m_ViewportImageMax = ImVec2(
+				m_ViewportImageMin.x + viewportSize.x,
+				m_ViewportImageMin.y + viewportSize.y
 			);
 
 			ImGui::End();

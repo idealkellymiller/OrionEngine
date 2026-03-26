@@ -21,6 +21,7 @@
 #include "Renderer/RenderPass.h"
 #include "Renderer/Framebuffer.h"
 #include "Renderer/DrawCommand.h"
+#include "Renderer/EditorCamera.h"
 
 #include "ECS/Scene.h"
 

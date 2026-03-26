@@ -37,7 +37,7 @@ namespace Orion {
 		m_Data.Title = props.Title;
 		m_Data.Width = props.Width;
 		m_Data.Height = props.Height;
-
+		
 		// ORN_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
 		if (!s_GLFWInitialized)
@@ -54,6 +54,12 @@ namespace Orion {
 		}
 
         // ------------------------GLFW AND GLAD INITIALIZATION------------------------
+		// Tell GLFW what kind of OpenGL context we want.
+		// Here we ask for OpengGL 4.6 Core Profile
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
 		glfwMakeContextCurrent(m_Window);
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))

@@ -49,6 +49,7 @@ int main(int argc, char** argv)
 {
 	// initialize loggers
 	Orion::Log::Init();
+
 	ORN_CORE_WARN("Initalized Log!");
 	ORN_INFO("Initalized Client Log!");
 

@@ -1,43 +1,48 @@
 #pragma once
+#include "EngineCore.h"
 #include <glad/glad.h>
 
 
-// Simple OpenGL framebuffer wrapper
-// This will own
-// - an FBO
-// - a color texture attachment
-// - a depth/stencil renderbuffer
-class Framebuffer {
-public:
-	Framebuffer();
-	~Framebuffer();
+namespace Orion {
 
-	// Create the framebuffer and attachments
-	void Create(unsigned int width, unsigned int height);
+	// Simple OpenGL framebuffer wrapper
+	// This will own
+	// - an FBO
+	// - a color texture attachment
+	// - a depth/stencil renderbuffer
+	class ORION_API Framebuffer {
+	public:
+		Framebuffer();
+		~Framebuffer();
 
-	// Free all OpenGL objects
-	void Destroy();
+		// Create the framebuffer and attachments
+		void Create(unsigned int width, unsigned int height);
 
-	// Rebuild attachments at a new size
-	void Resize(unsigned int width, unsigned int height);
-	
-	// Bind this framebuffer so future rendering goes into it
-	void Bind() const;
+		// Free all OpenGL objects
+		void Destroy();
 
-	// Bind the default framebuffer (the GLFW window backbuffer)
-	void Unbind() const;
+		// Rebuild attachments at a new size
+		void Resize(unsigned int width, unsigned int height);
 
-	// Get the color texture so ImGui can display it
-	unsigned int GetColorAttachment() const { return m_ColorAttachment; }
+		// Bind this framebuffer so future rendering goes into it
+		void Bind() const;
 
-	unsigned int GetWidth() const { return m_Width; }
-	unsigned int GetHeight() const { return m_Height; }
+		// Bind the default framebuffer (the GLFW window backbuffer)
+		void Unbind() const;
 
-private:
-	unsigned int m_FBO;
-	unsigned int m_ColorAttachment;
-	unsigned int m_DepthStencilRBO;
+		// Get the color texture so ImGui can display it
+		unsigned int GetColorAttachment() const { return m_ColorAttachment; }
 
-	unsigned int m_Width;
-	unsigned int m_Height;
-};
+		unsigned int GetWidth() const { return m_Width; }
+		unsigned int GetHeight() const { return m_Height; }
+
+	private:
+		unsigned int m_FBO;
+		unsigned int m_ColorAttachment;
+		unsigned int m_DepthStencilRBO;
+
+		unsigned int m_Width;
+		unsigned int m_Height;
+	};
+
+}

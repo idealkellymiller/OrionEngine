@@ -1,29 +1,33 @@
 #pragma once
+#include "EngineCore.h"
 
 
-// Which triangle faces should OpenGL cull?
-enum class CullMode
-{
-    None,   // Do not cull any faces
-    Back,   // Cull back-facing triangles
-    Front   // Cull front-facing triangles
-};
+namespace Orion {
 
-// High-level material blend mode.
-// We keep this simple for now.
-enum class BlendMode
-{
-    Opaque,      // No blending
-    Transparent  // Standard alpha blending
-};
+    // Which triangle faces should OpenGL cull?
+    enum class ORION_API CullMode
+    {
+        None,   // Do not cull any faces
+        Back,   // Cull back-facing triangles
+        Front   // Cull front-facing triangles
+    };
 
-// Render state owned by a material.
-// This describes HOW the object should be drawn.
-struct MaterialRenderState
-{
-    BlendMode Blend = BlendMode::Opaque;
+    // High-level material blend mode.
+    // We keep this simple for now.
+    enum class ORION_API BlendMode
+    {
+        Opaque,      // No blending
+        Transparent  // Standard alpha blending
+    };
 
-    bool DepthTest = true;   // Usually enabled for 3D rendering
-    bool DepthWrite = true;  // Transparent materials often disable this
-    CullMode Cull = CullMode::Back;
-};
+    // Render state owned by a material.
+    // This describes HOW the object should be drawn.
+    struct ORION_API MaterialRenderState
+    {
+        BlendMode Blend = BlendMode::Opaque;
+
+        bool DepthTest = true;   // Usually enabled for 3D rendering
+        bool DepthWrite = true;  // Transparent materials often disable this
+        CullMode Cull = CullMode::Back;
+    };
+}

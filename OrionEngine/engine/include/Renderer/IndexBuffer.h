@@ -1,24 +1,28 @@
 #pragma once
+#include "EngineCore.h"
 
 
-class IndexBuffer {
-public:
-    IndexBuffer() = default;
-    ~IndexBuffer();
+namespace Orion {
 
-    // Creates an element/index buffer and uploads index data.
-    bool Create(const unsigned int* data, unsigned int count);
+    class ORION_API IndexBuffer {
+    public:
+        IndexBuffer() = default;
+        ~IndexBuffer();
 
-    void Destroy();
+        // Creates an element/index buffer and uploads index data.
+        bool Create(const unsigned int* data, unsigned int count);
 
-    void Bind() const;
-    void Unbind() const;
+        void Destroy();
 
-    unsigned int GetID() const { return m_BufferID; }
-    unsigned int GetCount() const { return m_Count; }
-    bool IsValid() const { return m_BufferID != 0 && m_Count > 0; }
+        void Bind() const;
+        void Unbind() const;
 
-private:
-    unsigned int m_BufferID = 0;
-    unsigned int m_Count = 0;
-};
+        unsigned int GetID() const { return m_BufferID; }
+        unsigned int GetCount() const { return m_Count; }
+        bool IsValid() const { return m_BufferID != 0 && m_Count > 0; }
+
+    private:
+        unsigned int m_BufferID = 0;
+        unsigned int m_Count = 0;
+    };
+}

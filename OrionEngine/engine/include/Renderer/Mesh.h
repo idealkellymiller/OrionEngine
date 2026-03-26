@@ -1,4 +1,5 @@
 #pragma once
+#include "EngineCore.h"
 #include <vector>
 
 #include "Vertex.h"
@@ -8,47 +9,51 @@
 #include "BoundingSphere.h"
 
 
-class Mesh
-{
-public:
-    Mesh();
-    ~Mesh();
+namespace Orion {
 
-    // Non-copyable for now because it owns GPU resources.
-    Mesh(const Mesh&) = delete;
-    // Mesh& operator=(const Mesh&) = delete;
+    class Mesh
+    {
+    public:
+        Mesh();
+        ~Mesh();
 
-    // Create from vertices only (fallback path)
-    // bool Create(const std::vector<Vertex>& vertices);
-    // Create from vertices and indices (preferred path)
-    bool Create(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+        // Non-copyable for now because it owns GPU resources.
+        Mesh(const Mesh&) = delete;
+        // Mesh& operator=(const Mesh&) = delete;
 
-    // Destroy GPU resources.
-    void Destroy();
+        // Create from vertices only (fallback path)
+        // bool Create(const std::vector<Vertex>& vertices);
+        // Create from vertices and indices (preferred path)
+        bool Create(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 
-    bool IsValid() const;
+        // Destroy GPU resources.
+        void Destroy();
 
-    int GetVertexCount() const { return m_VertexCount; }
-    int GetIndexCount() const { return m_IndexCount; }
-    bool HasIndices() const { return m_IndexCount > 0; }
+        bool IsValid() const;
 
-    VertexArray& GetVertexArray();
-    const VertexArray& GetVertexArray() const;
+        int GetVertexCount() const { return m_VertexCount; }
+        int GetIndexCount() const { return m_IndexCount; }
+        bool HasIndices() const { return m_IndexCount > 0; }
 
-    const BoundingSphere& GetBounds() const { return m_Bounds; }
+        VertexArray& GetVertexArray();
+        const VertexArray& GetVertexArray() const;
+
+        const BoundingSphere& GetBounds() const { return m_Bounds; }
 
 
-private:
-    // Computes local-space bounding sphere from vertex positions
-    void ComputeBounds(const std::vector<Vertex>& vertices);
+    private:
+        // Computes local-space bounding sphere from vertex positions
+        void ComputeBounds(const std::vector<Vertex>& vertices);
 
-private:
-    VertexArray* m_VertexArray = nullptr;
-    VertexBuffer* m_VertexBuffer = nullptr;
-    IndexBuffer* m_IndexBuffer = nullptr;
+    private:
+        VertexArray* m_VertexArray = nullptr;
+        VertexBuffer* m_VertexBuffer = nullptr;
+        IndexBuffer* m_IndexBuffer = nullptr;
 
-    int m_VertexCount = 0;
-    int m_IndexCount = 0;
+        int m_VertexCount = 0;
+        int m_IndexCount = 0;
 
-    BoundingSphere m_Bounds;
-};
+        BoundingSphere m_Bounds;
+    };
+
+}

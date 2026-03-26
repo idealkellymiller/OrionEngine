@@ -62,6 +62,12 @@ namespace Orion {
 		}
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 
+		// Enable VSync.
+		// With VSync on, buffer swaps wiat for the monitor refresh.
+		// So if your display is 60 Hz, the game usually presents around 60 fps isntead 800+ fps.
+		// 1 means wait for 1 vertical refresh before swapping buffers.
+		glfwSwapInterval(1);
+
 		// ------------------------SETTING GLFW CALLBACKS------------------------
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
 			{

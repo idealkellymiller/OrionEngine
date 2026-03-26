@@ -1,0 +1,70 @@
+{
+	"abstract" : true,
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"_add_library",
+			"add_library",
+			"target_link_libraries"
+		],
+		"files" : 
+		[
+			"C:/Users/luked/vcpkg/scripts/buildsystems/vcpkg.cmake",
+			"engine/external/spdlog/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 219,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 639,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 225,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"id" : "spdlog_header_only::@28884050fed7cd637bbc",
+	"interfaceCompileDependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "Threads::Threads::@28884050fed7cd637bbc"
+		}
+	],
+	"interfaceLinkLibraries" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "Threads::Threads::@28884050fed7cd637bbc"
+		}
+	],
+	"name" : "spdlog_header_only",
+	"paths" : 
+	{
+		"build" : "engine/external/spdlog",
+		"source" : "engine/external/spdlog"
+	},
+	"sources" : [],
+	"type" : "INTERFACE_LIBRARY"
+}

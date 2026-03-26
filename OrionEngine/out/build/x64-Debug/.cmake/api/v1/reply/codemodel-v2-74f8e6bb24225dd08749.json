@@ -1,0 +1,333 @@
+{
+	"configurations" : 
+	[
+		{
+			"abstractTargets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "Threads::Threads::@33f32c2a15853726329e",
+					"jsonFile" : "target-Threads__Threads-Debug-84cc7d13b67e9b55156e.json",
+					"name" : "Threads::Threads",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "Threads::Threads::@28884050fed7cd637bbc",
+					"jsonFile" : "target-Threads__Threads-Debug-62acc3ecb3b38c61d437.json",
+					"name" : "Threads::Threads",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "glm::@0e8afdfaa0969b62f00d",
+					"jsonFile" : "target-glm-Debug-614805c3b66d3c5945ee.json",
+					"name" : "glm",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "glm-header-only::@0e8afdfaa0969b62f00d",
+					"jsonFile" : "target-glm-header-only-Debug-15daa1f07cf49466f820.json",
+					"name" : "glm-header-only",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "nlohmann_json::@3c59a01cab04e8319404",
+					"jsonFile" : "target-nlohmann_json-Debug-3dc9de3c8baeb9ade053.json",
+					"name" : "nlohmann_json",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "spdlog_header_only::@28884050fed7cd637bbc",
+					"jsonFile" : "target-spdlog_header_only-Debug-ddf497ffca9928a4f391.json",
+					"name" : "spdlog_header_only",
+					"projectIndex" : 2
+				}
+			],
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						4,
+						5,
+						6
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f6f22219c74102c3da70.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.23"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						0
+					],
+					"build" : "engine/external/GLFW",
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-engine.external.GLFW-Debug-bc55b85fdc51bb5fca83.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "engine/external/GLFW",
+					"targetIndexes" : 
+					[
+						6
+					]
+				},
+				{
+					"build" : "engine/external/GLFW/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-engine.external.GLFW.src-Debug-ddf8198b62ee1d659989.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "engine/external/GLFW/src",
+					"targetIndexes" : 
+					[
+						4,
+						7
+					]
+				},
+				{
+					"build" : "engine/external/GLFW/docs",
+					"jsonFile" : "directory-engine.external.GLFW.docs-Debug-0bd03537c6115233e837.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "engine/external/GLFW/docs"
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						1,
+						5
+					],
+					"build" : "engine/external/spdlog",
+					"jsonFile" : "directory-engine.external.spdlog-Debug-ec766c7dd84b923e38ed.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "engine/external/spdlog",
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						2,
+						3
+					],
+					"build" : "engine/external/glm",
+					"jsonFile" : "directory-engine.external.glm-Debug-adfd9b492af03a0c55e4.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.23"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "engine/external/glm"
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						4
+					],
+					"build" : "engine/external/json-3.12.0",
+					"jsonFile" : "directory-engine.external.json-3.12.0-Debug-673d5492560356346836.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "engine/external/json-3.12.0"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"abstractTargetIndexes" : 
+					[
+						2,
+						3
+					],
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						5
+					],
+					"name" : "OrionEngine",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						0
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						4,
+						6,
+						7
+					]
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						1,
+						5
+					],
+					"directoryIndexes" : 
+					[
+						4
+					],
+					"name" : "spdlog",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						4
+					],
+					"directoryIndexes" : 
+					[
+						6
+					],
+					"name" : "nlohmann_json",
+					"parentIndex" : 0
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Editor::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Editor-Debug-d01f5b29278e119eb1f5.json",
+					"name" : "Editor",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Engine::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Engine-Debug-89919e37c01fc0cdb434.json",
+					"name" : "Engine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Glad::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Glad-Debug-28be4f4a5fa5d13552ac.json",
+					"name" : "Glad",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ImGUI::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ImGUI-Debug-f1704955edacf05c85ca.json",
+					"name" : "ImGUI",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "glfw::@18ce409c90f82087435e",
+					"jsonFile" : "target-glfw-Debug-cbbb5f44d38878790921.json",
+					"name" : "glfw",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "spdlog::@28884050fed7cd637bbc",
+					"jsonFile" : "target-spdlog-Debug-0edd8dc6ec5c20734234.json",
+					"name" : "spdlog",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "uninstall::@33f32c2a15853726329e",
+					"jsonFile" : "target-uninstall-Debug-7af6b8f70345f9364dbf.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "update_mappings::@18ce409c90f82087435e",
+					"jsonFile" : "target-update_mappings-Debug-3ae880cf34efdf0c4ea9.json",
+					"name" : "update_mappings",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug",
+		"source" : "C:/dev/OrionEngine/OrionEngine"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	}
+}

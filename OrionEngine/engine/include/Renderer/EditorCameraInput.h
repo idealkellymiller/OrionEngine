@@ -1,11 +1,15 @@
 #pragma once
+#include "EngineCore.h"
 
-class EditorCameraInput
-{
-public:
-    static void AddScrollDelta(float delta);
-    static float ConsumeScrollDelta();
+namespace Orion {
 
-private:
-    static float s_ScrollDelta;
-};
+    class ORION_API EditorCameraInput
+    {
+    public:
+        static void AddScrollDelta(float delta);
+        static float ConsumeScrollDelta();
+
+    private:
+        static float s_ScrollDelta;
+    };
+}

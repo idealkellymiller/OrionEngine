@@ -1,29 +1,34 @@
 #pragma once
+#include "EngineCore.h"
 
 
-class VertexArray {
-public:
-	VertexArray() = default;
-	~VertexArray();
 
-	bool Create();
-	void Destroy();
+namespace Orion {
 
-	void Bind() const;
-	void Unbind() const;
+	class ORION_API VertexArray {
+	public:
+		VertexArray() = default;
+		~VertexArray();
 
-	// Configures a single vertex attribute in the currently bound VAO.
-	void SetAttribute(
-		unsigned int index,
-		int componentCount,
-		unsigned int type,
-		bool normalized,
-		int stride,
-		unsigned long long offset);
+		bool Create();
+		void Destroy();
 
-	unsigned int GetID() const { return m_ArrayID; }
-	bool IsValid() const { return m_ArrayID != 0; }
+		void Bind() const;
+		void Unbind() const;
 
-private:
-	unsigned int m_ArrayID = 0;
-};
+		// Configures a single vertex attribute in the currently bound VAO.
+		void SetAttribute(
+			unsigned int index,
+			int componentCount,
+			unsigned int type,
+			bool normalized,
+			int stride,
+			unsigned long long offset);
+
+		unsigned int GetID() const { return m_ArrayID; }
+		bool IsValid() const { return m_ArrayID != 0; }
+
+	private:
+		unsigned int m_ArrayID = 0;
+	};
+}

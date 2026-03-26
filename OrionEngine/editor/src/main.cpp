@@ -21,7 +21,7 @@ public:
 	void OnEvent(Orion::Event& event) override
 	{
         // on event, print the event using client logger
-		ORN_TRACE("{0}", event.ToString());
+		// ORN_TRACE("{0}", event.ToString());
 	}
 };
 
@@ -58,3 +58,8 @@ int main(int argc, char** argv)
 	app->Run(); // starts main loop
 	delete app;
 }
+
+// Luke:
+// - Add namespace Orion {} to all .cpp/.h
+// - Add #include "EngineCore.h" and the Orion_API to each class declaration
+//

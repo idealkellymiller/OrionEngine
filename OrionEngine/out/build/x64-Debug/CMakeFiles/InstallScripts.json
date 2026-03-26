@@ -1,0 +1,13 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/cmake_install.cmake",
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/engine/external/GLFW/cmake_install.cmake",
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/engine/external/GLFW/src/cmake_install.cmake",
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/engine/external/GLFW/docs/cmake_install.cmake",
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/engine/external/spdlog/cmake_install.cmake",
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/engine/external/glm/cmake_install.cmake",
+		"C:/dev/OrionEngine/OrionEngine/out/build/x64-Debug/engine/external/json-3.12.0/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

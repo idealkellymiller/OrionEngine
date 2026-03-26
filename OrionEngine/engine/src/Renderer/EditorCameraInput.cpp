@@ -1,16 +1,18 @@
 #include "Renderer/EditorCameraInput.h"
 
+namespace Orion {
 
-float EditorCameraInput::s_ScrollDelta = 0.0f;
+	float EditorCameraInput::s_ScrollDelta = 0.0f;
 
-void EditorCameraInput::AddScrollDelta(float delta)
-{
-	s_ScrollDelta += delta;
-}
+	void EditorCameraInput::AddScrollDelta(float delta)
+	{
+		s_ScrollDelta += delta;
+	}
 
-float EditorCameraInput::ConsumeScrollDelta()
-{
-	float value = s_ScrollDelta;
-	s_ScrollDelta = 0.0f;
-	return value;
+	float EditorCameraInput::ConsumeScrollDelta()
+	{
+		float value = s_ScrollDelta;
+		s_ScrollDelta = 0.0f;
+		return value;
+	}
 }

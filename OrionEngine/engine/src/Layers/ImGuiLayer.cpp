@@ -398,6 +398,11 @@ namespace Orion {
 
 					ImGui::EndTable();
 				}
+
+				if (ImGui::Button("Add primitive to scene")) {
+					// temporary
+					AddPrimitive();
+				}
 			}
 			ImGui::End();
 		}
@@ -418,11 +423,6 @@ namespace Orion {
 			}
 
 			ImGui::TreePop();
-		}
-
-		if (ImGui::Button("Add primitive to scene")) {
-			// temporary
-			AddPrimitive();
 		}
 	}
 

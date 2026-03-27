@@ -226,7 +226,6 @@ namespace Orion {
 
 	void ImGuiLayer::ShowTransformComponent()
 	{
-		//TODO: transform component
 		if (ImGui::CollapsingHeader("Transform"))
 		{
 			float oldScaleValues[3] = { scale[0], scale[1], scale[2] };
@@ -319,45 +318,47 @@ namespace Orion {
 			bool viewportHovered = false;
 			bool viewportFocused = false;
 
-			ImGui::Begin("Viewport");
+			if (ImGui::Begin("Viewport", &showViewportModule))
+			{
+				viewportHovered = ImGui::IsWindowHovered();
+				viewportFocused = ImGui::IsWindowFocused();
 
-			viewportHovered = ImGui::IsWindowHovered();
-			viewportFocused = ImGui::IsWindowFocused();
+				// Get the size available inside this window for content
+					viewportSize = ImGui::GetContentRegionAvail();
 
-			// Get the size available inside this window for content
-			viewportSize = ImGui::GetContentRegionAvail();
+					// Prevent weird zero-cases when minimized/collapsed
+					if (viewportSize.x < 1.0f) viewportSize.x = 1.0f;
+					if (viewportSize.y < 1.0f) viewportSize.y = 1.0f;
 
-			// Prevent weird zero-cases when minimized/collapsed
-			if (viewportSize.x < 1.0f) viewportSize.x = 1.0f;
-			if (viewportSize.y < 1.0f) viewportSize.y = 1.0f;
+					// Resize the framebuffer if panel size changed
+					// TODO: make viewportframebuffer static variable that is accessed through renderer facade
+						Renderer::GetViewportFramebuffer()->Resize(
+							static_cast<unsigned int>(viewportSize.x),
+							static_cast<unsigned int>(viewportSize.y)
+						);
 
-			// Resize the framebuffer if panel size changed
-			// TODO: make viewportframebuffer static variable that is accessed through renderer facade
-			Renderer::GetViewportFramebuffer()->Resize(
-				static_cast<unsigned int>(viewportSize.x),
-				static_cast<unsigned int>(viewportSize.y)
-			);
 
-			
 
-			// Show the framebuffer's color texture inside ImGui
-			// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
-			// UVs are flipped vertically because OpenGL texture origin is bottom-left,
-			// while ImGui expects top-left style display.
-			ImGui::Image(
-				(ImTextureID)(intptr_t)Renderer::GetViewportFramebuffer()->GetColorAttachment(),
-				ImVec2(viewportSize.x, viewportSize.y),
-				ImVec2(0, 1),   // UV top-left
-				ImVec2(1, 0)    // UV bottom-right
-			);
+				// Show the framebuffer's color texture inside ImGui
+				// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
+				// UVs are flipped vertically because OpenGL texture origin is bottom-left,
+				// while ImGui expects top-left style display.
+				ImGui::Image(
+					(ImTextureID)(intptr_t)Renderer::GetViewportFramebuffer()->GetColorAttachment(),
+					ImVec2(viewportSize.x, viewportSize.y),
+					ImVec2(0, 1),   // UV top-left
+					ImVec2(1, 0)    // UV bottom-right
+				);
 
-			// IMPORTANT for picking
-			// Top-left of where the image will be drawn in screen coordinates
-			m_ViewportImageMin = ImGui::GetCursorScreenPos();
-			m_ViewportImageMax = ImVec2(
-				m_ViewportImageMin.x + viewportSize.x,
-				m_ViewportImageMin.y + viewportSize.y
-			);
+				// IMPORTANT for picking
+				// Top-left of where the image will be drawn in screen coordinates
+				m_ViewportImageMin = ImGui::GetCursorScreenPos();
+				m_ViewportImageMax = ImVec2(
+					m_ViewportImageMin.x + viewportSize.x,
+					m_ViewportImageMin.y + viewportSize.y
+				);
+			}
+
 
 			ImGui::End();
 		}
@@ -380,6 +381,11 @@ namespace Orion {
 
 					ImGui::EndTable();
 				}
+
+				if (ImGui::Button("Add primitive to scene")) {
+					// temporary
+					AddPrimitive();
+				}
 			}
 			ImGui::End();
 		}
@@ -400,11 +406,6 @@ namespace Orion {
 			}
 
 			ImGui::TreePop();
-		}
-
-		if (ImGui::Button("Add primitive to scene")) {
-			// temporary
-			AddPrimitive();
 		}
 	}
 

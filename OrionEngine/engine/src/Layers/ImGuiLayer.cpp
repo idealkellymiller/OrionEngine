@@ -364,6 +364,23 @@ namespace Orion {
 		}
 	}
 
+	//testing 
+	std::vector<HierarchyNode> hierarchy =
+	{
+		{"Scene",
+			{
+				{"Camera"},
+				{"Player",
+					{
+						{"Weapon"},
+						{"Mesh"}
+					}
+				},
+				{"Light"}
+			}
+		}
+	};
+
 	//Hierarchy
 	void ImGuiLayer::ShowHierarchyModule()
 	{

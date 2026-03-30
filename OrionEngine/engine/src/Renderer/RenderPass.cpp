@@ -330,7 +330,7 @@ namespace Orion {
 		// Picking should behave like a solid visibility pass.
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-		glDisable(GL_BACK);
+		glDisable(GL_BLEND);
 
 		// For consistant face culling with normal rendering
 		glEnable(GL_CULL_FACE);

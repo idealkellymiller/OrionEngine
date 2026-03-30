@@ -52,6 +52,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Layers/Layer.cpp"
             "engine/src/Layers/LayerStack.cpp"
             "engine/src/Layers/ImGuiLayer.cpp"
+            "engine/src/Layers/EditorLayer.cpp"
 
             "engine/src/Log/Log.cpp"
 
@@ -60,6 +61,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Renderer/EditorCameraInput.cpp"
             "engine/src/Renderer/Framebuffer.cpp"
             "engine/src/Renderer/Frustum.cpp"
+	        "engine/src/Renderer/Gizmo.cpp"
             "engine/src/Renderer/IndexBuffer.cpp"
             "engine/src/Renderer/Material.cpp"
             "engine/src/Renderer/Mesh.cpp"

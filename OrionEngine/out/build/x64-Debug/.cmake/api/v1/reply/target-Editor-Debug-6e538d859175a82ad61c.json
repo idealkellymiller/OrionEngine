@@ -32,7 +32,7 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 106,
+				"line" : 107,
 				"parent" : 0
 			},
 			{
@@ -44,19 +44,19 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 113,
+				"line" : 114,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 94,
+				"line" : 95,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 117,
+				"line" : 118,
 				"parent" : 0
 			},
 			{
@@ -68,7 +68,7 @@
 			{
 				"command" : 4,
 				"file" : 1,
-				"line" : 108,
+				"line" : 109,
 				"parent" : 0
 			}
 		]
@@ -179,15 +179,15 @@
 	[
 		{
 			"backtrace" : 3,
+			"id" : "Glad::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 3,
 			"id" : "ImGUI::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 5,
 			"id" : "Engine::@6890427a1f51a3e7e1df"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "Glad::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 3,
@@ -259,12 +259,12 @@
 	"orderDependencies" : 
 	[
 		{
-			"backtrace" : 5,
-			"id" : "Engine::@6890427a1f51a3e7e1df"
-		},
-		{
 			"backtrace" : 6,
 			"id" : "Editor::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "Engine::@6890427a1f51a3e7e1df"
 		}
 	],
 	"paths" : 

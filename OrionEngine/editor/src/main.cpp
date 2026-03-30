@@ -32,6 +32,7 @@ class EditorClient : public Orion::Application
 		{ 
 			PushLayer(new ExampleLayer());
 			PushLayer(new Orion::ImGuiLayer());
+			PushLayer(new Orion::EditorLayer());
 		}
 
 		~EditorClient()

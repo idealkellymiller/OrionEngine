@@ -22,6 +22,7 @@
 #include "Renderer/Framebuffer.h"
 #include "Renderer/DrawCommand.h"
 #include "Renderer/EditorCamera.h"
+#include "Renderer/Gizmo.h"
 
 #include "ECS/Scene.h"
 
@@ -121,5 +122,7 @@ namespace Orion {
 		static unsigned int s_PickingFBO;
 		static unsigned int s_PickingColorTexture;	// stores EntityID (interger texture)
 		static unsigned int s_PickingDepthRBO;
+
+		static GizmoPass s_GizmoPass;
 	};
 }

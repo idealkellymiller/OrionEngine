@@ -56,8 +56,6 @@ namespace Orion {
 
 	void ImGuiLayer::OnUpdate()
 	{
-		// --------------- Call Renderer for this frame and render to the ImGui viewport ------------------
-		
 		
 		// -------------------------------- ImGui ------------------------------------
 		
@@ -89,13 +87,6 @@ namespace Orion {
 
 
 
-		Renderer::BeginFrame();
-
-		// Update camera projection if window size changes
-		float aspectRatio = (float)Renderer::GetViewportFramebuffer()->GetWidth() / (float)Renderer::GetViewportFramebuffer()->GetHeight();
-		Renderer::GetActiveCamera()->SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
-
-		Renderer::Render();
 
 		// Object Picking:
 		// TODO: mousePos is being overwritten so this bool will always be false. Get mouse input through event system
@@ -108,14 +99,16 @@ namespace Orion {
 		if (mouseInsideViewportImage) {
 			int localMouseX = static_cast<int>(mousePos.x - m_ViewportImageMin.x);
 			int localMouseY = static_cast<int>(mousePos.y - m_ViewportImageMin.y);
+			// std::cout << localMouseX << "," << localMouseY << std::endl;
 			EntityID hovered = Renderer::PickEntity(localMouseX, localMouseY);
 			std::cout << "Hovered entity: " << hovered << " at (" << localMouseX << "," << localMouseY << ")\n";
+
 		}
 		else {
 			// std::cout << "Hovered entity: 000\n";
+			// std::cout << "Outside viewport" << std::endl;
 		}
 
-		Renderer::EndFrame();
 
 
 
@@ -300,20 +293,7 @@ namespace Orion {
 
 		if (showViewportModule)
 		{
-			//if (ImGui::Begin("Viewport", &showViewportModule))
-			//{
-			//	ImVec2 size = ImGui::GetContentRegionAvail();
 
-			//	ImGui::Image(
-			//		(ImTextureID)(intptr_t)viewportTexture,
-			//		size,
-			//		ImVec2(0, 1),
-			//		ImVec2(1, 0)
-			//	);
-			//}
-			//ImGui::End();
-
-			// Viewport window
 			static ImVec2 viewportSize = ImVec2(0.0f, 0.0f);
 			bool viewportHovered = false;
 			bool viewportFocused = false;
@@ -323,22 +303,24 @@ namespace Orion {
 				viewportHovered = ImGui::IsWindowHovered();
 				viewportFocused = ImGui::IsWindowFocused();
 
+				// Viewport window
+				viewportSize = ImGui::GetContentRegionAvail();
+
+				// Prevent weird zero-cases when minimized/collapsed
+				if (viewportSize.x < 1.0f) viewportSize.x = 1.0f;
+				if (viewportSize.y < 1.0f) viewportSize.y = 1.0f;
+
+				// Resize the framebuffer if panel size changed
+				// TODO: make viewportframebuffer static variable that is accessed through renderer facade
+				Renderer::GetViewportFramebuffer()->Resize(
+					static_cast<unsigned int>(viewportSize.x),
+					static_cast<unsigned int>(viewportSize.y)
+				);
+
+
 				// Get the size available inside this window for content
-					viewportSize = ImGui::GetContentRegionAvail();
-
-					// Prevent weird zero-cases when minimized/collapsed
-					if (viewportSize.x < 1.0f) viewportSize.x = 1.0f;
-					if (viewportSize.y < 1.0f) viewportSize.y = 1.0f;
-
-					// Resize the framebuffer if panel size changed
-					// TODO: make viewportframebuffer static variable that is accessed through renderer facade
-						Renderer::GetViewportFramebuffer()->Resize(
-							static_cast<unsigned int>(viewportSize.x),
-							static_cast<unsigned int>(viewportSize.y)
-						);
-
-
-
+				// Save image rect before drawing.
+				m_ViewportImageMin = ImGui::GetCursorScreenPos();
 				// Show the framebuffer's color texture inside ImGui
 				// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
 				// UVs are flipped vertically because OpenGL texture origin is bottom-left,
@@ -352,7 +334,6 @@ namespace Orion {
 
 				// IMPORTANT for picking
 				// Top-left of where the image will be drawn in screen coordinates
-				m_ViewportImageMin = ImGui::GetCursorScreenPos();
 				m_ViewportImageMax = ImVec2(
 					m_ViewportImageMin.x + viewportSize.x,
 					m_ViewportImageMin.y + viewportSize.y

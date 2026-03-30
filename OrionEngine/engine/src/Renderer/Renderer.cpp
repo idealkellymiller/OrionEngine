@@ -7,6 +7,7 @@
 #include "Renderer/Camera.h"
 #include "Renderer/RenderScene.h"
 #include "Renderer/RenderPass.h"
+#include "Renderer/Gizmo.h"
 
 #include "ECS/Scene.h"
 
@@ -53,6 +54,8 @@ namespace Orion {
 	unsigned int Renderer::s_PickingFBO = 0;
 	unsigned int Renderer::s_PickingColorTexture = 0;
 	unsigned int Renderer::s_PickingDepthRBO = 0;
+
+	GizmoPass Renderer::s_GizmoPass;
 
 
 	bool Renderer::Init() {
@@ -111,6 +114,8 @@ namespace Orion {
 		s_PickingShader = pickingShader;
 
 
+		s_GizmoPass.Init();
+
 
 
 
@@ -124,6 +129,8 @@ namespace Orion {
 
 		ShutdownShadowResources();
 		ShutdownPickingResources();
+
+		s_GizmoPass.Shutdown();
 	}
 
 	void Renderer::SetViewport(int x, int y, int width, int height)
@@ -182,6 +189,10 @@ namespace Orion {
 		RenderScene scene;
 		scene.BuildRenderScene();
 		s_ActiveRenderScene = scene;
+
+		// Update camera projection if window size changes
+		float aspectRatio = (float)s_ViewportFramebuffer.GetWidth() / (float)s_ViewportFramebuffer.GetHeight();
+		s_ActiveCamera.SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
 	}
 
 	void Renderer::EndFrame()
@@ -189,6 +200,8 @@ namespace Orion {
 		// Nothing here rn
 		// TODO: add frame stats 
 
+
+		ClearQueues();
 
 
 		s_ViewportFramebuffer.Unbind();
@@ -216,6 +229,7 @@ namespace Orion {
 
 	void Renderer::Render()
 	{
+		BeginFrame();
 
 
 		Camera* camera = GetActiveCamera();
@@ -279,9 +293,15 @@ namespace Orion {
 			s_LightSpaceMatrix
 		);
 
+		GizmoData gizmo;
+		gizmo.position = glm::vec3(0.0f, 0.0f, 0.0f);
+		gizmo.axisLength = 1.0f;
+		s_GizmoPass.Execute(s_ActiveCamera, gizmo);
+
 		RenderPickingPass();
 
-		ClearQueues();
+		
+		EndFrame();
 	}
 
 	void Renderer::BuildRenderQueue(const RenderScene& scene)

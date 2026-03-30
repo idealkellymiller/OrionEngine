@@ -9,7 +9,11 @@
 #include <vector>
 
 #include "Application.h"
+
 #include "Layers/Layer.h"
 #include "Layers/ImGuiLayer.h"
+#include "Layers/EditorLayer.h"
+
 #include "Log/Log.h"
+
 #include "Renderer/Renderer.h"

@@ -10,8 +10,11 @@
 #include "Renderer/Gizmo.h"
 
 #include "ECS/Scene.h"
+#include "ECS/SceneManager.h"
 
 #include "Application.h"
+
+#include "Layers/EditorLayer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -293,10 +296,16 @@ namespace Orion {
 			s_LightSpaceMatrix
 		);
 
-		GizmoData gizmo;
-		gizmo.position = glm::vec3(0.0f, 0.0f, 0.0f);
-		gizmo.axisLength = 1.0f;
-		s_GizmoPass.Execute(s_ActiveCamera, gizmo);
+		// Only render gizmo to screen if an obejct is selected (not 0)
+		if (EditorLayer::GetSelectedEntity() != INVALID_ENTITY) {
+			// Get entity's position
+			glm::vec3 position = SceneManager::GetActiveScene()->GetTransformComponent(EditorLayer::GetSelectedEntity())->position;
+
+			GizmoData gizmo;
+			gizmo.position = position;
+			gizmo.axisLength = 2.5f;
+			s_GizmoPass.Execute(s_ActiveCamera, gizmo);
+		}
 
 		RenderPickingPass();
 

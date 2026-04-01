@@ -5,6 +5,7 @@
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include "imgui.h"
+#include "ECS/Scene.h"
 
 namespace Orion {
 	struct HierarchyNode
@@ -23,10 +24,13 @@ namespace Orion {
 		void OnUpdate();
 		void OnEvent(Event& event);
 
+		static EntityID GetHoveredEntity() { return s_HoveredEntity; }
+
 	private:
 		float m_Time = 0.0f;
 		ImVec2 m_ViewportImageMin = { 0, 0 };
 		ImVec2 m_ViewportImageMax = { 0, 0 };
+		static EntityID s_HoveredEntity;
 
 		// --------ImGui Module Definitions-----------
 		void ShowMainMenuBar();

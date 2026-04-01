@@ -87,28 +87,41 @@ namespace Orion {
 
     void GizmoPass::Execute(const Camera& camera, const GizmoData& gizmo)
     {
-        // Force a known-good state for gizmo rendering.
-        glDisable(GL_CULL_FACE); 
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-
-        m_GizmoShader.Bind();
-
-        // TODO: update this to show position is at the entity selected.
+        // Build the matrice once.
         glm::mat4 model = glm::translate(glm::mat4(1.0f), gizmo.position);
         model = glm::scale(model, glm::vec3(gizmo.axisLength));
 
         glm::mat4 viewProjection = camera.GetProjectionMatrix() * camera.GetViewMatrix();
 
+        // Common state for both draws.
+        glDisable(GL_CULL_FACE); 
+        glDisable(GL_BLEND);
+        // glLineWidth(3.0f);
+
+        m_GizmoShader.Bind();
         m_GizmoShader.SetMat4("u_ViewProjection", viewProjection);
         m_GizmoShader.SetMat4("u_Model", model);
 
         glBindVertexArray(m_GizmoVAO);
+
+        // Pass 1: hidden/occluded part
+        // Draw through geometry, but darker so it reads as "behind"
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        m_GizmoShader.SetVec3("u_ColorMultiplier", glm::vec3(0.35f));
         glDrawArrays(GL_LINES, 0, 6);
+
+        // Pass 2: visible / front part
+        // Draw depth-tested in full brightness.
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        m_GizmoShader.SetVec3("u_ColorMultiplier", glm::vec3(1.0f));
+        glDrawArrays(GL_LINES, 0, 6);
+
         glBindVertexArray(0);
 
-        // Restore depth writing for later passes.
+        // Restore safe defaults.
         glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
     }
 }

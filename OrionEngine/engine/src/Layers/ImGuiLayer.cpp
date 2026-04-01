@@ -17,6 +17,10 @@
 
 namespace Orion {
 
+	// Initialize static members
+	EntityID ImGuiLayer::s_HoveredEntity = INVALID_ENTITY;
+
+
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGuiLayer")
 	{
@@ -100,8 +104,8 @@ namespace Orion {
 			int localMouseX = static_cast<int>(mousePos.x - m_ViewportImageMin.x);
 			int localMouseY = static_cast<int>(mousePos.y - m_ViewportImageMin.y);
 			// std::cout << localMouseX << "," << localMouseY << std::endl;
-			EntityID hovered = Renderer::PickEntity(localMouseX, localMouseY);
-			std::cout << "Hovered entity: " << hovered << " at (" << localMouseX << "," << localMouseY << ")\n";
+			s_HoveredEntity = Renderer::PickEntity(localMouseX, localMouseY);
+			// std::cout << "Hovered entity: " << hovered << " at (" << localMouseX << "," << localMouseY << ")\n";
 
 		}
 		else {

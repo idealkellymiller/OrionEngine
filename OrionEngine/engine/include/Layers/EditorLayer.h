@@ -19,7 +19,9 @@ namespace Orion {
 		void OnUpdate();
 		void OnEvent(Event& event);
 
+		static EntityID GetSelectedEntity() { return s_SelectedEntity; }
+
 	private:
-		static EntityID m_SelectedEntity;
+		static EntityID s_SelectedEntity;
 	};
 }

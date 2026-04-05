@@ -21,6 +21,7 @@
 #include <algorithm>	// for std::sort
 #include <glm/glm.hpp>
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 
 
@@ -90,24 +91,24 @@ namespace Orion {
 		// Create the Shaders.
 		Shader litShader;
 		if (!litShader.CreateFromFiles(
-			"../engine/engineAssets/shaders/Lit.vert",
-			"../engine/engineAssets/shaders/Lit.frag"))
+			"../engine/shaders/Lit.vert",
+			"../engine/shaders/Lit.frag"))
 		{
 			std::cout << "Failed to create lit Shader\n";
 		}
 
 		Shader shadowShader;
 		if (!shadowShader.CreateFromFiles(
-			"../engine/engineAssets/shaders/Shadow.vert",
-			"../engine/engineAssets/shaders/Shadow.frag"))
+			"../engine/shaders/Shadow.vert",
+			"../engine/shaders/Shadow.frag"))
 		{
 			std::cout << "Failed to create shadow Shader\n";
 		}
 
 		Shader pickingShader;
 		if (!pickingShader.CreateFromFiles(
-			"../engine/engineAssets/shaders/Picking.vert",
-			"../engine/engineAssets/shaders/Picking.frag"))
+			"../engine/shaders/Picking.vert",
+			"../engine/shaders/Picking.frag"))
 		{
 			std::cout << "Failed to create picking Shader\n";
 		}

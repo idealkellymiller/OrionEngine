@@ -20,6 +20,9 @@ namespace Orion {
 	// Initialize static members
 	EntityID ImGuiLayer::s_HoveredEntity = INVALID_ENTITY;
 
+	bool ImGuiLayer::s_ViewportHovered = false;
+	bool ImGuiLayer::s_ViewportFocused = false;
+
 
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGuiLayer")
@@ -143,7 +146,7 @@ namespace Orion {
 				{
 					// imgui wants to capture this event
 					// mark it as handled so it doesn't propogate down to other app layers.
-					event.Handled = true;
+					// event.Handled = true;
 				}
 				break;
 			}
@@ -154,7 +157,7 @@ namespace Orion {
 			{
 				if (io.WantCaptureMouse)
 				{
-					event.Handled = true;
+					// event.Handled = true;
 				}
 				break;
 			}
@@ -299,13 +302,13 @@ namespace Orion {
 		{
 
 			static ImVec2 viewportSize = ImVec2(0.0f, 0.0f);
-			bool viewportHovered = false;
-			bool viewportFocused = false;
+			//bool viewportHovered = false;
+			//bool viewportFocused = false;
 
 			if (ImGui::Begin("Viewport", &showViewportModule))
 			{
-				viewportHovered = ImGui::IsWindowHovered();
-				viewportFocused = ImGui::IsWindowFocused();
+				s_ViewportHovered = ImGui::IsWindowHovered();
+				s_ViewportFocused = ImGui::IsWindowFocused();
 
 				// Viewport window
 				viewportSize = ImGui::GetContentRegionAvail();

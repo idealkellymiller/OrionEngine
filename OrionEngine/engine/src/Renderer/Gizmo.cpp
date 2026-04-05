@@ -16,8 +16,8 @@ namespace Orion {
 	{
 		// Load a very small unlit shader used only for the gizmo.
         if (!m_GizmoShader.CreateFromFiles(
-            "../engine/engineAssets/shaders/Gizmo.vert",
-            "../engine/engineAssets/shaders/Gizmo.frag"))
+            "../engine/shaders/Gizmo.vert",
+            "../engine/shaders/Gizmo.frag"))
         {
             std::cout << "Failed to create gizmo shader\n";
         }

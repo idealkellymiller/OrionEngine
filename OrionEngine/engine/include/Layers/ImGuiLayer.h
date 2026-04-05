@@ -26,11 +26,17 @@ namespace Orion {
 
 		static EntityID GetHoveredEntity() { return s_HoveredEntity; }
 
+		static bool GetViewportHovered() { return s_ViewportHovered; }
+		static bool GetViewportFocused() { return s_ViewportFocused; }
+
 	private:
 		float m_Time = 0.0f;
 		ImVec2 m_ViewportImageMin = { 0, 0 };
 		ImVec2 m_ViewportImageMax = { 0, 0 };
 		static EntityID s_HoveredEntity;
+
+		static bool s_ViewportHovered;
+		static bool s_ViewportFocused;
 
 		// --------ImGui Module Definitions-----------
 		void ShowMainMenuBar();

@@ -1,10 +1,24 @@
 #include "Renderer/EditorCamera.h"
 #include "Renderer/Camera.h"
-#include "Renderer/EditorCameraInput.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm> // for std::clamp
 #include <cmath>
+#include <cstring> // for memset
+
+// GLFW key/button codes used by events (match GLFW defines without including glfw3.h)
+namespace KeyCode {
+    constexpr int W          = 87;
+    constexpr int A          = 65;
+    constexpr int S          = 83;
+    constexpr int D          = 68;
+    constexpr int Q          = 81;
+    constexpr int E          = 69;
+    constexpr int LeftShift  = 340;
+}
+namespace MouseCode {
+    constexpr int ButtonRight = 1;  // GLFW_MOUSE_BUTTON_RIGHT
+}
 
 
 namespace Orion {
@@ -18,11 +32,15 @@ namespace Orion {
         m_Up(0.0f, 1.0f, 0.0f),
         m_MoveSpeed(5.0f),
         m_MouseSensitivity(0.12f),
-        m_WasRightMouseDown(false),
+        m_RightMouseDown(false),
+        m_MouseX(0.0f),
+        m_MouseY(0.0f),
+        m_ScrollDelta(0.0f),
         m_FirstMouseFrame(true),
-        m_LastMouseX(0.0),
-        m_LastMouseY(0.0)
+        m_LastMouseX(0.0f),
+        m_LastMouseY(0.0f)
     {
+        std::memset(m_KeyStates, 0, sizeof(m_KeyStates));
         UpdateVectors();
     }
 
@@ -43,33 +61,70 @@ namespace Orion {
         m_MoveSpeed = (speed < 0.1f) ? 0.1f : speed;
     }
 
+    // ---------- Event-driven input setters ----------
+
+    void EditorCamera::OnKeyPressed(int keyCode)
+    {
+        if (keyCode >= 0 && keyCode < MAX_KEYS)
+            m_KeyStates[keyCode] = true;
+    }
+
+    void EditorCamera::OnKeyReleased(int keyCode)
+    {
+        if (keyCode >= 0 && keyCode < MAX_KEYS)
+            m_KeyStates[keyCode] = false;
+    }
+
+    void EditorCamera::OnMouseMoved(float x, float y)
+    {
+        m_MouseX = x;
+        m_MouseY = y;
+    }
+
+    void EditorCamera::OnMouseButtonPressed(int button)
+    {
+        if (button == MouseCode::ButtonRight)
+            m_RightMouseDown = true;
+    }
+
+    void EditorCamera::OnMouseButtonReleased(int button)
+    {
+        if (button == MouseCode::ButtonRight) {
+            m_RightMouseDown = false;
+            // Reset so next RMB press doesn't produce a delta jump
+            m_FirstMouseFrame = true;
+        }
+    }
+
+    void EditorCamera::OnMouseScrolled(float yOffset)
+    {
+        m_ScrollDelta += yOffset;
+    }
+
+    // ---------- Per-frame update ----------
+
     void EditorCamera::Update(
-        GLFWwindow* window,
-        Camera& camera,
+        Camera* camera,
         float deltaTime,
         bool viewportHovered,
         bool viewportFocused)
     {
         // Only allow editor camera controls when the viewport is relevant.
-        // hovered us useful for wheel/interaction.
-        // Focsed helps ensure keyboard goes to the viewport.
         bool canControl = viewportHovered || viewportFocused;
 
-        // Right mouse held means "Capture editor camera controls".
-        bool rightMouseDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-
-        if (canControl && rightMouseDown) {
-            UpdateMouseLook(window, deltaTime);
-            UpdateMovement(window, deltaTime);
+        if (canControl && m_RightMouseDown) {
+            UpdateMouseLook(deltaTime);
+            UpdateMovement(deltaTime);
         }
         else {
             // Reset delta startup so next RMB press does not jump.
             m_FirstMouseFrame = true;
         }
 
-        m_WasRightMouseDown = rightMouseDown;
+        // Consume accumulated scroll delta
+        float scrollDelta = m_ScrollDelta;
+        m_ScrollDelta = 0.0f;
 
-        float scrollDelta = EditorCameraInput::ConsumeScrollDelta();
         if (canControl && scrollDelta != 0.0f)
         {
             // Mouse wheel changes fly speed
@@ -80,35 +135,31 @@ namespace Orion {
         }
 
         // Push final transform into Orion Camera
-        camera.SetPosition(m_Position);
-        camera.SetTarget(m_Position + m_Forward);
-        camera.SetUp(glm::vec3(0.0f, 1.0f, 0.0f));
+        camera->SetPosition(m_Position);
+        camera->SetTarget(m_Position + m_Forward);
+        camera->SetUp(glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
-    void EditorCamera::UpdateMouseLook(GLFWwindow* window, float deltaTime)
+    void EditorCamera::UpdateMouseLook(float deltaTime)
     {
         (void)deltaTime;
 
-        double mouseX = 0.0;
-        double mouseY = 0.0;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-
-        // ON the first RMB frame, initialize previous position so we do not snap.
+        // On the first RMB frame, initialize previous position so we do not snap.
         if (m_FirstMouseFrame) {
-            m_LastMouseX = mouseX;
-            m_LastMouseY = mouseY;
+            m_LastMouseX = m_MouseX;
+            m_LastMouseY = m_MouseY;
             m_FirstMouseFrame = false;
         }
 
-        double deltaX = mouseX - m_LastMouseX;
-        double deltaY = mouseY - m_LastMouseY;
+        float deltaX = m_MouseX - m_LastMouseX;
+        float deltaY = m_MouseY - m_LastMouseY;
 
-        m_LastMouseX = mouseX;
-        m_LastMouseY = mouseY;
+        m_LastMouseX = m_MouseX;
+        m_LastMouseY = m_MouseY;
 
         // Yaw rotates left/right, pitch rotates up/down
-        m_Yaw += static_cast<float>(deltaX) * m_MouseSensitivity;
-        m_Pitch -= static_cast<float>(deltaY) * m_MouseSensitivity;
+        m_Yaw += deltaX * m_MouseSensitivity;
+        m_Pitch -= deltaY * m_MouseSensitivity;
 
         // Clamp pitch so we do not flip upside down
         m_Pitch = std::clamp(m_Pitch, -89.0f, 89.0f);
@@ -116,47 +167,37 @@ namespace Orion {
         UpdateVectors();
     }
 
-    void EditorCamera::UpdateMovement(GLFWwindow* window, float deltaTime)
+    void EditorCamera::UpdateMovement(float deltaTime)
     {
-        // Dhift makes movement faster, common in editors
+        // Shift makes movement faster, common in editors
         float speedMultiplier = 1.0f;
-        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        if (m_KeyStates[KeyCode::LeftShift])
             speedMultiplier = 3.0f;
 
         float velocity = m_MoveSpeed * speedMultiplier * deltaTime;
 
         // Move forward/back along look direction
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        if (m_KeyStates[KeyCode::W])
             m_Position += m_Forward * velocity;
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        if (m_KeyStates[KeyCode::S])
             m_Position -= m_Forward * velocity;
-        }
 
         // Strafe left/right
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        {
+        if (m_KeyStates[KeyCode::A])
             m_Position -= m_Right * velocity;
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        {
+        if (m_KeyStates[KeyCode::D])
             m_Position += m_Right * velocity;
-        }
 
         // Move vertically in world space
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        {
+        if (m_KeyStates[KeyCode::E])
             m_Position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
-        }
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        {
+        if (m_KeyStates[KeyCode::Q])
             m_Position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
-        }
     }
 
     void EditorCamera::UpdateVectors()
     {
-        // convert yaw/pitch angle sinto a normalized fowarad vector
+        // Convert yaw/pitch angles into a normalized forward vector
         glm::vec3 forward;
         forward.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
         forward.y = sin(glm::radians(m_Pitch));

@@ -4,7 +4,6 @@
 #include "Renderer/Material.h"
 #include "Renderer/OBJLoader.h"
 #include "Renderer/Renderer.h" // ============ POSSIBLE DEPENDENCY LOOP ================
-#include "Renderer/EditorCamera.h"
 
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
@@ -71,6 +70,11 @@ namespace Orion {
             AssetID materialID = materialComp->material;
             std::shared_ptr<Material> material = AssetManager::GetMaterial(materialID);
 
+            // Skip entities with missing assets to avoid null dereferences in the renderer
+            if (!mesh || !material) {
+                std::cout << "Warning: Entity " << entity << " has invalid mesh or material asset. Skipping.\n";
+                continue;
+            }
 
             Renderable renderable;
             renderable.entity = entity;
@@ -85,14 +89,8 @@ namespace Orion {
 
 
 
-        // Create and configure camera once.
-        Camera camera;
-        camera.SetPosition(glm::vec3(0.0f, 0.0f, 10.0f));
-        camera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-        camera.SetUp(glm::vec3(0.0f, 1.0f, 0.0f));
-        Renderer::SetActiveCamera(camera);
-
-
+        // Camera is managed by EditorCamera and written into
+        // Renderer::GetActiveCamera() each frame — no override here.
 
         // Create a sun-like directional light.
         DirectionalLight sun;

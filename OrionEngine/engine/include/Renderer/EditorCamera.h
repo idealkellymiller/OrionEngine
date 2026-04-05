@@ -1,7 +1,6 @@
 #pragma once
 #include "EngineCore.h"
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 
 
 namespace Orion {
@@ -9,8 +8,9 @@ namespace Orion {
 	class Camera;
 
 
-	// EditorCamera is a controller for a camera.
-	// It reads input from GLFW and updates position/orientation.
+	// EditorCamera is a fly-camera controller for the editor viewport.
+	// Input state is fed via On*() methods (called from EditorLayer::OnEvent)
+	// and consumed each frame in Update().
 	class ORION_API EditorCamera {
 	public:
 		EditorCamera();
@@ -19,13 +19,19 @@ namespace Orion {
 		void SetPosition(const glm::vec3& position);
 		void SetYawPitch(float yawDegrees, float pitchDegrees);
 
-		// Per-frame update
-		// deltatime = frame time in seconds
-		// viewportHovered = mouse is over the viewport window
-		// viewportFocused = viewport window is focused/active
+		// --- Event-driven input (called from EditorLayer::OnEvent) ---
+		void OnKeyPressed(int keyCode);
+		void OnKeyReleased(int keyCode);
+		void OnMouseMoved(float x, float y);
+		void OnMouseButtonPressed(int button);
+		void OnMouseButtonReleased(int button);
+		void OnMouseScrolled(float yOffset);
+
+		// Per-frame update — reads accumulated input state, applies movement,
+		// and writes the result into the given Camera.
+		// viewportHovered/viewportFocused gate whether input is acted on.
 		void Update(
-			GLFWwindow* window,
-			Camera& camera,
+			Camera* camera,
 			float deltaTime,
 			bool viewportHovered,
 			bool viewportFocused
@@ -41,19 +47,19 @@ namespace Orion {
 		glm::vec3 GetUp() const { return m_Up; }
 
 	private:
-		// Rebuild foward/right/up vectors from yaw/pitch
+		// Rebuild forward/right/up vectors from yaw/pitch
 		void UpdateVectors();
 
-		// Handle mouse look
-		void UpdateMouseLook(GLFWwindow* window, float deltaTime);
+		// Handle mouse look (reads from stored mouse state)
+		void UpdateMouseLook(float deltaTime);
 
-		// Handle WASD/QE movement
-		void UpdateMovement(GLFWwindow* window, float deltaTime);
+		// Handle WASD/QE movement (reads from stored key state)
+		void UpdateMovement(float deltaTime);
 
 	private:
 		glm::vec3 m_Position;
 
-		// Camera orientation stored as yaw/pitch in degress
+		// Camera orientation stored as yaw/pitch in degrees
 		float m_Yaw;
 		float m_Pitch;
 
@@ -66,12 +72,18 @@ namespace Orion {
 		float m_MoveSpeed;
 		float m_MouseSensitivity;
 
-		// RMB state tracking
-		bool m_WasRightMouseDown;
+		// --- Input state fed by events ---
+		static constexpr int MAX_KEYS = 512;
+		bool m_KeyStates[MAX_KEYS];
 
-		// Last mouse position for delta calculation
+		bool m_RightMouseDown;
+		float m_MouseX;
+		float m_MouseY;
+		float m_ScrollDelta;  // accumulated between frames, consumed in Update()
+
+		// Mouse-look delta tracking
 		bool m_FirstMouseFrame;
-		double m_LastMouseX;
-		double m_LastMouseY;
+		float m_LastMouseX;
+		float m_LastMouseY;
 	};
 }

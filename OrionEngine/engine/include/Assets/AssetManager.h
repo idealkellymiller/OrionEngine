@@ -43,12 +43,23 @@ namespace Orion {
         static void LoadMesh(const std::string filePath);
         static void LoadMaterial(const std::string filePath);
 
-        static AssetID GetMeshID(const std::string filePath) { return m_MeshPathToID[filePath]; }
-        static AssetID GetTextureID(const std::string filePath) { return m_TexturePathToID[filePath]; }
-        static AssetID GetMaterialID(const std::string filePath) { return m_MaterialPathToID[filePath]; }
+        static AssetID GetMeshID(const std::string filePath) {
+            auto it = m_MeshPathToID.find(filePath);
+            return (it != m_MeshPathToID.end()) ? it->second : INVALID_ASSET_ID;
+        }
+        static AssetID GetTextureID(const std::string filePath) {
+            auto it = m_TexturePathToID.find(filePath);
+            return (it != m_TexturePathToID.end()) ? it->second : INVALID_ASSET_ID;
+        }
+        static AssetID GetMaterialID(const std::string filePath) {
+            auto it = m_MaterialPathToID.find(filePath);
+            return (it != m_MaterialPathToID.end()) ? it->second : INVALID_ASSET_ID;
+        }
 
         static void SetAssetsFolderPath(std::string filePath) { m_AssetsFolderPath = filePath; }
         static std::string GetAssetsFolderPath() { return m_AssetsFolderPath; }
+
+        static void PrintMatsPathToID();
 
     private:
         static std::string m_AssetsFolderPath;

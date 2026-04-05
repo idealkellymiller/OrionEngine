@@ -87,7 +87,8 @@ namespace Orion {
         std::sort(materialFiles.begin(), materialFiles.end());
 
 
-        // Load in your chosen order
+        // Load in the chosen order: 
+        // Meshes -> Textures -> Materials
         for (const auto& path : meshFiles)
             LoadMesh(path.string());
 
@@ -109,7 +110,7 @@ namespace Orion {
         auto it = m_LoadedMeshes.find(assetID);
         if (it != m_LoadedMeshes.end())
             return it->second;
-
+        
         return nullptr;
     }
 
@@ -172,6 +173,9 @@ namespace Orion {
         m_LoadedMeshes[assetID] = mesh;
         // Store reverse lookup
         m_MeshPathToID[filePath] = assetID;
+
+
+        std::cout << "OBJ loaded to AssetID: " << assetID << " --- " << filePath << "\n" << " --- Vertices: " << vertices.size() << "\n" << " --- Indices: " << indices.size() << "\n";
     }
 
     void AssetManager::LoadTexture(const std::string filePath)
@@ -203,6 +207,8 @@ namespace Orion {
         m_LoadedTextures[assetID] = texture;
         // Store reverse lookup
         m_TexturePathToID[filePath] = assetID;
+
+        std::cout << "Texture loaded to AssetID: " << assetID << " --- " << filePath << "\n";
     }
 
     void AssetManager::LoadMaterial(const std::string filePath)
@@ -245,5 +251,15 @@ namespace Orion {
         m_LoadedMaterials[assetID] = material;
         // Store reverse lookup
         m_MaterialPathToID[filePath] = assetID;
+
+        std::cout << "Material loaded to AssetID: " << assetID << " --- " << filePath << "\n";
+    }
+
+    void AssetManager::PrintMatsPathToID()
+    {
+        for (const auto& [path, id] : m_MaterialPathToID)
+        {
+            std::cout << "Path: " << path << " | ID: " << id << std::endl;
+        }
     }
 }

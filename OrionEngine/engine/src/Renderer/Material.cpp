@@ -94,7 +94,6 @@ namespace Orion {
             }
         }
 
-        std::cout << "Material loaded successfully: " << filePath << "\n";
         return true;
     }
 

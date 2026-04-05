@@ -5,6 +5,9 @@
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include "ECS/Scene.h"
+#include <Renderer/EditorCamera.h>
+
+#include <string>
 
 
 namespace Orion {
@@ -21,7 +24,11 @@ namespace Orion {
 
 		static EntityID GetSelectedEntity() { return s_SelectedEntity; }
 
+		void AddPrimitive(std::string primitiveFileName);
+
 	private:
 		static EntityID s_SelectedEntity;
+
+		static EditorCamera s_EditorCamera;
 	};
 }

@@ -1,0 +1,14 @@
+# diffuse texture path. "none" = no texture
+dt textures\mossy_stones.png
+
+# color tint
+c 1.0 1.0 1.0 1.0
+
+# specular color
+sc 0.15 0.15 0.15
+
+# specular shininess
+ss 8.0
+
+# is transparent. 0 = false
+it 0

@@ -29,10 +29,10 @@ namespace Orion {
 			return false;
 		}
 
-		std::cout << "Loaded texture: " << path
-			<< " | W: " << m_Width
-			<< " H: " << m_Height
-			<< " Channels: " << m_Channels << std::endl;
+		//std::cout << "Loaded texture: " << path
+		//	<< " | W: " << m_Width
+		//	<< " H: " << m_Height
+		//	<< " Channels: " << m_Channels << std::endl;
 
 
 		GLenum format = GL_RGB;

@@ -58,7 +58,6 @@ project(OrionEngine LANGUAGES CXX C)
 
             "engine/src/Renderer/Camera.cpp"
             "engine/src/Renderer/EditorCamera.cpp"
-            "engine/src/Renderer/EditorCameraInput.cpp"
             "engine/src/Renderer/Framebuffer.cpp"
             "engine/src/Renderer/Frustum.cpp"
 	        "engine/src/Renderer/Gizmo.cpp"

@@ -16,23 +16,23 @@ namespace Orion {
     static constexpr EntityID INVALID_ENTITY = 0;
 
     // metadata for this entity
-    struct ORION_API EntityDataComponent {
-        std::string name = "Entity";
+    struct EntityDataComponent {
+        std::string name = "New Entity";
         bool enabled = true;
     };
 
-    struct ORION_API TransformComponent {
+    struct TransformComponent {
         glm::vec3 position = { 0.0f, 0.0f, 0.0f };
         glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
         glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
     };
 
-    struct ORION_API MeshComponent {
+    struct MeshComponent {
         // References to the mesh and material assets loaded in the file directory.
         AssetID mesh = INVALID_ASSET_ID;
     };
 
-    struct ORION_API MaterialComponent {
+    struct MaterialComponent {
         AssetID material = INVALID_ASSET_ID;
     };
 
@@ -54,6 +54,7 @@ namespace Orion {
         bool IsValidEntity(EntityID entityID) const;
 
         const std::vector<EntityID>& GetEntities() const { return m_Entities; }
+        const EntityID GetNextEntityID() { return m_NextEntityID; }
 
         void Clear();
 

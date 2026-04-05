@@ -225,9 +225,7 @@ namespace Orion {
 			return false;
 		}
 
-		std::cout << "OBJ loaded successfully: " << filePath << "\n";
-		std::cout << "  Vertices: " << outVertices.size() << "\n";
-		std::cout << "  Indices: " << outIndices.size() << "\n";
+		
 
 		return true;
 	}

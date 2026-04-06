@@ -25,7 +25,11 @@ namespace Orion {
 
 		static void NewScene();
 
+		// Path the active scene was loaded from (empty if unsaved)
+		static const std::string& GetActiveScenePath() { return s_ActiveScenePath; }
+
 	private:
 		static std::shared_ptr<Scene> s_ActiveScene;
+		static std::string s_ActiveScenePath;
 	};
 }

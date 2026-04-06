@@ -1,69 +1,144 @@
 {
-  "scene": {
-    "name": "Default Scene",
-    "version": 1
-  },
   "entities": [
     {
       "id": 1,
-      "name": "Cube",
-      "transform": {
-        "position": [ -2.0, 0.0, -2.0 ],
-        "rotation": [ 0.0, 0.0, 0.0 ],
-        "scale": [ 1.0, 1.0, 1.0 ]
+      "material": {
+        "path": "materials/stone.mtrl"
       },
       "mesh": {
         "path": "models/cube.obj"
       },
-      "material": {
-        "path": "materials/stone.mtrl"
+      "name": "Cube",
+      "transform": {
+        "position": [
+          -5.124601364135742,
+          0.0,
+          4.1681976318359375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
       }
     },
     {
       "id": 2,
-      "name": "Floor",
-      "transform": {
-        "position": [ 0.0, -4.0, 0.0 ],
-        "rotation": [ 0.0, 0.0, 0.0 ],
-        "scale": [ 5.0, 1.0, 5.0 ]
+      "material": {
+        "path": "materials/default.mtrl"
       },
       "mesh": {
         "path": "models/cube.obj"
       },
-      "material": {
-        "path": "materials/default.mtrl"
+      "name": "Floor",
+      "transform": {
+        "position": [
+          0.0,
+          -4.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          13.055593490600586,
+          0.12874019145965576,
+          12.939863204956055
+        ]
       }
     },
     {
       "id": 3,
-      "name": "Monkey",
-      "transform": {
-        "position": [ 3.5, 1.0, -2.0 ],
-        "rotation": [ 0.0, 0.0, 0.0 ],
-        "scale": [ 1.0, 1.0, 1.0 ]
+      "material": {
+        "path": "materials/glass.mtrl"
       },
       "mesh": {
         "path": "models/monkey.obj"
       },
-      "material": {
-        "path": "materials/glass.mtrl"
-      },
-      "parent": 1
+      "name": "Monkey",
+      "parent": 1,
+      "transform": {
+        "position": [
+          3.492776870727539,
+          1.0,
+          -2.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
     },
     {
+      "camera": {
+        "far": 100.0,
+        "fov": 60.0,
+        "isActive": true,
+        "near": 0.10000000149011612
+      },
       "id": 4,
       "name": "Main Camera",
       "transform": {
-        "position": [ 0.0, 2.0, 8.0 ],
-        "rotation": [ -0.17, 0.0, 0.0 ],
-        "scale": [ 1.0, 1.0, 1.0 ]
+        "position": [
+          0.0,
+          2.0,
+          8.0
+        ],
+        "rotation": [
+          -0.17000000178813934,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "material": {
+        "path": "materials/default.mtrl"
       },
-      "camera": {
-        "fov": 60.0,
-        "near": 0.1,
-        "far": 100.0,
-        "isActive": true
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "New Entity",
+      "transform": {
+        "position": [
+          5.51416540145874,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
       }
     }
-  ]
+  ],
+  "scene": {
+    "name": "Saved Scene",
+    "version": 1
+  }
 }

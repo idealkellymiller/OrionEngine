@@ -22,6 +22,7 @@ using json = nlohmann::json;
 namespace Orion {
 
 	std::shared_ptr<Scene> SceneManager::s_ActiveScene = nullptr;
+	std::string SceneManager::s_ActiveScenePath = "";
 
 	void SceneManager::Init()
 	{
@@ -181,6 +182,7 @@ namespace Orion {
 		}
 
 		s_ActiveScene = newScene;
+		s_ActiveScenePath = filePath;
 		std::cout << "Successfully loaded scene: " << filePath << "\n";
 		return true;
 	}

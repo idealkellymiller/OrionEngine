@@ -145,7 +145,21 @@ namespace Orion {
 			}
 			// Editor-only keybinds (disabled during play mode)
 			else if (s_PlayState == PlayState::Stopped) {
-				if (key == GLFW_KEY_I) {
+				// Ctrl+S: save scene
+				GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+				bool ctrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+				            glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+
+				if (ctrl && key == GLFW_KEY_S) {
+					const std::string& path = SceneManager::GetActiveScenePath();
+					if (!path.empty()) {
+						SceneManager::SaveScene(path);
+					} else {
+						std::cout << "[EditorLayer] No scene path to save to.\n";
+					}
+					event.Handled = true;
+				}
+				else if (key == GLFW_KEY_I) {
 					AddPrimitive("cube");
 					event.Handled = true;
 				}

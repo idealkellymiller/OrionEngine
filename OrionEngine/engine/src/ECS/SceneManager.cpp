@@ -154,6 +154,19 @@ namespace Orion {
 					std::cout << "Warning: failed to resolve material: " << materialPath << "\n";
 				}
 			}
+
+			// --- Camera ---
+			if (entityJson.contains("camera")) {
+				const auto& c = entityJson["camera"];
+
+				CameraComponent cam;
+				if (c.contains("fov"))       cam.fovDegrees = c["fov"].get<float>();
+				if (c.contains("near"))      cam.nearPlane  = c["near"].get<float>();
+				if (c.contains("far"))       cam.farPlane   = c["far"].get<float>();
+				if (c.contains("isActive"))  cam.isActive   = c["isActive"].get<bool>();
+
+				newScene->AddCameraComponent(entity, cam);
+			}
 		}
 
 		s_ActiveScene = newScene;

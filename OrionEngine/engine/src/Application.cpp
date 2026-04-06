@@ -47,6 +47,18 @@ namespace Orion {
 		m_LayerStack.PopOverlay(layer);
 	}
 
+	void Application::QueueLayerOp(std::function<void()> op)
+	{
+		m_PendingLayerOps.push_back(std::move(op));
+	}
+
+	void Application::ProcessPendingLayerOps()
+	{
+		for (auto& op : m_PendingLayerOps)
+			op();
+		m_PendingLayerOps.clear();
+	}
+
 	// after receiving an event, dispatch to the layers of the app
 	void Application::OnEvent(Event& e)
 	{
@@ -57,7 +69,7 @@ namespace Orion {
 		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
 
 		// go through every layer in the stack.
-		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) 
+		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
 		{
 			// dispatch the event to the next layer
 			(*--it)->OnEvent(e);
@@ -84,17 +96,16 @@ namespace Orion {
 
 		//--------------------------MAIN APP LOOP--------------------------
 		while (m_Running) {
-			// Compute deltaTime;
 
-			// Renderer::BeginFrame();
+			// Process any deferred layer push/pop operations safely
+			// before iterating the layer stack.
+			ProcessPendingLayerOps();
 
 			// update every layer in the stack in order
 			for (Layer* layer : m_LayerStack)
 			{
 				layer->OnUpdate();
 			}
-
-			// Renderer::EndFrame();
 
 			// update app window
 			m_Window->OnUpdate();

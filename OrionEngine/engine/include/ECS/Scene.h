@@ -89,6 +89,11 @@ namespace Orion {
         MaterialComponent* GetMaterialComponent(EntityID entityID);
         bool HasMaterialComponent(EntityID entityID) const;
 
+        // Camera
+        void AddCameraComponent(EntityID entityID, const CameraComponent& component);
+        CameraComponent* GetCameraComponent(EntityID entityID);
+        bool HasCameraComponent(EntityID entityID) const;
+
     private:
         EntityID m_NextEntityID = 1;
 
@@ -98,6 +103,7 @@ namespace Orion {
         std::unordered_map<EntityID, TransformComponent> m_TransformComponents;
         std::unordered_map<EntityID, MeshComponent> m_MeshComponents;
         std::unordered_map<EntityID, MaterialComponent> m_MaterialComponents;
+        std::unordered_map<EntityID, CameraComponent> m_CameraComponents;
     };
 
 }

@@ -29,18 +29,12 @@ namespace Orion {
         // Walk every entity in the scene
         for (const auto& entity : scene->GetEntities()) {
 
-            // Check if the required ecs components exist
-            if (!scene->HasTransformComponent(entity)) {
-                std::cout << "Entity: " << entity << " does not have a transform component.\n";
-                return;
-            }
-            if (!scene->HasMeshComponent(entity)) {
-                std::cout << "Entity: " << entity << " does not have a mesh component.\n";
-                return;
-            }
-            if (!scene->HasMaterialComponent(entity)) {
-                std::cout << "Entity: " << entity << " does not have a material component.\n";
-                return;
+            // Skip entities that don't have the components needed for rendering.
+            // Not every entity is renderable (e.g. camera-only entities).
+            if (!scene->HasTransformComponent(entity) ||
+                !scene->HasMeshComponent(entity) ||
+                !scene->HasMaterialComponent(entity)) {
+                continue;
             }
 
             // Get the components

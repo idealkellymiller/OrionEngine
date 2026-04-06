@@ -63,13 +63,16 @@ namespace Orion {
 		float deltaTime = currentTime - lastFrameTime;
 		lastFrameTime = currentTime;
 
-		// Update editor camera — input state was already fed via OnEvent()
-		s_EditorCamera.Update(
-			Renderer::GetActiveCamera(),
-			deltaTime,
-			ImGuiLayer::GetViewportHovered(),
-			ImGuiLayer::GetViewportFocused()
-		);
+		// Update editor camera — only when NOT in play mode.
+		// During play, RuntimeLayer::ApplyRuntimeCamera() drives the renderer camera.
+		if (s_PlayState == PlayState::Stopped) {
+			s_EditorCamera.Update(
+				Renderer::GetActiveCamera(),
+				deltaTime,
+				ImGuiLayer::GetViewportHovered(),
+				ImGuiLayer::GetViewportFocused()
+			);
+		}
 
 		Renderer::Render();
 	}
@@ -170,18 +173,19 @@ namespace Orion {
 		if (s_PlayState == PlayState::Playing)
 			return;
 
-		auto editorScene = SceneManager::GetActiveScene();
-		if (!editorScene) return;
+		// Defer to Application — can't modify the layer stack while iterating it.
+		Application::Get().QueueLayerOp([this]() {
+			auto editorScene = SceneManager::GetActiveScene();
+			if (!editorScene) return;
 
-		// Create and push the runtime layer
-		m_RuntimeLayer = new RuntimeLayer();
-		Application::Get().PushLayer(m_RuntimeLayer);
-		m_RuntimeLayer->BeginPlay(editorScene);
+			m_RuntimeLayer = new RuntimeLayer();
+			Application::Get().PushLayer(m_RuntimeLayer);
+			m_RuntimeLayer->BeginPlay(editorScene);
 
-		s_PlayState = PlayState::Playing;
-		s_SelectedEntity = INVALID_ENTITY; // Deselect during play
-
-		std::cout << "[EditorLayer] Entered play mode (F5 to stop).\n";
+			s_PlayState = PlayState::Playing;
+			s_SelectedEntity = INVALID_ENTITY;
+			std::cout << "[EditorLayer] Entered play mode.\n";
+		});
 	}
 
 	void EditorLayer::ExitPlayMode()
@@ -189,17 +193,17 @@ namespace Orion {
 		if (s_PlayState == PlayState::Stopped || !m_RuntimeLayer)
 			return;
 
-		// Stop play and restore the editor scene
-		m_RuntimeLayer->EndPlay();
+		// Defer to Application — can't modify the layer stack while iterating it.
+		Application::Get().QueueLayerOp([this]() {
+			if (!m_RuntimeLayer) return;
 
-		// Remove runtime layer from the stack (calls OnDetach) and free it
-		Application::Get().PopLayer(m_RuntimeLayer);
-		delete m_RuntimeLayer;
-		m_RuntimeLayer = nullptr;
-
-		s_PlayState = PlayState::Stopped;
-
-		std::cout << "[EditorLayer] Exited play mode. Scene restored.\n";
+			m_RuntimeLayer->EndPlay();
+			Application::Get().PopLayer(m_RuntimeLayer);
+			delete m_RuntimeLayer;
+			m_RuntimeLayer = nullptr;
+			s_PlayState = PlayState::Stopped;
+			std::cout << "[EditorLayer] Exited play mode. Scene restored.\n";
+		});
 	}
 
 

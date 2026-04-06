@@ -194,9 +194,19 @@ namespace Orion {
 		scene.BuildRenderScene();
 		s_ActiveRenderScene = scene;
 
-		// Update camera projection if window size changes
+		// Update camera aspect ratio to match viewport.
+		// During play mode, RuntimeLayer sets full projection from CameraComponent.
+		// During edit mode, apply default editor projection.
 		float aspectRatio = (float)s_ViewportFramebuffer.GetWidth() / (float)s_ViewportFramebuffer.GetHeight();
-		s_ActiveCamera.SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
+		if (!EditorLayer::IsPlaying()) {
+			s_ActiveCamera.SetPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
+		} else {
+			// Just update aspect ratio, keep FOV/near/far from CameraComponent
+			s_ActiveCamera.SetPerspective(
+				s_ActiveCamera.GetFOVDegrees(), aspectRatio,
+				s_ActiveCamera.GetNearPlane(), s_ActiveCamera.GetFarPlane()
+			);
+		}
 	}
 
 	void Renderer::EndFrame()

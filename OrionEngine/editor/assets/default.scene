@@ -48,6 +48,21 @@
       "material": {
         "path": "materials/glass.mtrl"
       }
+    },
+    {
+      "id": 4,
+      "name": "Main Camera",
+      "transform": {
+        "position": [ 0.0, 2.0, 8.0 ],
+        "rotation": [ -0.17, 0.0, 0.0 ],
+        "scale": [ 1.0, 1.0, 1.0 ]
+      },
+      "camera": {
+        "fov": 60.0,
+        "near": 0.1,
+        "far": 100.0,
+        "isActive": true
+      }
     }
   ]
 }

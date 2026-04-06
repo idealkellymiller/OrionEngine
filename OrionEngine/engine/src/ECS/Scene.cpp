@@ -49,6 +49,7 @@ namespace Orion {
         m_TransformComponents.erase(entityID);
         m_MeshComponents.erase(entityID);
         m_MaterialComponents.erase(entityID);
+        m_CameraComponents.erase(entityID);
     }
 
     bool Scene::IsValidEntity(EntityID entityID) const
@@ -68,6 +69,7 @@ namespace Orion {
         m_MaterialComponents.clear();
         m_MeshComponents.clear();
         m_TransformComponents.clear();
+        m_CameraComponents.clear();
     }
 
     std::shared_ptr<Scene> Scene::Copy() const
@@ -79,6 +81,7 @@ namespace Orion {
         newScene->m_TransformComponents = m_TransformComponents;
         newScene->m_MeshComponents = m_MeshComponents;
         newScene->m_MaterialComponents = m_MaterialComponents;
+        newScene->m_CameraComponents = m_CameraComponents;
         return newScene;
     }
 
@@ -165,5 +168,26 @@ namespace Orion {
     bool Scene::HasMaterialComponent(EntityID entityID) const
     {
         return m_MaterialComponents.find(entityID) != m_MaterialComponents.end();
+    }
+
+
+    // --- Camera ---
+    void Scene::AddCameraComponent(EntityID entityID, const CameraComponent& component)
+    {
+        m_CameraComponents[entityID] = component;
+    }
+
+    CameraComponent* Scene::GetCameraComponent(EntityID entityID)
+    {
+        auto it = m_CameraComponents.find(entityID);
+        if (it != m_CameraComponents.end())
+            return &it->second;
+
+        return nullptr;
+    }
+
+    bool Scene::HasCameraComponent(EntityID entityID) const
+    {
+        return m_CameraComponents.find(entityID) != m_CameraComponents.end();
     }
 }

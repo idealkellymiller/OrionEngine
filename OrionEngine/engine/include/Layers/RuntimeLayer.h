@@ -33,6 +33,11 @@ namespace Orion {
 		std::shared_ptr<Scene> GetEditorSceneSnapshot() const { return m_EditorSceneSnapshot; }
 
 	private:
+		// Finds the active CameraComponent entity and writes its transform
+		// into the Renderer's active Camera each frame.
+		void ApplyRuntimeCamera();
+
+	private:
 		std::shared_ptr<Scene> m_RuntimeScene = nullptr;		 // The live scene being simulated
 		std::shared_ptr<Scene> m_EditorSceneSnapshot = nullptr;  // Frozen copy of the editor scene
 

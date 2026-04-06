@@ -28,9 +28,18 @@ namespace Orion {
 		auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
 		if (it != m_Layers.end())
 		{
+			auto erasedIndex = std::distance(m_Layers.begin(), it);
+			auto insertIndex = std::distance(m_Layers.begin(), m_LayerInsert);
+
 			layer->OnDetach();
 			m_Layers.erase(it);
-			m_LayerInsert--;
+
+			// Only shift the insert point back if the erased element was before it.
+			// If the erased element WAS the insert point (or after), keep the same index.
+			if (erasedIndex < insertIndex)
+				m_LayerInsert = m_Layers.begin() + (insertIndex - 1);
+			else
+				m_LayerInsert = m_Layers.begin() + insertIndex;
 		}
 	}
 

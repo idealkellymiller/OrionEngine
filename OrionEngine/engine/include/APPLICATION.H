@@ -8,6 +8,8 @@
 #include "Events/ApplicationEvent.h"
 
 #include <memory>
+#include <vector>
+#include <functional>
 
 namespace Orion
 {
@@ -25,6 +27,10 @@ namespace Orion
             void PopLayer(Layer* layer);
             void PopOverlay(Layer* layer);
 
+            // Queue a layer operation to run safely between frames.
+            // Use this when pushing/popping layers from inside OnUpdate or OnEvent.
+            void QueueLayerOp(std::function<void()> op);
+
             void Run();
 
             // all Event object EventCallbacks are set to THIS
@@ -34,10 +40,13 @@ namespace Orion
         private:
             static Application* s_Instance; // static singleton instance of Application
             bool OnWindowClose(WindowCloseEvent& e);
+            void ProcessPendingLayerOps();
+
             std::unique_ptr<Window> m_Window; // points to main app window
             bool m_Running = true;
 
             LayerStack m_LayerStack;
+            std::vector<std::function<void()>> m_PendingLayerOps;
     };
     
     // defined in editor client

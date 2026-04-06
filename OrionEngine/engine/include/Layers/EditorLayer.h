@@ -48,7 +48,7 @@ namespace Orion {
 
 		static EditorCamera s_EditorCamera;
 
-		// Runtime layer (owned by LayerStack, we just keep a reference)
+		// Runtime layer (owned by EditorLayer, pushed/popped from LayerStack)
 		RuntimeLayer* m_RuntimeLayer = nullptr;
 
 		// Gizmo drag state

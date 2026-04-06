@@ -299,13 +299,24 @@ namespace Orion {
 
 		// Only render gizmo to screen if an obejct is selected (not 0)
 		if (EditorLayer::GetSelectedEntity() != INVALID_ENTITY) {
-			// Get entity's position
-			glm::vec3 position = SceneManager::GetActiveScene()->GetTransformComponent(EditorLayer::GetSelectedEntity())->position;
+			auto* tc = SceneManager::GetActiveScene()->GetTransformComponent(EditorLayer::GetSelectedEntity());
+			if (tc) {
+				// Build orientation matrix matching RenderScene rotation order (X→Y→Z)
+				glm::mat4 orient(1.0f);
+				if (tc->rotation.x != 0.0f)
+					orient = glm::rotate(orient, tc->rotation.x, glm::vec3(1, 0, 0));
+				if (tc->rotation.y != 0.0f)
+					orient = glm::rotate(orient, tc->rotation.y, glm::vec3(0, 1, 0));
+				if (tc->rotation.z != 0.0f)
+					orient = glm::rotate(orient, tc->rotation.z, glm::vec3(0, 0, 1));
 
-			GizmoData gizmo;
-			gizmo.position = position;
-			gizmo.axisLength = 2.5f;
-			s_GizmoPass.Execute(s_ActiveCamera, gizmo);
+				GizmoData gizmo;
+				gizmo.position = tc->position;
+				gizmo.orientation = orient;
+				gizmo.axisLength = 2.5f;
+				gizmo.mode = EditorLayer::GetGizmoMode();
+				s_GizmoPass.Execute(s_ActiveCamera, gizmo);
+			}
 		}
 
 		RenderPickingPass();

@@ -22,6 +22,8 @@ namespace Orion {
 
 	bool ImGuiLayer::s_ViewportHovered = false;
 	bool ImGuiLayer::s_ViewportFocused = false;
+	ImVec2 ImGuiLayer::s_ViewportImageMin = { 0, 0 };
+	ImVec2 ImGuiLayer::s_ViewportImageMax = { 0, 0 };
 
 
 	ImGuiLayer::ImGuiLayer()
@@ -99,13 +101,13 @@ namespace Orion {
 		// TODO: mousePos is being overwritten so this bool will always be false. Get mouse input through event system
 		ImVec2 mousePos = ImGui::GetMousePos();
 		bool mouseInsideViewportImage =
-			mousePos.x >= m_ViewportImageMin.x &&
-			mousePos.x < m_ViewportImageMax.x &&
-			mousePos.y >= m_ViewportImageMin.y &&
-			mousePos.y < m_ViewportImageMax.y;
+			mousePos.x >= s_ViewportImageMin.x &&
+			mousePos.x < s_ViewportImageMax.x &&
+			mousePos.y >= s_ViewportImageMin.y &&
+			mousePos.y < s_ViewportImageMax.y;
 		if (mouseInsideViewportImage) {
-			int localMouseX = static_cast<int>(mousePos.x - m_ViewportImageMin.x);
-			int localMouseY = static_cast<int>(mousePos.y - m_ViewportImageMin.y);
+			int localMouseX = static_cast<int>(mousePos.x - s_ViewportImageMin.x);
+			int localMouseY = static_cast<int>(mousePos.y - s_ViewportImageMin.y);
 			// std::cout << localMouseX << "," << localMouseY << std::endl;
 			s_HoveredEntity = Renderer::PickEntity(localMouseX, localMouseY);
 			// std::cout << "Hovered entity: " << hovered << " at (" << localMouseX << "," << localMouseY << ")\n";
@@ -327,7 +329,7 @@ namespace Orion {
 
 				// Get the size available inside this window for content
 				// Save image rect before drawing.
-				m_ViewportImageMin = ImGui::GetCursorScreenPos();
+				s_ViewportImageMin = ImGui::GetCursorScreenPos();
 				// Show the framebuffer's color texture inside ImGui
 				// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
 				// UVs are flipped vertically because OpenGL texture origin is bottom-left,
@@ -341,9 +343,9 @@ namespace Orion {
 
 				// IMPORTANT for picking
 				// Top-left of where the image will be drawn in screen coordinates
-				m_ViewportImageMax = ImVec2(
-					m_ViewportImageMin.x + viewportSize.x,
-					m_ViewportImageMin.y + viewportSize.y
+				s_ViewportImageMax = ImVec2(
+					s_ViewportImageMin.x + viewportSize.x,
+					s_ViewportImageMin.y + viewportSize.y
 				);
 			}
 

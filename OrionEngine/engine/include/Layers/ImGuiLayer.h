@@ -29,10 +29,13 @@ namespace Orion {
 		static bool GetViewportHovered() { return s_ViewportHovered; }
 		static bool GetViewportFocused() { return s_ViewportFocused; }
 
+		static ImVec2 GetViewportMin() { return s_ViewportImageMin; }
+		static ImVec2 GetViewportMax() { return s_ViewportImageMax; }
+
 	private:
 		float m_Time = 0.0f;
-		ImVec2 m_ViewportImageMin = { 0, 0 };
-		ImVec2 m_ViewportImageMax = { 0, 0 };
+		static ImVec2 s_ViewportImageMin;
+		static ImVec2 s_ViewportImageMax;
 		static EntityID s_HoveredEntity;
 
 		static bool s_ViewportHovered;

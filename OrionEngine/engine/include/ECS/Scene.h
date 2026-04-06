@@ -49,6 +49,12 @@ namespace Orion {
         std::vector<EntityID> children;
     };
 
+    // Points to a Lua script file that defines OnStart() and OnUpdate(dt).
+    // The ScriptEngine (Apollo) loads and runs these during play mode.
+    struct ScriptComponent {
+        std::string scriptPath;  // Relative to assets folder, e.g. "scripts/rotate.lua"
+    };
+
 
 
 
@@ -99,6 +105,11 @@ namespace Orion {
         CameraComponent* GetCameraComponent(EntityID entityID);
         bool HasCameraComponent(EntityID entityID) const;
 
+        // Script
+        void AddScriptComponent(EntityID entityID, const ScriptComponent& component);
+        ScriptComponent* GetScriptComponent(EntityID entityID);
+        bool HasScriptComponent(EntityID entityID) const;
+
         // Relationships (parent-child hierarchy)
         void SetParent(EntityID child, EntityID parent);
         void RemoveParent(EntityID child);
@@ -127,6 +138,7 @@ namespace Orion {
         std::unordered_map<EntityID, MeshComponent> m_MeshComponents;
         std::unordered_map<EntityID, MaterialComponent> m_MaterialComponents;
         std::unordered_map<EntityID, CameraComponent> m_CameraComponents;
+        std::unordered_map<EntityID, ScriptComponent> m_ScriptComponents;
         std::unordered_map<EntityID, RelationshipComponent> m_Relationships;
 
         // Empty children vector returned by GetChildren when entity has no relationships.

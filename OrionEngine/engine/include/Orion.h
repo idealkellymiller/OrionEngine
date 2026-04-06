@@ -17,4 +17,6 @@
 
 #include "Log/Log.h"
 
+#include "Scripting/Apollo.h"
+
 #include "Renderer/Renderer.h"

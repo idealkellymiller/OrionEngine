@@ -1,6 +1,7 @@
 #pragma once
 #include "Layer.h"
 #include "ECS/Scene.h"
+#include "Scripting/Apollo.h"
 
 #include <memory>
 
@@ -42,6 +43,9 @@ namespace Orion {
 		std::shared_ptr<Scene> m_EditorSceneSnapshot = nullptr;  // Frozen copy of the editor scene
 
 		float m_RuntimeTime = 0.0f;
+
+		// Apollo scripting engine — owns the Lua VM for this play session.
+		ScriptEngine m_ScriptEngine;
 	};
 
 }

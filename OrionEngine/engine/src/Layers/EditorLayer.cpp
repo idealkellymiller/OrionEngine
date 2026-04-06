@@ -159,6 +159,13 @@ namespace Orion {
 					}
 					event.Handled = true;
 				}
+				else if (key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) {
+					if (s_SelectedEntity != INVALID_ENTITY) {
+						SceneManager::GetActiveScene()->DestroyEntity(s_SelectedEntity);
+						s_SelectedEntity = INVALID_ENTITY;
+					}
+					event.Handled = true;
+				}
 				else if (key == GLFW_KEY_I) {
 					AddPrimitive("cube");
 					event.Handled = true;

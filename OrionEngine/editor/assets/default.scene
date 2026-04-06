@@ -9,6 +9,9 @@
         "path": "models/cube.obj"
       },
       "name": "Cube",
+      "script": {
+        "path": "scripts/rotate.lua"
+      },
       "transform": {
         "position": [
           -5.124601364135742,

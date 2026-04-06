@@ -66,6 +66,7 @@ namespace Orion {
         m_MeshComponents.erase(entityID);
         m_MaterialComponents.erase(entityID);
         m_CameraComponents.erase(entityID);
+        m_ScriptComponents.erase(entityID);
     }
 
     bool Scene::IsValidEntity(EntityID entityID) const
@@ -86,6 +87,7 @@ namespace Orion {
         m_MeshComponents.clear();
         m_TransformComponents.clear();
         m_CameraComponents.clear();
+        m_ScriptComponents.clear();
         m_Relationships.clear();
     }
 
@@ -99,6 +101,7 @@ namespace Orion {
         newScene->m_MeshComponents = m_MeshComponents;
         newScene->m_MaterialComponents = m_MaterialComponents;
         newScene->m_CameraComponents = m_CameraComponents;
+        newScene->m_ScriptComponents = m_ScriptComponents;
         newScene->m_Relationships = m_Relationships;
         return newScene;
     }
@@ -207,6 +210,27 @@ namespace Orion {
     bool Scene::HasCameraComponent(EntityID entityID) const
     {
         return m_CameraComponents.find(entityID) != m_CameraComponents.end();
+    }
+
+
+    // --- Script ---
+    void Scene::AddScriptComponent(EntityID entityID, const ScriptComponent& component)
+    {
+        m_ScriptComponents[entityID] = component;
+    }
+
+    ScriptComponent* Scene::GetScriptComponent(EntityID entityID)
+    {
+        auto it = m_ScriptComponents.find(entityID);
+        if (it != m_ScriptComponents.end())
+            return &it->second;
+
+        return nullptr;
+    }
+
+    bool Scene::HasScriptComponent(EntityID entityID) const
+    {
+        return m_ScriptComponents.find(entityID) != m_ScriptComponents.end();
     }
 
 

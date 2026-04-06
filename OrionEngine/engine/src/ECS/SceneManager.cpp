@@ -168,9 +168,17 @@ namespace Orion {
 
 				newScene->AddCameraComponent(entity, cam);
 			}
+
+			// --- Script ---
+			if (entityJson.contains("script") && entityJson["script"].contains("path")) {
+				ScriptComponent sc;
+				sc.scriptPath = entityJson["script"]["path"].get<std::string>();
+				newScene->AddScriptComponent(entity, sc);
+			}
 		}
 
 		// --- Second pass: resolve parent-child relationships ---
+		// All entities must exist before we can link them.
 		// (All entities must exist before we can link them.)
 		for (const auto& entityJson : j["entities"]) {
 			if (entityJson.contains("id") && entityJson.contains("parent")) {
@@ -251,6 +259,12 @@ namespace Orion {
 				entityJson["camera"]["near"]     = cam->nearPlane;
 				entityJson["camera"]["far"]      = cam->farPlane;
 				entityJson["camera"]["isActive"] = cam->isActive;
+			}
+
+			// --- Script ---
+			ScriptComponent* sc = s_ActiveScene->GetScriptComponent(entity);
+			if (sc && !sc->scriptPath.empty()) {
+				entityJson["script"]["path"] = sc->scriptPath;
 			}
 
 			j["entities"].push_back(entityJson);

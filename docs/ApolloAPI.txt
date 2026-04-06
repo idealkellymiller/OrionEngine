@@ -1,0 +1,23 @@
+-- Transform (acts on THIS entity)
+Transform.GetPosition()          --> x, y, z
+Transform.SetPosition(x, y, z)
+Transform.GetRotation()          --> rx, ry, rz  (Euler radians)
+Transform.SetRotation(rx, ry, rz)
+Transform.GetScale()             --> sx, sy, sz
+Transform.SetScale(sx, sy, sz)
+
+-- Input (polls GLFW directly)
+Input.IsKeyDown("W")             --> bool
+Input.IsMouseButtonDown(0)       --> bool  (0=left, 1=right, 2=middle)
+Input.GetMousePosition()         --> x, y
+
+-- Entity (cross-entity access)
+Entity.GetID()                   --> this entity's ID
+Entity.GetName()                 --> this entity's name
+Entity.FindByName("Main Camera") --> EntityID or 0
+Entity.GetPosition(entityID)     --> x, y, z
+Entity.SetPosition(id, x, y, z)
+
+-- Time
+Time.deltaTime()                 --> seconds since last frame
+Time.elapsed()                   --> seconds since play started

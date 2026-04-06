@@ -23,6 +23,13 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory("engine/external/glm")
     add_subdirectory(engine/external/json-3.12.0)
 
+    # Lua 5.4 — built as a static C library
+    file(GLOB LUA_SOURCES "engine/external/lua/*.c")
+    add_library(Lua STATIC ${LUA_SOURCES})
+        target_include_directories(Lua PUBLIC "engine/external/lua")
+        # Lua is C, avoid C++ name mangling issues
+        set_target_properties(Lua PROPERTIES LINKER_LANGUAGE C)
+
     # Engine .dll
     add_library(Engine SHARED)
 
@@ -33,8 +40,8 @@ project(OrionEngine LANGUAGES CXX C)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 
         # include all headers from the include directory
-        target_include_directories(Engine 
-        PUBLIC 
+        target_include_directories(Engine
+        PUBLIC
             "engine/include"
             ${CMAKE_CURRENT_SOURCE_DIR}/engine/external
         PRIVATE
@@ -79,6 +86,8 @@ project(OrionEngine LANGUAGES CXX C)
 
             "engine/src/ECS/Scene.cpp"
             "engine/src/ECS/SceneManager.cpp"
+
+            "engine/src/Scripting/ScriptEngine.cpp"
         )
 
         target_compile_definitions(Engine 
@@ -99,6 +108,7 @@ project(OrionEngine LANGUAGES CXX C)
             glfw
             spdlog
             nlohmann_json::nlohmann_json
+            Lua
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)

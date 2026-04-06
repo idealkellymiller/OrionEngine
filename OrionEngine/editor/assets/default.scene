@@ -47,7 +47,8 @@
       },
       "material": {
         "path": "materials/glass.mtrl"
-      }
+      },
+      "parent": 1
     },
     {
       "id": 4,

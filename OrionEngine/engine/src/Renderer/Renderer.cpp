@@ -309,19 +309,26 @@ namespace Orion {
 
 		// Only render gizmo to screen if an object is selected and not in play mode
 		if (EditorLayer::GetSelectedEntity() != INVALID_ENTITY && !EditorLayer::IsPlaying()) {
-			auto* tc = SceneManager::GetActiveScene()->GetTransformComponent(EditorLayer::GetSelectedEntity());
-			if (tc) {
-				// Build orientation matrix matching RenderScene rotation order (X→Y→Z)
+			auto scene = SceneManager::GetActiveScene();
+			EntityID selected = EditorLayer::GetSelectedEntity();
+			if (scene->HasTransformComponent(selected)) {
+				// Use world transform so gizmo aligns with parented objects
+				glm::mat4 worldTransform = scene->GetWorldTransform(selected);
+
+				// Extract world position from column 3
+				glm::vec3 worldPos = glm::vec3(worldTransform[3]);
+
+				// Extract world orientation (strip translation and scale)
 				glm::mat4 orient(1.0f);
-				if (tc->rotation.x != 0.0f)
-					orient = glm::rotate(orient, tc->rotation.x, glm::vec3(1, 0, 0));
-				if (tc->rotation.y != 0.0f)
-					orient = glm::rotate(orient, tc->rotation.y, glm::vec3(0, 1, 0));
-				if (tc->rotation.z != 0.0f)
-					orient = glm::rotate(orient, tc->rotation.z, glm::vec3(0, 0, 1));
+				for (int i = 0; i < 3; i++) {
+					glm::vec3 col = glm::vec3(worldTransform[i]);
+					float len = glm::length(col);
+					if (len > 1e-6f)
+						orient[i] = glm::vec4(col / len, 0.0f);
+				}
 
 				GizmoData gizmo;
-				gizmo.position = tc->position;
+				gizmo.position = worldPos;
 				gizmo.orientation = orient;
 				gizmo.axisLength = 2.5f;
 				gizmo.mode = EditorLayer::GetGizmoMode();

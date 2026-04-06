@@ -1,8 +1,11 @@
 #include "ECS/Scene.h"
 #include <algorithm>
+#include <glm/gtc/matrix_transform.hpp>
 
 
 namespace Orion {
+
+    const std::vector<EntityID> Scene::s_EmptyChildren = {};
 
     Scene::Scene()
     {
@@ -38,6 +41,19 @@ namespace Orion {
         if (!IsValidEntity(entityID))
             return;
 
+        // Detach from parent if any
+        RemoveParent(entityID);
+
+        // Reparent children to root (detach them)
+        auto relIt = m_Relationships.find(entityID);
+        if (relIt != m_Relationships.end()) {
+            // Copy children list since RemoveParent modifies it
+            std::vector<EntityID> children = relIt->second.children;
+            for (EntityID child : children)
+                RemoveParent(child);
+        }
+        m_Relationships.erase(entityID);
+
         // Remove from entity list
         m_Entities.erase(
             std::remove(m_Entities.begin(), m_Entities.end(), entityID),
@@ -70,6 +86,7 @@ namespace Orion {
         m_MeshComponents.clear();
         m_TransformComponents.clear();
         m_CameraComponents.clear();
+        m_Relationships.clear();
     }
 
     std::shared_ptr<Scene> Scene::Copy() const
@@ -82,6 +99,7 @@ namespace Orion {
         newScene->m_MeshComponents = m_MeshComponents;
         newScene->m_MaterialComponents = m_MaterialComponents;
         newScene->m_CameraComponents = m_CameraComponents;
+        newScene->m_Relationships = m_Relationships;
         return newScene;
     }
 
@@ -189,5 +207,126 @@ namespace Orion {
     bool Scene::HasCameraComponent(EntityID entityID) const
     {
         return m_CameraComponents.find(entityID) != m_CameraComponents.end();
+    }
+
+
+    // --- Relationships (parent-child hierarchy) ---
+
+    void Scene::SetParent(EntityID child, EntityID parent)
+    {
+        if (child == INVALID_ENTITY || parent == INVALID_ENTITY || child == parent)
+            return;
+
+        // Prevent circular parenting: walk up from 'parent' to make sure 'child' isn't an ancestor
+        EntityID walk = parent;
+        while (walk != INVALID_ENTITY) {
+            if (walk == child)
+                return; // Would create a cycle
+            auto it = m_Relationships.find(walk);
+            walk = (it != m_Relationships.end()) ? it->second.parent : INVALID_ENTITY;
+        }
+
+        // Detach from current parent first
+        RemoveParent(child);
+
+        // Set new parent
+        m_Relationships[child].parent = parent;
+        m_Relationships[parent].children.push_back(child);
+    }
+
+    void Scene::RemoveParent(EntityID child)
+    {
+        auto childIt = m_Relationships.find(child);
+        if (childIt == m_Relationships.end() || childIt->second.parent == INVALID_ENTITY)
+            return;
+
+        EntityID oldParent = childIt->second.parent;
+        childIt->second.parent = INVALID_ENTITY;
+
+        // Remove from old parent's children list
+        auto parentIt = m_Relationships.find(oldParent);
+        if (parentIt != m_Relationships.end()) {
+            auto& siblings = parentIt->second.children;
+            siblings.erase(
+                std::remove(siblings.begin(), siblings.end(), child),
+                siblings.end()
+            );
+        }
+    }
+
+    EntityID Scene::GetParent(EntityID entityID) const
+    {
+        auto it = m_Relationships.find(entityID);
+        if (it != m_Relationships.end())
+            return it->second.parent;
+        return INVALID_ENTITY;
+    }
+
+    const std::vector<EntityID>& Scene::GetChildren(EntityID entityID) const
+    {
+        auto it = m_Relationships.find(entityID);
+        if (it != m_Relationships.end())
+            return it->second.children;
+        return s_EmptyChildren;
+    }
+
+    bool Scene::HasChildren(EntityID entityID) const
+    {
+        auto it = m_Relationships.find(entityID);
+        return it != m_Relationships.end() && !it->second.children.empty();
+    }
+
+    bool Scene::HasParent(EntityID entityID) const
+    {
+        auto it = m_Relationships.find(entityID);
+        return it != m_Relationships.end() && it->second.parent != INVALID_ENTITY;
+    }
+
+    std::vector<EntityID> Scene::GetRootEntities() const
+    {
+        std::vector<EntityID> roots;
+        for (EntityID entity : m_Entities) {
+            if (!HasParent(entity))
+                roots.push_back(entity);
+        }
+        return roots;
+    }
+
+
+    // --- World transform ---
+
+    glm::mat4 Scene::BuildLocalTransform(const TransformComponent& tc)
+    {
+        glm::mat4 transform(1.0f);
+        transform = glm::translate(transform, tc.position);
+        if (tc.rotation.x != 0.0f)
+            transform = glm::rotate(transform, tc.rotation.x, glm::vec3(1, 0, 0));
+        if (tc.rotation.y != 0.0f)
+            transform = glm::rotate(transform, tc.rotation.y, glm::vec3(0, 1, 0));
+        if (tc.rotation.z != 0.0f)
+            transform = glm::rotate(transform, tc.rotation.z, glm::vec3(0, 0, 1));
+        transform = glm::scale(transform, tc.scale);
+        return transform;
+    }
+
+    glm::mat4 Scene::GetWorldTransform(EntityID entityID) const
+    {
+        // Walk up the parent chain, collecting local transforms on a stack,
+        // then multiply top-down: root * ... * parent * child.
+        std::vector<EntityID> chain;
+        EntityID current = entityID;
+        while (current != INVALID_ENTITY) {
+            chain.push_back(current);
+            current = GetParent(current);
+        }
+
+        glm::mat4 world(1.0f);
+        // Multiply from root (back of chain) down to the entity (front)
+        for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+            auto tcIt = m_TransformComponents.find(*it);
+            if (tcIt != m_TransformComponents.end())
+                world = world * BuildLocalTransform(tcIt->second);
+        }
+        return world;
     }
 }

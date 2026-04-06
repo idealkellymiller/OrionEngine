@@ -56,6 +56,23 @@ namespace Orion {
             return (it != m_MaterialPathToID.end()) ? it->second : INVALID_ASSET_ID;
         }
 
+        // Reverse lookup: AssetID → file path (for serialization)
+        static std::string GetMeshPath(AssetID id) {
+            for (auto& [path, aid] : m_MeshPathToID)
+                if (aid == id) return path;
+            return "";
+        }
+        static std::string GetMaterialPath(AssetID id) {
+            for (auto& [path, aid] : m_MaterialPathToID)
+                if (aid == id) return path;
+            return "";
+        }
+        static std::string GetTexturePath(AssetID id) {
+            for (auto& [path, aid] : m_TexturePathToID)
+                if (aid == id) return path;
+            return "";
+        }
+
         static void SetAssetsFolderPath(std::string filePath) { m_AssetsFolderPath = filePath; }
         static std::string GetAssetsFolderPath() { return m_AssetsFolderPath; }
 

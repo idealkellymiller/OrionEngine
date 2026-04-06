@@ -38,23 +38,11 @@ namespace Orion {
             }
 
             // Get the components
-            TransformComponent* transformComp = scene->GetTransformComponent(entity);
             MeshComponent* meshComp = scene->GetMeshComponent(entity);
             MaterialComponent* materialComp = scene->GetMaterialComponent(entity);
 
-            // Get the transform data
-            glm::mat4 transform = glm::mat4(1.0f);
-            // translate
-            transform = glm::translate(transform, transformComp->position);
-            // rotation
-            if (transformComp->rotation.x != 0.0f)
-                transform = glm::rotate(transform, transformComp->rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-            if (transformComp->rotation.y != 0.0f)
-                transform = glm::rotate(transform, transformComp->rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-            if (transformComp->rotation.z != 0.0f)
-                transform = glm::rotate(transform, transformComp->rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-            // scale
-            transform = glm::scale(transform, transformComp->scale);
+            // Compute world transform (walks up parent chain if parented)
+            glm::mat4 transform = scene->GetWorldTransform(entity);
 
             // Get the Mesh reference
             AssetID meshID = meshComp->mesh;

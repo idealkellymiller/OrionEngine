@@ -16,16 +16,16 @@
 
 namespace Orion {
 
-	// Build orientation matrix matching RenderScene rotation order (X→Y→Z)
-	static glm::mat4 BuildOrientationMatrix(const TransformComponent& tc)
+	// Extract the rotation part of a world transform (strips translation and scale).
+	static glm::mat4 ExtractOrientation(const glm::mat4& worldTransform)
 	{
 		glm::mat4 orient(1.0f);
-		if (tc.rotation.x != 0.0f)
-			orient = glm::rotate(orient, tc.rotation.x, glm::vec3(1, 0, 0));
-		if (tc.rotation.y != 0.0f)
-			orient = glm::rotate(orient, tc.rotation.y, glm::vec3(0, 1, 0));
-		if (tc.rotation.z != 0.0f)
-			orient = glm::rotate(orient, tc.rotation.z, glm::vec3(0, 0, 1));
+		for (int i = 0; i < 3; i++) {
+			glm::vec3 col = glm::vec3(worldTransform[i]);
+			float len = glm::length(col);
+			if (len > 1e-6f)
+				orient[i] = glm::vec4(col / len, 0.0f);
+		}
 		return orient;
 	}
 
@@ -228,13 +228,15 @@ namespace Orion {
 		float vpWidth = vpMax.x - vpMin.x;
 		float vpHeight = vpMax.y - vpMin.y;
 
-		// Build gizmo data matching what the Renderer uses
-		auto* tc = SceneManager::GetActiveScene()->GetTransformComponent(s_SelectedEntity);
-		if (!tc) return false;
+		// Build gizmo data matching what the Renderer uses (world space)
+		auto scene = SceneManager::GetActiveScene();
+		if (!scene->HasTransformComponent(s_SelectedEntity)) return false;
+
+		glm::mat4 worldTransform = scene->GetWorldTransform(s_SelectedEntity);
 
 		GizmoData gizmo;
-		gizmo.position = tc->position;
-		gizmo.orientation = BuildOrientationMatrix(*tc);
+		gizmo.position = glm::vec3(worldTransform[3]);
+		gizmo.orientation = ExtractOrientation(worldTransform);
 		gizmo.axisLength = 2.5f;
 		gizmo.mode = s_GizmoMode;
 
@@ -278,15 +280,18 @@ namespace Orion {
 		m_LastDragMouseX = screenMouseX;
 		m_LastDragMouseY = screenMouseY;
 
-		// Build gizmo data with orientation for axis directions
+		// Use world transform for gizmo position and orientation
+		glm::mat4 worldTransform = scene->GetWorldTransform(s_SelectedEntity);
+		glm::vec3 worldPos = glm::vec3(worldTransform[3]);
+		glm::mat4 worldOrient = ExtractOrientation(worldTransform);
+
 		GizmoData gizmo;
-		gizmo.position = tc->position;
-		gizmo.orientation = BuildOrientationMatrix(*tc);
+		gizmo.position = worldPos;
+		gizmo.orientation = worldOrient;
 
 		if (s_GizmoMode == GizmoMode::Rotate)
 		{
 			// --- Rotation via ray-plane intersection ---
-			// The rotation plane has its normal = the oriented axis being rotated around.
 			glm::vec3 planeNormal = gizmo.GetAxisDir(m_DragAxis);
 
 			// Convert screen coords to viewport-local
@@ -302,15 +307,15 @@ namespace Orion {
 
 			// Intersect both rays with the rotation plane
 			float tPrev, tCur;
-			bool hitPrev = GizmoInteraction::RayPlaneIntersect(prevOrigin, prevDir, tc->position, planeNormal, tPrev);
-			bool hitCur = GizmoInteraction::RayPlaneIntersect(curOrigin, curDir, tc->position, planeNormal, tCur);
+			bool hitPrev = GizmoInteraction::RayPlaneIntersect(prevOrigin, prevDir, worldPos, planeNormal, tPrev);
+			bool hitCur = GizmoInteraction::RayPlaneIntersect(curOrigin, curDir, worldPos, planeNormal, tCur);
 
 			if (!hitPrev || !hitCur)
 				return;
 
 			// Get intersection points in the plane, relative to gizmo center
-			glm::vec3 prevHit = prevOrigin + prevDir * tPrev - tc->position;
-			glm::vec3 curHit = curOrigin + curDir * tCur - tc->position;
+			glm::vec3 prevHit = prevOrigin + prevDir * tPrev - worldPos;
+			glm::vec3 curHit = curOrigin + curDir * tCur - worldPos;
 
 			float prevLen = glm::length(prevHit);
 			float curLen = glm::length(curHit);
@@ -326,19 +331,20 @@ namespace Orion {
 			float sign = glm::dot(planeNormal, glm::cross(prevHit, curHit));
 			if (sign < 0.0f) angleDelta = -angleDelta;
 
+			// Rotation is always applied to the local Euler angles
 			if (m_DragAxis == GizmoAxis::X)      tc->rotation.x += angleDelta;
 			else if (m_DragAxis == GizmoAxis::Y)  tc->rotation.y += angleDelta;
 			else if (m_DragAxis == GizmoAxis::Z)  tc->rotation.z += angleDelta;
 		}
 		else
 		{
-			// --- Translate / Scale: project mouse delta onto the screen-space oriented axis ---
+			// --- Translate / Scale: project mouse delta onto screen-space world axis ---
 			glm::vec3 axisDir = gizmo.GetAxisDir(m_DragAxis);
 
 			glm::vec2 originScreen = GizmoInteraction::WorldToViewport(
-				tc->position, camera, vpWidth, vpHeight);
+				worldPos, camera, vpWidth, vpHeight);
 			glm::vec2 axisTipScreen = GizmoInteraction::WorldToViewport(
-				tc->position + axisDir, camera, vpWidth, vpHeight);
+				worldPos + axisDir, camera, vpWidth, vpHeight);
 
 			glm::vec2 screenAxis = axisTipScreen - originScreen;
 			float screenAxisLenSq = glm::dot(screenAxis, screenAxis);
@@ -351,7 +357,18 @@ namespace Orion {
 
 			if (s_GizmoMode == GizmoMode::Translate)
 			{
-				tc->position += axisDir * projectedPx;
+				// The world-space axis direction needs to be converted to the
+				// parent's local space before adding to tc->position.
+				EntityID parentID = scene->GetParent(s_SelectedEntity);
+				if (parentID != INVALID_ENTITY) {
+					glm::mat4 parentWorld = scene->GetWorldTransform(parentID);
+					glm::mat4 invParent = glm::inverse(parentWorld);
+					// Transform the world-space movement vector into parent-local space
+					glm::vec3 localDelta = glm::vec3(invParent * glm::vec4(axisDir * projectedPx, 0.0f));
+					tc->position += localDelta;
+				} else {
+					tc->position += axisDir * projectedPx;
+				}
 			}
 			else // Scale
 			{

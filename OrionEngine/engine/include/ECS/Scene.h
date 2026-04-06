@@ -44,6 +44,11 @@ namespace Orion {
         bool isActive = true;   // If multiple cameras exist, only the active one is used
     };
 
+    struct RelationshipComponent {
+        EntityID parent = INVALID_ENTITY;
+        std::vector<EntityID> children;
+    };
+
 
 
 
@@ -94,7 +99,25 @@ namespace Orion {
         CameraComponent* GetCameraComponent(EntityID entityID);
         bool HasCameraComponent(EntityID entityID) const;
 
+        // Relationships (parent-child hierarchy)
+        void SetParent(EntityID child, EntityID parent);
+        void RemoveParent(EntityID child);
+        EntityID GetParent(EntityID entityID) const;
+        const std::vector<EntityID>& GetChildren(EntityID entityID) const;
+        bool HasChildren(EntityID entityID) const;
+        bool HasParent(EntityID entityID) const;
+
+        // Returns the list of root entities (entities with no parent), in order.
+        std::vector<EntityID> GetRootEntities() const;
+
+        // Compute world transform by walking up the parent chain.
+        // Returns parentWorldTransform * localTransform.
+        glm::mat4 GetWorldTransform(EntityID entityID) const;
+
     private:
+        // Helper: build a local transform matrix from a TransformComponent.
+        static glm::mat4 BuildLocalTransform(const TransformComponent& tc);
+
         EntityID m_NextEntityID = 1;
 
         std::vector<EntityID> m_Entities;
@@ -104,6 +127,10 @@ namespace Orion {
         std::unordered_map<EntityID, MeshComponent> m_MeshComponents;
         std::unordered_map<EntityID, MaterialComponent> m_MaterialComponents;
         std::unordered_map<EntityID, CameraComponent> m_CameraComponents;
+        std::unordered_map<EntityID, RelationshipComponent> m_Relationships;
+
+        // Empty children vector returned by GetChildren when entity has no relationships.
+        static const std::vector<EntityID> s_EmptyChildren;
     };
 
 }

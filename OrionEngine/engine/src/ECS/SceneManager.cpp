@@ -169,8 +169,99 @@ namespace Orion {
 			}
 		}
 
+		// --- Second pass: resolve parent-child relationships ---
+		// (All entities must exist before we can link them.)
+		for (const auto& entityJson : j["entities"]) {
+			if (entityJson.contains("id") && entityJson.contains("parent")) {
+				EntityID child = entityJson["id"].get<EntityID>();
+				EntityID parent = entityJson["parent"].get<EntityID>();
+				if (newScene->IsValidEntity(child) && newScene->IsValidEntity(parent))
+					newScene->SetParent(child, parent);
+			}
+		}
+
 		s_ActiveScene = newScene;
 		std::cout << "Successfully loaded scene: " << filePath << "\n";
+		return true;
+	}
+
+	bool SceneManager::SaveScene(const std::string& filePath)
+	{
+		if (!s_ActiveScene) {
+			std::cout << "No active scene to save.\n";
+			return false;
+		}
+
+		json j;
+		j["scene"]["name"] = "Saved Scene";
+		j["scene"]["version"] = 1;
+		j["entities"] = json::array();
+
+		std::string assetsPath = AssetManager::GetAssetsFolderPath();
+
+		for (EntityID entity : s_ActiveScene->GetEntities()) {
+			json entityJson;
+			entityJson["id"] = entity;
+
+			// --- Entity Data ---
+			EntityDataComponent* edc = s_ActiveScene->GetEntityDataComponent(entity);
+			if (edc)
+				entityJson["name"] = edc->name;
+
+			// --- Parent ---
+			EntityID parent = s_ActiveScene->GetParent(entity);
+			if (parent != INVALID_ENTITY)
+				entityJson["parent"] = parent;
+
+			// --- Transform ---
+			TransformComponent* tc = s_ActiveScene->GetTransformComponent(entity);
+			if (tc) {
+				entityJson["transform"]["position"] = { tc->position.x, tc->position.y, tc->position.z };
+				entityJson["transform"]["rotation"] = { tc->rotation.x, tc->rotation.y, tc->rotation.z };
+				entityJson["transform"]["scale"]    = { tc->scale.x, tc->scale.y, tc->scale.z };
+			}
+
+			// --- Mesh ---
+			MeshComponent* mc = s_ActiveScene->GetMeshComponent(entity);
+			if (mc && mc->mesh != INVALID_ASSET_ID) {
+				std::string meshPath = AssetManager::GetMeshPath(mc->mesh);
+				// Convert to relative path and forward slashes for JSON
+				if (meshPath.find(assetsPath) == 0)
+					meshPath = meshPath.substr(assetsPath.size());
+				std::replace(meshPath.begin(), meshPath.end(), '\\', '/');
+				entityJson["mesh"]["path"] = meshPath;
+			}
+
+			// --- Material ---
+			MaterialComponent* matc = s_ActiveScene->GetMaterialComponent(entity);
+			if (matc && matc->material != INVALID_ASSET_ID) {
+				std::string matPath = AssetManager::GetMaterialPath(matc->material);
+				if (matPath.find(assetsPath) == 0)
+					matPath = matPath.substr(assetsPath.size());
+				std::replace(matPath.begin(), matPath.end(), '\\', '/');
+				entityJson["material"]["path"] = matPath;
+			}
+
+			// --- Camera ---
+			CameraComponent* cam = s_ActiveScene->GetCameraComponent(entity);
+			if (cam) {
+				entityJson["camera"]["fov"]      = cam->fovDegrees;
+				entityJson["camera"]["near"]     = cam->nearPlane;
+				entityJson["camera"]["far"]      = cam->farPlane;
+				entityJson["camera"]["isActive"] = cam->isActive;
+			}
+
+			j["entities"].push_back(entityJson);
+		}
+
+		std::ofstream file(filePath);
+		if (!file.is_open()) {
+			std::cout << "Failed to open file for saving: " << filePath << "\n";
+			return false;
+		}
+
+		file << j.dump(2);
+		std::cout << "Successfully saved scene: " << filePath << "\n";
 		return true;
 	}
 }

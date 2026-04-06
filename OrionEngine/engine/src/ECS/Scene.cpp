@@ -70,6 +70,18 @@ namespace Orion {
         m_TransformComponents.clear();
     }
 
+    std::shared_ptr<Scene> Scene::Copy() const
+    {
+        auto newScene = std::make_shared<Scene>();
+        newScene->m_NextEntityID = m_NextEntityID;
+        newScene->m_Entities = m_Entities;
+        newScene->m_EntityDataComponents = m_EntityDataComponents;
+        newScene->m_TransformComponents = m_TransformComponents;
+        newScene->m_MeshComponents = m_MeshComponents;
+        newScene->m_MaterialComponents = m_MaterialComponents;
+        return newScene;
+    }
+
 
 
     // --- Entity Data ---

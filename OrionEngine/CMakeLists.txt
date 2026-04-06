@@ -53,6 +53,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Layers/LayerStack.cpp"
             "engine/src/Layers/ImGuiLayer.cpp"
             "engine/src/Layers/EditorLayer.cpp"
+            "engine/src/Layers/RuntimeLayer.cpp"
 
             "engine/src/Log/Log.cpp"
 

@@ -32,6 +32,7 @@ namespace Orion {
 	// Initialize static members
 	EntityID EditorLayer::s_SelectedEntity = INVALID_ENTITY;
 	GizmoMode EditorLayer::s_GizmoMode = GizmoMode::Translate;
+	PlayState EditorLayer::s_PlayState = PlayState::Stopped;
 	EditorCamera EditorLayer::s_EditorCamera;
 
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
@@ -101,8 +102,8 @@ namespace Orion {
 		dispatcher.Dispatch<MouseBtnPressedEvent>([this](MouseBtnPressedEvent& e) -> bool {
 			s_EditorCamera.OnMouseButtonPressed(e.GetMouseBtn());
 
-			// Left-click: try gizmo grab first, then entity selection
-			if (e.GetMouseBtn() == GLFW_MOUSE_BUTTON_LEFT) {
+			// Left-click: try gizmo grab first, then entity selection (editor only)
+			if (e.GetMouseBtn() == GLFW_MOUSE_BUTTON_LEFT && s_PlayState == PlayState::Stopped) {
 				ImVec2 mousePos = ImGui::GetMousePos();
 				if (!TryBeginGizmoDrag(mousePos.x, mousePos.y)) {
 					// No gizmo hit — select entity
@@ -131,23 +132,74 @@ namespace Orion {
 			KeyPressedEvent& keyEvent = static_cast<KeyPressedEvent&>(event);
 			int key = keyEvent.GetKeyCode();
 
-			if (key == GLFW_KEY_I) {
-				AddPrimitive("cube");
+			// P toggles play mode — always available
+			if (key == GLFW_KEY_P) {
+				if (s_PlayState == PlayState::Stopped)
+					EnterPlayMode();
+				else
+					ExitPlayMode();
 				event.Handled = true;
 			}
-			else if (key == GLFW_KEY_1) {
-				s_GizmoMode = GizmoMode::Translate;
-				event.Handled = true;
-			}
-			else if (key == GLFW_KEY_2) {
-				s_GizmoMode = GizmoMode::Rotate;
-				event.Handled = true;
-			}
-			else if (key == GLFW_KEY_3) {
-				s_GizmoMode = GizmoMode::Scale;
-				event.Handled = true;
+			// Editor-only keybinds (disabled during play mode)
+			else if (s_PlayState == PlayState::Stopped) {
+				if (key == GLFW_KEY_I) {
+					AddPrimitive("cube");
+					event.Handled = true;
+				}
+				else if (key == GLFW_KEY_1) {
+					s_GizmoMode = GizmoMode::Translate;
+					event.Handled = true;
+				}
+				else if (key == GLFW_KEY_2) {
+					s_GizmoMode = GizmoMode::Rotate;
+					event.Handled = true;
+				}
+				else if (key == GLFW_KEY_3) {
+					s_GizmoMode = GizmoMode::Scale;
+					event.Handled = true;
+				}
 			}
 		}
+	}
+
+
+	// --- Play mode ---
+
+	void EditorLayer::EnterPlayMode()
+	{
+		if (s_PlayState == PlayState::Playing)
+			return;
+
+		auto editorScene = SceneManager::GetActiveScene();
+		if (!editorScene) return;
+
+		// Create and push the runtime layer
+		m_RuntimeLayer = new RuntimeLayer();
+		Application::Get().PushLayer(m_RuntimeLayer);
+		m_RuntimeLayer->BeginPlay(editorScene);
+
+		s_PlayState = PlayState::Playing;
+		s_SelectedEntity = INVALID_ENTITY; // Deselect during play
+
+		std::cout << "[EditorLayer] Entered play mode (F5 to stop).\n";
+	}
+
+	void EditorLayer::ExitPlayMode()
+	{
+		if (s_PlayState == PlayState::Stopped || !m_RuntimeLayer)
+			return;
+
+		// Stop play and restore the editor scene
+		m_RuntimeLayer->EndPlay();
+
+		// Remove runtime layer from the stack (calls OnDetach) and free it
+		Application::Get().PopLayer(m_RuntimeLayer);
+		delete m_RuntimeLayer;
+		m_RuntimeLayer = nullptr;
+
+		s_PlayState = PlayState::Stopped;
+
+		std::cout << "[EditorLayer] Exited play mode. Scene restored.\n";
 	}
 
 

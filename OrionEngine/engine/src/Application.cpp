@@ -37,6 +37,16 @@ namespace Orion {
 		layer->OnAttach();
 	}
 
+	void Application::PopLayer(Layer* layer)
+	{
+		m_LayerStack.PopLayer(layer);
+	}
+
+	void Application::PopOverlay(Layer* layer)
+	{
+		m_LayerStack.PopOverlay(layer);
+	}
+
 	// after receiving an event, dispatch to the layers of the app
 	void Application::OnEvent(Event& e)
 	{

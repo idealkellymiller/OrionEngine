@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 #include <glm/glm.hpp>
 
 #include "Assets/AssetTypes.h"
@@ -36,6 +37,13 @@ namespace Orion {
         AssetID material = INVALID_ASSET_ID;
     };
 
+    struct CameraComponent {
+        float fovDegrees = 60.0f;
+        float nearPlane = 0.1f;
+        float farPlane = 100.0f;
+        bool isActive = true;   // If multiple cameras exist, only the active one is used
+    };
+
 
 
 
@@ -57,6 +65,9 @@ namespace Orion {
         const EntityID GetNextEntityID() { return m_NextEntityID; }
 
         void Clear();
+
+        // Deep-copy this scene into a new Scene (for play-mode snapshot/restore)
+        std::shared_ptr<Scene> Copy() const;
 
         // Entity data
         void AddEntityDataComponent(EntityID entityID, const EntityDataComponent& component);

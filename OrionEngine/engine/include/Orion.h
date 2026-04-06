@@ -13,6 +13,7 @@
 #include "Layers/Layer.h"
 #include "Layers/ImGuiLayer.h"
 #include "Layers/EditorLayer.h"
+#include "Layers/RuntimeLayer.h"
 
 #include "Log/Log.h"
 

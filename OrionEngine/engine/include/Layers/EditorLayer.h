@@ -1,5 +1,6 @@
 #pragma once
 #include "Layer.h"
+#include "Layers/RuntimeLayer.h"
 
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
@@ -18,15 +19,21 @@ namespace Orion {
 	public:
 		EditorLayer();
 		~EditorLayer();
-		void OnAttach();
-		void OnDetach();
-		void OnUpdate();
-		void OnEvent(Event& event);
+		void OnAttach() override;
+		void OnDetach() override;
+		void OnUpdate() override;
+		void OnEvent(Event& event) override;
 
 		static EntityID GetSelectedEntity() { return s_SelectedEntity; }
 		static GizmoMode GetGizmoMode() { return s_GizmoMode; }
+		static PlayState GetPlayState() { return s_PlayState; }
+		static bool IsPlaying() { return s_PlayState == PlayState::Playing; }
 
 		void AddPrimitive(std::string primitiveFileName);
+
+		// Play mode
+		void EnterPlayMode();
+		void ExitPlayMode();
 
 	private:
 		// Attempt to start a gizmo drag. Returns true if an axis was grabbed.
@@ -37,8 +44,12 @@ namespace Orion {
 	private:
 		static EntityID s_SelectedEntity;
 		static GizmoMode s_GizmoMode;
+		static PlayState s_PlayState;
 
 		static EditorCamera s_EditorCamera;
+
+		// Runtime layer (owned by LayerStack, we just keep a reference)
+		RuntimeLayer* m_RuntimeLayer = nullptr;
 
 		// Gizmo drag state
 		bool m_DraggingGizmo = false;

@@ -297,8 +297,8 @@ namespace Orion {
 			s_LightSpaceMatrix
 		);
 
-		// Only render gizmo to screen if an obejct is selected (not 0)
-		if (EditorLayer::GetSelectedEntity() != INVALID_ENTITY) {
+		// Only render gizmo to screen if an object is selected and not in play mode
+		if (EditorLayer::GetSelectedEntity() != INVALID_ENTITY && !EditorLayer::IsPlaying()) {
 			auto* tc = SceneManager::GetActiveScene()->GetTransformComponent(EditorLayer::GetSelectedEntity());
 			if (tc) {
 				// Build orientation matrix matching RenderScene rotation order (X→Y→Z)

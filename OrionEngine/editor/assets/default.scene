@@ -113,7 +113,7 @@
       }
     },
     {
-      "id": 5,
+      "id": 7,
       "material": {
         "path": "materials/default.mtrl"
       },
@@ -123,9 +123,9 @@
       "name": "New Entity",
       "transform": {
         "position": [
-          5.51416540145874,
+          5.323555946350098,
           0.0,
-          0.0
+          5.691965579986572
         ],
         "rotation": [
           0.0,

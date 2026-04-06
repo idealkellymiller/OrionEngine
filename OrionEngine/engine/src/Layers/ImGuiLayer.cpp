@@ -1,7 +1,9 @@
 #include "EngineCore.h"
 #include "Layers/ImGuiLayer.h"
+#include "Layers/EditorLayer.h"
 #include "Application.h"
 #include "Renderer/Renderer.h"
+#include "ECS/SceneManager.h"
 
 #include "imgui.h"
 // #include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
@@ -354,70 +356,161 @@ namespace Orion {
 		}
 	}
 
-	//testing 
-	std::vector<HierarchyNode> hierarchy =
-	{
-		{"Scene",
-			{
-				{"Camera"},
-				{"Player",
-					{
-						{"Weapon"},
-						{"Mesh"}
-					}
-				},
-				{"Light"}
-			}
-		}
-	};
+	// ================================================================
+	// Hierarchy Panel — shows all entities as a tree using ECS data
+	// ================================================================
 
-	//Hierarchy
 	void ImGuiLayer::ShowHierarchyModule()
 	{
-		if (showHierarchyModule)
-		{
-			if (ImGui::Begin("Hierarchy", &showHierarchyModule))
-			{
-				//TODO: myca
-				if (ImGui::BeginTable("HierarchyTable", 1))
-				{
-					for (auto& node : hierarchy)
-					{
-						DrawHierarchyNode(node);
-					}
+		if (!showHierarchyModule)
+			return;
 
-					ImGui::EndTable();
+		if (ImGui::Begin("Hierarchy", &showHierarchyModule))
+		{
+			auto scene = SceneManager::GetActiveScene();
+			if (scene)
+			{
+				// Only draw root entities (those with no parent).
+				// Children are drawn recursively inside DrawEntityNode.
+				std::vector<EntityID> roots = scene->GetRootEntities();
+				for (EntityID root : roots)
+				{
+					DrawEntityNode(root, *scene);
 				}
 
-				if (ImGui::Button("Add primitive to scene")) {
-					// temporary
-					AddPrimitive();
+				// Right-click on empty space = context menu for the whole panel
+				if (ImGui::BeginPopupContextWindow("HierarchyContextMenu",
+					ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+					if (ImGui::MenuItem("Create Empty Entity")) {
+						EntityID newEntity = scene->CreateEntity();
+						scene->AddEntityDataComponent(newEntity, EntityDataComponent{});
+						scene->AddTransformComponent(newEntity, TransformComponent{});
+						EditorLayer::SetSelectedEntity(newEntity);
+					}
+					ImGui::EndPopup();
+				}
+
+				// Drop on empty space = unparent (make root)
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+					{
+						EntityID droppedEntity = *(const EntityID*)payload->Data;
+						scene->RemoveParent(droppedEntity);
+					}
+					ImGui::EndDragDropTarget();
 				}
 			}
-			ImGui::End();
 		}
+		ImGui::End();
 	}
 
-	void ImGuiLayer::DrawHierarchyNode(HierarchyNode& node)
+	void ImGuiLayer::DrawEntityNode(EntityID entity, Scene& scene)
 	{
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
+		// Get the entity's display name.
+		EntityDataComponent* edc = scene.GetEntityDataComponent(entity);
+		std::string name = edc ? edc->name : ("Entity " + std::to_string(entity));
 
-		bool open = ImGui::TreeNode(node.name.c_str());
+		// Is this entity currently selected?
+		bool isSelected = (entity == EditorLayer::GetSelectedEntity());
 
-		if (open)
+		// Does this entity have children?
+		bool hasChildren = scene.HasChildren(entity);
+
+		// Build tree node flags:
+		//   - OpenOnArrow: only expand when clicking the arrow, not the label
+		//   - SpanAvailWidth: the node spans the full width (easier to click)
+		//   - Selected: highlight if this is the selected entity
+		//   - Leaf: no arrow if no children
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow
+		                         | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+		if (isSelected)
+			flags |= ImGuiTreeNodeFlags_Selected;
+
+		if (!hasChildren)
+			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		// Use the entity ID as the ImGui ID to keep nodes unique.
+		bool nodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, "%s", name.c_str());
+
+		// --- Click to select ---
+		if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 		{
-			for (auto& child : node.children)
+			EditorLayer::SetSelectedEntity(entity);
+		}
+
+		// --- Drag source: start dragging this entity ---
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+		{
+			ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &entity, sizeof(EntityID));
+			ImGui::Text("%s", name.c_str());
+			ImGui::EndDragDropSource();
+		}
+
+		// --- Drop target: reparent the dragged entity under this one ---
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
 			{
-				DrawHierarchyNode(child);
+				EntityID droppedEntity = *(const EntityID*)payload->Data;
+				// Don't parent an entity to itself.
+				if (droppedEntity != entity)
+				{
+					scene.SetParent(droppedEntity, entity);
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		// --- Right-click context menu on this entity ---
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Create Child Entity"))
+			{
+				EntityID child = scene.CreateEntity();
+				scene.AddEntityDataComponent(child, EntityDataComponent{});
+				scene.AddTransformComponent(child, TransformComponent{});
+				scene.SetParent(child, entity);
+				EditorLayer::SetSelectedEntity(child);
 			}
 
+			if (ImGui::MenuItem("Delete Entity"))
+			{
+				// If this was selected, clear selection.
+				if (EditorLayer::GetSelectedEntity() == entity)
+					EditorLayer::SetSelectedEntity(INVALID_ENTITY);
+
+				scene.DestroyEntity(entity);
+
+				ImGui::EndPopup();
+				// Node was destroyed — don't draw children.
+				if (nodeOpen && hasChildren)
+					ImGui::TreePop();
+				return;
+			}
+
+			if (scene.HasParent(entity))
+			{
+				if (ImGui::MenuItem("Unparent"))
+				{
+					scene.RemoveParent(entity);
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		// --- Recursively draw children if the node is open ---
+		if (nodeOpen && hasChildren)
+		{
+			const auto& children = scene.GetChildren(entity);
+			for (EntityID child : children)
+			{
+				DrawEntityNode(child, scene);
+			}
 			ImGui::TreePop();
 		}
-	}
-
-	void ImGuiLayer::AddPrimitive() {
-
 	}
 
 	////holds the files

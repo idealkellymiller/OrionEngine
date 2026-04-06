@@ -25,6 +25,7 @@ namespace Orion {
 		void OnEvent(Event& event) override;
 
 		static EntityID GetSelectedEntity() { return s_SelectedEntity; }
+		static void SetSelectedEntity(EntityID entity) { s_SelectedEntity = entity; }
 		static GizmoMode GetGizmoMode() { return s_GizmoMode; }
 		static PlayState GetPlayState() { return s_PlayState; }
 		static bool IsPlaying() { return s_PlayState == PlayState::Playing; }

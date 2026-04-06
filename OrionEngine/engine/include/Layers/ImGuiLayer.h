@@ -8,11 +8,6 @@
 #include "ECS/Scene.h"
 
 namespace Orion {
-	struct HierarchyNode
-	{
-		std::string name;
-		std::vector<HierarchyNode> children;
-	};
 
 	class ORION_API ImGuiLayer : public Layer {
 
@@ -47,8 +42,8 @@ namespace Orion {
 		void ShowMeshColliderComponent();
 		void ShowInspectorModule();
 		void ShowViewportModule();
-		void DrawHierarchyNode(HierarchyNode& node);
 		void ShowHierarchyModule();
+		void DrawEntityNode(EntityID entity, Scene& scene);
 		void DrawDirectoryTree();
 		void DrawDirectorySearch();
 		void DrawDirectory();
@@ -58,8 +53,8 @@ namespace Orion {
 		void ShowConsoleModule();
 		void ShowControlsModule();
 
-		// temporary
-		void AddPrimitive();
+		// Drag-and-drop reparenting state
+		EntityID m_DragSourceEntity = INVALID_ENTITY;
 
 	};
 }

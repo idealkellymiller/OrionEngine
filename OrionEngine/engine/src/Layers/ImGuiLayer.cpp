@@ -5,6 +5,7 @@
 #include "Renderer/Renderer.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
+#include "Core/ProjectSettings.h"
 
 #include "imgui.h"
 // #include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
@@ -95,6 +96,7 @@ namespace Orion {
 		ShowHierarchyModule();
 		ShowConsoleModule();
 		ShowControlsModule();
+		ShowProjectSettingsWindow();
 
 		// Tell ImGui to finalize all UI draw data
 		ImGui::Render();
@@ -212,6 +214,7 @@ namespace Orion {
 	static bool showFileDirectoryModule = true;
 	static bool showConsoleModule = true;
 	static bool showControlsModule = true;
+	static bool showProjectSettings = false;
 
 #define CHECKED_MENU_ITEM(menuItemName, checkedState) if (ImGui::MenuItem(menuItemName, NULL, checkedState)) { checkedState = !checkedState; }
 
@@ -230,6 +233,8 @@ namespace Orion {
 			// settings menu bar option
 			if (ImGui::BeginMenu("Settings"))
 			{
+				if (ImGui::MenuItem("Project Settings"))
+					showProjectSettings = true;
 				ImGui::EndMenu();
 			}
 			// view module menu bar option
@@ -1101,6 +1106,100 @@ namespace Orion {
 				ImGui::End();
 			}
 		}
+	}
+
+	// ========================== PROJECT SETTINGS ==========================
+
+	void ImGuiLayer::ShowProjectSettingsWindow()
+	{
+		if (!showProjectSettings)
+			return;
+
+		ProjectSettings& settings = ProjectSettings::Get();
+
+		ImGui::SetNextWindowSize(ImVec2(480, 520), ImGuiCond_FirstUseEver);
+		if (ImGui::Begin("Project Settings", &showProjectSettings))
+		{
+			// ---------- Project Info ----------
+			if (ImGui::CollapsingHeader("Project Info", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				char nameBuf[256];
+				strncpy_s(nameBuf, settings.projectName.c_str(), sizeof(nameBuf) - 1);
+				nameBuf[sizeof(nameBuf) - 1] = '\0';
+				if (ImGui::InputText("Project Name", nameBuf, sizeof(nameBuf)))
+					settings.projectName = nameBuf;
+
+				char sceneBuf[512];
+				strncpy_s(sceneBuf, settings.startingScene.c_str(), sizeof(sceneBuf) - 1);
+				sceneBuf[sizeof(sceneBuf) - 1] = '\0';
+				if (ImGui::InputText("Starting Scene", sceneBuf, sizeof(sceneBuf)))
+					settings.startingScene = sceneBuf;
+			}
+
+			ImGui::Separator();
+
+			// ---------- Background / Sky ----------
+			if (ImGui::CollapsingHeader("Background", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				// Mode selector dropdown
+				const char* modeNames[] = { "Solid Color", "Gradient", "Cubemap (coming soon)" };
+				int currentMode = static_cast<int>(settings.backgroundMode);
+				if (ImGui::Combo("Mode", &currentMode, modeNames, IM_ARRAYSIZE(modeNames)))
+				{
+					// Don't allow selecting Cubemap yet — snap back to current if attempted
+					if (currentMode == static_cast<int>(BackgroundMode::Cubemap))
+						currentMode = static_cast<int>(settings.backgroundMode);
+					settings.backgroundMode = static_cast<BackgroundMode>(currentMode);
+				}
+
+				// Show mode-specific controls
+				switch (settings.backgroundMode)
+				{
+					case BackgroundMode::SolidColor:
+					{
+						ImGui::ColorEdit3("Color", &settings.solidColor.x);
+						break;
+					}
+					case BackgroundMode::Gradient:
+					{
+						ImGui::ColorEdit3("Top Color", &settings.gradientTopColor.x);
+						ImGui::ColorEdit3("Bottom Color", &settings.gradientBottomColor.x);
+						break;
+					}
+					case BackgroundMode::Cubemap:
+					{
+						ImGui::TextDisabled("Cubemap skyboxes are not yet implemented.");
+						ImGui::TextDisabled("This will support 6-face cubemap textures.");
+
+						char cubeBuf[512];
+						strncpy_s(cubeBuf, settings.cubemapPath.c_str(), sizeof(cubeBuf) - 1);
+						cubeBuf[sizeof(cubeBuf) - 1] = '\0';
+
+						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+						ImGui::InputText("Cubemap Path", cubeBuf, sizeof(cubeBuf));
+						ImGui::PopStyleVar();
+						break;
+					}
+				}
+			}
+
+			ImGui::Separator();
+
+			// ---------- Lighting ----------
+			if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Text("Directional Light (Sun)");
+				ImGui::DragFloat3("Direction", &settings.sunDirection.x, 0.01f, -1.0f, 1.0f);
+				ImGui::ColorEdit3("Sun Color", &settings.sunColor.x);
+				ImGui::DragFloat("Sun Intensity", &settings.sunIntensity, 0.01f, 0.0f, 10.0f);
+
+				ImGui::Separator();
+				ImGui::Text("Ambient");
+				ImGui::DragFloat("Ambient Intensity", &settings.ambientIntensity, 0.005f, 0.0f, 1.0f);
+				ImGui::TextDisabled("(Ambient uniform not yet wired to shader)");
+			}
+		}
+		ImGui::End();
 	}
 
 }

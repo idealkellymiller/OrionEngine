@@ -83,6 +83,11 @@ namespace Orion {
 		static void ResizePickingResources(int width, int height);
 		static void RenderPickingPass();
 
+		// Gradient background
+		static void InitGradientResources();
+		static void ShutdownGradientResources();
+		static void RenderGradientBackground();
+
 	private:
 		// Store the clear color so the backend has a consistent state.
 		static float m_ClearColor[4];
@@ -123,5 +128,9 @@ namespace Orion {
 		static unsigned int s_PickingDepthRBO;
 
 		static GizmoPass s_GizmoPass;
+
+		// Gradient background resources
+		static Shader s_GradientShader;
+		static unsigned int s_EmptyVAO;   // empty VAO for fullscreen triangle trick
 	};
 }

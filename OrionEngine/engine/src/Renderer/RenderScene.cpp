@@ -7,6 +7,7 @@
 
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
+#include "Core/ProjectSettings.h"
 
 #include <iostream>
 #include <memory>
@@ -74,11 +75,12 @@ namespace Orion {
         // Camera is managed by EditorCamera and written into
         // Renderer::GetActiveCamera() each frame — no override here.
 
-        // Create a sun-like directional light.
+        // Directional light — driven by ProjectSettings so the user can tweak it.
+        ProjectSettings& settings = ProjectSettings::Get();
         DirectionalLight sun;
-        sun.Direction = glm::vec3(-0.5f, -1.0f, -0.2f);
-        sun.Color = glm::vec3(1.0f, 0.95f, 0.85f);
-        sun.Intensity = 1.2f;
+        sun.Direction = settings.sunDirection;
+        sun.Color     = settings.sunColor;
+        sun.Intensity = settings.sunIntensity;
 
         SetDirectionalLight(sun);
     }

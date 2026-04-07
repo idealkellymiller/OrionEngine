@@ -86,6 +86,7 @@ namespace Orion {
 		void ShowInspectorModule();
 		void ShowViewportModule();
 		void ShowHierarchyModule();
+		void ShowProjectSettingsWindow();
 		void DrawEntityNode(EntityID entity, Scene& scene);
 		void DrawDirectoryTree();
 		void DrawDirectorySearch();

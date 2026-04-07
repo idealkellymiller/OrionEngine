@@ -4,6 +4,7 @@
 #include "Application.h"
 #include "Renderer/Renderer.h"
 #include "ECS/SceneManager.h"
+#include "Assets/AssetManager.h"
 
 #include "imgui.h"
 // #include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
@@ -16,6 +17,7 @@
 
 #include <format>
 #include <iostream>
+#include <algorithm>
 
 namespace Orion {
 
@@ -24,6 +26,7 @@ namespace Orion {
 
 	bool ImGuiLayer::s_ViewportHovered = false;
 	bool ImGuiLayer::s_ViewportFocused = false;
+	bool ImGuiLayer::s_ViewportDragging = false;
 	ImVec2 ImGuiLayer::s_ViewportImageMin = { 0, 0 };
 	ImVec2 ImGuiLayer::s_ViewportImageMax = { 0, 0 };
 
@@ -146,22 +149,44 @@ namespace Orion {
 			case EventType::KeyPressed:
 			case EventType::KeyReleased:
 			{
-				if (io.WantCaptureKeyboard)
+				// Block keyboard events only when ImGui truly needs them
+				// (e.g. typing in an InputText) AND the user isn't actively
+				// interacting with the viewport (camera fly uses WASD).
+				if (io.WantCaptureKeyboard && !s_ViewportFocused && !s_ViewportDragging)
 				{
-					// imgui wants to capture this event
-					// mark it as handled so it doesn't propogate down to other app layers.
-					// event.Handled = true;
+					event.Handled = true;
 				}
 				break;
 			}
 			case EventType::MouseButtonPressed:
+			{
+				// If a mouse press starts in the viewport, begin a viewport drag.
+				// This keeps events flowing to EditorLayer even if the cursor
+				// leaves the viewport mid-drag (e.g. camera fly with RMB).
+				if (s_ViewportHovered)
+					s_ViewportDragging = true;
+
+				if (io.WantCaptureMouse && !s_ViewportHovered)
+					event.Handled = true;
+				break;
+			}
 			case EventType::MouseButtonReleased:
+			{
+				// End viewport drag on any release.
+				s_ViewportDragging = false;
+
+				if (io.WantCaptureMouse && !s_ViewportHovered)
+					event.Handled = true;
+				break;
+			}
 			case EventType::MouseMoved:
 			case EventType::MouseScrolled:
 			{
-				if (io.WantCaptureMouse)
+				// Allow mouse events through if the cursor is over the viewport
+				// OR if a drag started in the viewport (camera fly, gizmo drag, etc.).
+				if (io.WantCaptureMouse && !s_ViewportHovered && !s_ViewportDragging)
 				{
-					// event.Handled = true;
+					event.Handled = true;
 				}
 				break;
 			}
@@ -223,72 +248,444 @@ namespace Orion {
 		}
 	}
 
-	static float pos[3];
-	static float rot[3];
-	static float scale[3];
-	static bool scaleUniform;
+	// ========================== INSPECTOR ==========================
 
-	void ImGuiLayer::ShowTransformComponent()
+	// Helper: human-readable name for each component type
+	static const char* ComponentTypeName(ComponentType type)
 	{
-		if (ImGui::CollapsingHeader("Transform"))
+		switch (type) {
+			case ComponentType::EntityData: return "Entity Data";
+			case ComponentType::Transform:  return "Transform";
+			case ComponentType::Mesh:       return "Mesh";
+			case ComponentType::Material:   return "Material";
+			case ComponentType::Camera:     return "Camera";
+			case ComponentType::Script:     return "Script";
+			default:                        return "Unknown";
+		}
+	}
+
+	bool ImGuiLayer::IsRequiredComponent(ComponentType type)
+	{
+		// EntityData and Transform are mandatory — every entity must have them.
+		return type == ComponentType::EntityData || type == ComponentType::Transform;
+	}
+
+	void ImGuiLayer::RebuildComponentOrder(EntityID entity, Scene& scene)
+	{
+		// List every component the entity actually owns, in default order.
+		std::vector<ComponentType> order;
+
+		if (scene.HasEntityDataComponent(entity))
+			order.push_back(ComponentType::EntityData);
+		if (scene.HasTransformComponent(entity))
+			order.push_back(ComponentType::Transform);
+		if (scene.HasMeshComponent(entity))
+			order.push_back(ComponentType::Mesh);
+		if (scene.HasMaterialComponent(entity))
+			order.push_back(ComponentType::Material);
+		if (scene.HasCameraComponent(entity))
+			order.push_back(ComponentType::Camera);
+		if (scene.HasScriptComponent(entity))
+			order.push_back(ComponentType::Script);
+
+		m_ComponentOrder[entity] = order;
+	}
+
+	// ---------- Individual component field drawers ----------
+
+	void ImGuiLayer::DrawEntityDataFields(EntityID entity, Scene& scene)
+	{
+		EntityDataComponent* data = scene.GetEntityDataComponent(entity);
+		if (!data) return;
+
+		// Editable entity name
+		char nameBuf[256];
+		strncpy_s(nameBuf, data->name.c_str(), sizeof(nameBuf) - 1);
+		nameBuf[sizeof(nameBuf) - 1] = '\0';
+		if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
+			data->name = nameBuf;
+		}
+
+		ImGui::Checkbox("Enabled", &data->enabled);
+	}
+
+	void ImGuiLayer::DrawTransformFields(EntityID entity, Scene& scene)
+	{
+		TransformComponent* tc = scene.GetTransformComponent(entity);
+		if (!tc) return;
+
+		ImGui::DragFloat3("Position", &tc->position.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
+		ImGui::DragFloat3("Rotation", &tc->rotation.x, 0.1f,   -FLT_MAX, +FLT_MAX, "%.3f");
+
+		// Uniform-scale toggle
+		static bool scaleUniform = false;
+		glm::vec3 oldScale = tc->scale;
+
+		if (ImGui::DragFloat3("Scale", &tc->scale.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f"))
 		{
-			float oldScaleValues[3] = { scale[0], scale[1], scale[2] };
-
-			// transform sliders
-			ImGui::DragFloat3("Position", pos, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
-			ImGui::DragFloat3("Rotation", rot, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
-
-			if (ImGui::DragFloat3("Scale", scale, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f"))
-			{
-				float deltaX = scale[0] - oldScaleValues[0];
-				float deltaY = scale[1] - oldScaleValues[1];
-				float deltaZ = scale[2] - oldScaleValues[2];
-
-				// check if scale uniform is on
-				if (scaleUniform)
-				{
-					// change all sliders the same amount as changed slider
-					if (deltaX != 0)
-					{
-						scale[1] += deltaX;
-						scale[2] += deltaX;
-					}
-					else if (deltaY != 0)
-					{
-						scale[0] += deltaY;
-						scale[2] += deltaY;
-					}
-					else if (deltaZ != 0)
-					{
-						scale[0] += deltaZ;
-						scale[1] += deltaZ;
-					}
+			if (scaleUniform) {
+				glm::vec3 delta = tc->scale - oldScale;
+				if (delta.x != 0.0f) {
+					tc->scale.y = oldScale.y + delta.x;
+					tc->scale.z = oldScale.z + delta.x;
+				}
+				else if (delta.y != 0.0f) {
+					tc->scale.x = oldScale.x + delta.y;
+					tc->scale.z = oldScale.z + delta.y;
+				}
+				else if (delta.z != 0.0f) {
+					tc->scale.x = oldScale.x + delta.z;
+					tc->scale.y = oldScale.y + delta.z;
 				}
 			}
-			ImGui::Checkbox("Scale Uniform", &scaleUniform);
-
 		}
+		ImGui::Checkbox("Scale Uniform", &scaleUniform);
 	}
 
-	static bool isTrigger;
-
-	void ImGuiLayer::ShowMeshColliderComponent()
+	void ImGuiLayer::DrawMeshFields(EntityID entity, Scene& scene)
 	{
-		if (ImGui::CollapsingHeader("Mesh Collider"))
+		MeshComponent* mc = scene.GetMeshComponent(entity);
+		if (!mc) return;
+
+		// Build the preview label for the dropdown (current selection)
+		std::string previewLabel = "(none)";
+		if (mc->mesh != INVALID_ASSET_ID) {
+			MeshAsset* current = AssetManager::GetMeshAsset(mc->mesh);
+			if (current && !current->name.empty())
+				previewLabel = current->name;
+			else
+				previewLabel = "ID: " + std::to_string(mc->mesh);
+		}
+
+		// Dropdown to pick a mesh asset
+		if (ImGui::BeginCombo("Mesh", previewLabel.c_str()))
 		{
-			ImGui::Checkbox("Is Trigger", &isTrigger);
+			// Option to clear the mesh
+			if (ImGui::Selectable("(none)", mc->mesh == INVALID_ASSET_ID))
+				mc->mesh = INVALID_ASSET_ID;
+
+			// List every loaded mesh asset
+			for (auto& [id, asset] : AssetManager::GetAllMeshAssets())
+			{
+				bool isSelected = (mc->mesh == id);
+				std::string label = asset.name.empty()
+					? ("ID: " + std::to_string(id))
+					: asset.name;
+
+				if (ImGui::Selectable(label.c_str(), isSelected))
+					mc->mesh = id;
+
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		// Show path as read-only info below the dropdown
+		if (mc->mesh != INVALID_ASSET_ID) {
+			MeshAsset* asset = AssetManager::GetMeshAsset(mc->mesh);
+			if (asset)
+				ImGui::TextDisabled("Path: %s", asset->filePath.c_str());
 		}
 	}
+
+	void ImGuiLayer::DrawMaterialFields(EntityID entity, Scene& scene)
+	{
+		MaterialComponent* matComp = scene.GetMaterialComponent(entity);
+		if (!matComp) return;
+
+		// Build the preview label for the dropdown (current selection)
+		std::string previewLabel = "(none)";
+		if (matComp->material != INVALID_ASSET_ID) {
+			MaterialAsset* current = AssetManager::GetMaterialAsset(matComp->material);
+			if (current && !current->name.empty())
+				previewLabel = current->name;
+			else
+				previewLabel = "ID: " + std::to_string(matComp->material);
+		}
+
+		// Dropdown to pick a material asset
+		if (ImGui::BeginCombo("Material", previewLabel.c_str()))
+		{
+			// Option to clear the material
+			if (ImGui::Selectable("(none)", matComp->material == INVALID_ASSET_ID))
+				matComp->material = INVALID_ASSET_ID;
+
+			// List every loaded material asset
+			for (auto& [id, asset] : AssetManager::GetAllMaterialAssets())
+			{
+				bool isSelected = (matComp->material == id);
+				std::string label = asset.name.empty()
+					? ("ID: " + std::to_string(id))
+					: asset.name;
+
+				if (ImGui::Selectable(label.c_str(), isSelected))
+					matComp->material = id;
+
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		// Show editable material properties below the dropdown
+		if (matComp->material != INVALID_ASSET_ID) {
+			MaterialAsset* asset = AssetManager::GetMaterialAsset(matComp->material);
+			if (asset) {
+				ImGui::TextDisabled("Path: %s", asset->filePath.c_str());
+				ImGui::Separator();
+				ImGui::ColorEdit4("Color Tint", &asset->colorTint.x);
+				ImGui::ColorEdit3("Specular Color", &asset->specularColor.x);
+				ImGui::DragFloat("Shininess", &asset->specularShininess, 0.5f, 0.0f, 256.0f);
+				ImGui::Checkbox("Transparent", &asset->isTransparent);
+			}
+		}
+	}
+
+	void ImGuiLayer::DrawCameraFields(EntityID entity, Scene& scene)
+	{
+		CameraComponent* cam = scene.GetCameraComponent(entity);
+		if (!cam) return;
+
+		ImGui::DragFloat("FOV (degrees)", &cam->fovDegrees, 0.5f, 1.0f, 179.0f);
+		ImGui::DragFloat("Near Plane", &cam->nearPlane, 0.01f, 0.001f, 100.0f, "%.3f");
+		ImGui::DragFloat("Far Plane", &cam->farPlane, 1.0f, 1.0f, 10000.0f);
+		ImGui::Checkbox("Active", &cam->isActive);
+	}
+
+	void ImGuiLayer::DrawScriptFields(EntityID entity, Scene& scene)
+	{
+		ScriptComponent* sc = scene.GetScriptComponent(entity);
+		if (!sc) return;
+
+		// Editable script path
+		char pathBuf[512];
+		strncpy_s(pathBuf, sc->scriptPath.c_str(), sizeof(pathBuf) - 1);
+		pathBuf[sizeof(pathBuf) - 1] = '\0';
+		if (ImGui::InputText("Script Path", pathBuf, sizeof(pathBuf))) {
+			sc->scriptPath = pathBuf;
+		}
+
+		if (sc->scriptPath.empty()) {
+			ImGui::TextDisabled("(no script assigned)");
+		}
+	}
+
+	// ---------- Draw one component entry ----------
+
+	// Helper: draw a button that appears grayed-out and does nothing when disabled.
+	// Works with any ImGui version (no BeginDisabled needed).
+	static bool DisableableButton(const char* label, ImVec2 size, bool enabled)
+	{
+		if (!enabled) {
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.3f);
+			ImGui::Button(label, size);
+			ImGui::PopStyleVar();
+			return false;
+		}
+		return ImGui::Button(label, size);
+	}
+
+	bool ImGuiLayer::DrawComponent(ComponentType type, int index, EntityID entity, Scene& scene)
+	{
+		auto& order = m_ComponentOrder[entity];
+		bool removed = false;
+
+		// Unique ImGui ID per component slot so headers don't collide
+		ImGui::PushID(index);
+
+		// --- Header row: collapsing header + action buttons on the right ---
+		float contentWidth = ImGui::GetContentRegionAvail().x;
+
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen
+			| ImGuiTreeNodeFlags_Framed
+			| ImGuiTreeNodeFlags_AllowOverlap
+			| ImGuiTreeNodeFlags_FramePadding;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+		float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+		bool open = ImGui::TreeNodeEx(ComponentTypeName(type), flags);
+		ImGui::PopStyleVar();
+
+		// Right-aligned buttons: [^] [v] [X]
+		bool isRequired = IsRequiredComponent(type);
+		int buttonCount = isRequired ? 2 : 3;
+		float buttonWidth = 25.0f;
+		float buttonsWidth = buttonCount * (buttonWidth + ImGui::GetStyle().ItemSpacing.x);
+
+		ImGui::SameLine(contentWidth - buttonsWidth);
+
+		// Move Up (grayed out if already first)
+		if (DisableableButton("^", ImVec2(buttonWidth, lineHeight), index > 0)) {
+			std::swap(order[index], order[index - 1]);
+		}
+
+		ImGui::SameLine();
+
+		// Move Down (grayed out if already last)
+		if (DisableableButton("v", ImVec2(buttonWidth, lineHeight), index < (int)order.size() - 1)) {
+			std::swap(order[index], order[index + 1]);
+		}
+
+		// Remove button — only for non-required components
+		if (!isRequired) {
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+
+			if (ImGui::Button("X", ImVec2(buttonWidth, lineHeight))) {
+				removed = true;
+			}
+
+			ImGui::PopStyleColor(3);
+		}
+
+		// Draw component fields if the header is expanded
+		if (open) {
+			switch (type) {
+				case ComponentType::EntityData: DrawEntityDataFields(entity, scene);  break;
+				case ComponentType::Transform:  DrawTransformFields(entity, scene);   break;
+				case ComponentType::Mesh:       DrawMeshFields(entity, scene);        break;
+				case ComponentType::Material:   DrawMaterialFields(entity, scene);    break;
+				case ComponentType::Camera:     DrawCameraFields(entity, scene);      break;
+				case ComponentType::Script:     DrawScriptFields(entity, scene);      break;
+			}
+			ImGui::TreePop();
+		}
+
+		ImGui::PopID();
+
+		// Handle removal after drawing (so ImGui IDs stay stable this frame)
+		if (removed) {
+			switch (type) {
+				case ComponentType::Mesh:     scene.RemoveMeshComponent(entity);     break;
+				case ComponentType::Material: scene.RemoveMaterialComponent(entity);  break;
+				case ComponentType::Camera:   scene.RemoveCameraComponent(entity);    break;
+				case ComponentType::Script:   scene.RemoveScriptComponent(entity);    break;
+				default: break;
+			}
+			order.erase(order.begin() + index);
+		}
+
+		return removed;
+	}
+
+	// ---------- Add Component popup ----------
+
+	void ImGuiLayer::DrawAddComponentPopup(EntityID entity, Scene& scene)
+	{
+		if (ImGui::BeginPopup("AddComponentPopup")) {
+			ImGui::Text("Add Component");
+			ImGui::Separator();
+
+			auto& order = m_ComponentOrder[entity];
+
+			// Helper: checks if a type is already in the display order
+			auto hasType = [&](ComponentType t) {
+				return std::find(order.begin(), order.end(), t) != order.end();
+			};
+
+			int addableCount = 0;
+
+			if (!hasType(ComponentType::Mesh)) {
+				addableCount++;
+				if (ImGui::Selectable("Mesh")) {
+					scene.AddMeshComponent(entity, MeshComponent{});
+					order.push_back(ComponentType::Mesh);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::Material)) {
+				addableCount++;
+				if (ImGui::Selectable("Material")) {
+					scene.AddMaterialComponent(entity, MaterialComponent{});
+					order.push_back(ComponentType::Material);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::Camera)) {
+				addableCount++;
+				if (ImGui::Selectable("Camera")) {
+					scene.AddCameraComponent(entity, CameraComponent{});
+					order.push_back(ComponentType::Camera);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::Script)) {
+				addableCount++;
+				if (ImGui::Selectable("Script")) {
+					scene.AddScriptComponent(entity, ScriptComponent{});
+					order.push_back(ComponentType::Script);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (addableCount == 0) {
+				ImGui::TextDisabled("All components added");
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
+	// ---------- Main Inspector module ----------
 
 	void ImGuiLayer::ShowInspectorModule()
 	{
-
 		if (showInspectorModule)
 		{
 			if (ImGui::Begin("Inspector", &showInspectorModule))
 			{
-				ShowTransformComponent();
-				ShowMeshColliderComponent();
+				EntityID selected = EditorLayer::GetSelectedEntity();
+				auto scene = SceneManager::GetActiveScene();
+
+				// Only show content if a valid entity is selected and the scene exists
+				if (selected != INVALID_ENTITY && scene && scene->IsValidEntity(selected))
+				{
+					// Rebuild the component display order when selection changes
+					if (m_InspectorEntity != selected) {
+						m_InspectorEntity = selected;
+						// Only rebuild if we don't already have a cached order for this entity
+						if (m_ComponentOrder.find(selected) == m_ComponentOrder.end()) {
+							RebuildComponentOrder(selected, *scene);
+						}
+					}
+
+					ImGui::Text("Entity ID: %u", selected);
+					ImGui::Separator();
+
+					// Draw each component in the user-defined display order
+					auto& order = m_ComponentOrder[selected];
+					for (int i = 0; i < (int)order.size(); i++) {
+						// DrawComponent returns true if the component was removed,
+						// which shifts indices — decrement i to recheck this slot.
+						if (DrawComponent(order[i], i, selected, *scene)) {
+							i--;
+						}
+					}
+
+					ImGui::Separator();
+
+					// Centered "Add Component" button
+					float buttonWidth = 200.0f;
+					float windowWidth = ImGui::GetContentRegionAvail().x;
+					float cursorX = (windowWidth - buttonWidth) * 0.5f;
+					if (cursorX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + cursorX);
+
+					if (ImGui::Button("Add Component", ImVec2(buttonWidth, 0))) {
+						ImGui::OpenPopup("AddComponentPopup");
+					}
+
+					DrawAddComponentPopup(selected, *scene);
+				}
+				else
+				{
+					ImGui::TextDisabled("No entity selected");
+				}
 			}
 			ImGui::End();
 		}

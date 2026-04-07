@@ -7,7 +7,20 @@
 #include "imgui.h"
 #include "ECS/Scene.h"
 
+#include <unordered_map>
+
 namespace Orion {
+
+	// Component types the inspector knows how to display.
+	// Order in this enum is the default display order for new entities.
+	enum class ComponentType {
+		EntityData,   // Name, enabled flag       — REQUIRED, cannot be removed
+		Transform,    // Position, rotation, scale — REQUIRED, cannot be removed
+		Mesh,         // Mesh asset reference
+		Material,     // Material asset reference
+		Camera,       // Camera settings (FOV, near/far, active flag)
+		Script        // Lua script path
+	};
 
 	class ORION_API ImGuiLayer : public Layer {
 
@@ -36,10 +49,40 @@ namespace Orion {
 		static bool s_ViewportHovered;
 		static bool s_ViewportFocused;
 
+		// True while a mouse button is held that started in the viewport.
+		// Keeps events flowing to EditorLayer even if the cursor leaves the viewport mid-drag.
+		static bool s_ViewportDragging;
+
+		// --- Inspector state ---
+		// Tracks which entity the inspector is showing so we rebuild on selection change.
+		EntityID m_InspectorEntity = INVALID_ENTITY;
+
+		// Per-entity component display order (survives reselection within a session).
+		std::unordered_map<EntityID, std::vector<ComponentType>> m_ComponentOrder;
+
+		// Builds or refreshes the display-order list for the given entity.
+		void RebuildComponentOrder(EntityID entity, Scene& scene);
+
+		// Returns true if this component type is required and cannot be removed.
+		static bool IsRequiredComponent(ComponentType type);
+
+		// Draws one component's collapsing header + fields + reorder/remove buttons.
+		// Returns true if the component was removed this frame.
+		bool DrawComponent(ComponentType type, int index, EntityID entity, Scene& scene);
+
+		// Individual component field drawers
+		void DrawEntityDataFields(EntityID entity, Scene& scene);
+		void DrawTransformFields(EntityID entity, Scene& scene);
+		void DrawMeshFields(EntityID entity, Scene& scene);
+		void DrawMaterialFields(EntityID entity, Scene& scene);
+		void DrawCameraFields(EntityID entity, Scene& scene);
+		void DrawScriptFields(EntityID entity, Scene& scene);
+
+		// "Add Component" popup
+		void DrawAddComponentPopup(EntityID entity, Scene& scene);
+
 		// --------ImGui Module Definitions-----------
 		void ShowMainMenuBar();
-		void ShowTransformComponent();
-		void ShowMeshColliderComponent();
 		void ShowInspectorModule();
 		void ShowViewportModule();
 		void ShowHierarchyModule();

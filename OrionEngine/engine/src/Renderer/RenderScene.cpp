@@ -54,7 +54,7 @@ namespace Orion {
 
             // Skip entities with missing assets to avoid null dereferences in the renderer
             if (!mesh || !material) {
-                std::cout << "Warning: Entity " << entity << " has invalid mesh or material asset. Skipping.\n";
+                // std::cout << "Warning: Entity " << entity << " has invalid mesh or material asset. Skipping.\n";
                 continue;
             }
 

@@ -94,21 +94,25 @@ namespace Orion {
         void AddMeshComponent(EntityID entityID, const MeshComponent& component);
         MeshComponent* GetMeshComponent(EntityID entityID);
         bool HasMeshComponent(EntityID entityID) const;
+        void RemoveMeshComponent(EntityID entityID);
 
         // Material
         void AddMaterialComponent(EntityID entityID, const MaterialComponent& component);
         MaterialComponent* GetMaterialComponent(EntityID entityID);
         bool HasMaterialComponent(EntityID entityID) const;
+        void RemoveMaterialComponent(EntityID entityID);
 
         // Camera
         void AddCameraComponent(EntityID entityID, const CameraComponent& component);
         CameraComponent* GetCameraComponent(EntityID entityID);
         bool HasCameraComponent(EntityID entityID) const;
+        void RemoveCameraComponent(EntityID entityID);
 
         // Script
         void AddScriptComponent(EntityID entityID, const ScriptComponent& component);
         ScriptComponent* GetScriptComponent(EntityID entityID);
         bool HasScriptComponent(EntityID entityID) const;
+        void RemoveScriptComponent(EntityID entityID);
 
         // Relationships (parent-child hierarchy)
         void SetParent(EntityID child, EntityID parent);

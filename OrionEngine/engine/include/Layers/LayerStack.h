@@ -22,7 +22,10 @@ namespace Orion {
 		std::vector<Layer*>::iterator end() { return m_Layers.end(); }
 	private:
 		std::vector<Layer*> m_Layers;
-		std::vector<Layer*>::iterator m_LayerInsert;
+		// Index-based insert point instead of an iterator.
+		// Overlays live after this index; regular layers live before it.
+		// Using an index avoids invalidation when the vector reallocates.
+		size_t m_LayerInsertIndex = 0;
 	};
 
 }

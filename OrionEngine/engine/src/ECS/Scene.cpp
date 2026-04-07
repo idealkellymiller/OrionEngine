@@ -170,6 +170,11 @@ namespace Orion {
         return m_MeshComponents.find(entityID) != m_MeshComponents.end();
     }
 
+    void Scene::RemoveMeshComponent(EntityID entityID)
+    {
+        m_MeshComponents.erase(entityID);
+    }
+
 
     // ---- Material ---
     void Scene::AddMaterialComponent(EntityID entityID, const MaterialComponent& component)
@@ -189,6 +194,11 @@ namespace Orion {
     bool Scene::HasMaterialComponent(EntityID entityID) const
     {
         return m_MaterialComponents.find(entityID) != m_MaterialComponents.end();
+    }
+
+    void Scene::RemoveMaterialComponent(EntityID entityID)
+    {
+        m_MaterialComponents.erase(entityID);
     }
 
 
@@ -212,6 +222,11 @@ namespace Orion {
         return m_CameraComponents.find(entityID) != m_CameraComponents.end();
     }
 
+    void Scene::RemoveCameraComponent(EntityID entityID)
+    {
+        m_CameraComponents.erase(entityID);
+    }
+
 
     // --- Script ---
     void Scene::AddScriptComponent(EntityID entityID, const ScriptComponent& component)
@@ -231,6 +246,11 @@ namespace Orion {
     bool Scene::HasScriptComponent(EntityID entityID) const
     {
         return m_ScriptComponents.find(entityID) != m_ScriptComponents.end();
+    }
+
+    void Scene::RemoveScriptComponent(EntityID entityID)
+    {
+        m_ScriptComponents.erase(entityID);
     }
 
 

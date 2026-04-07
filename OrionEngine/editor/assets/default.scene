@@ -33,7 +33,7 @@
     {
       "id": 2,
       "material": {
-        "path": "materials/default.mtrl"
+        "path": "materials/stone.mtrl"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -51,9 +51,9 @@
           0.0
         ],
         "scale": [
-          13.055593490600586,
-          0.12874019145965576,
-          12.939863204956055
+          10.0,
+          0.10000000149011612,
+          10.0
         ]
       }
     },
@@ -120,12 +120,40 @@
       "mesh": {
         "path": "models/cube.obj"
       },
-      "name": "New Entity",
+      "name": "Cubert",
       "transform": {
         "position": [
           5.323555946350098,
           0.0,
           5.691965579986572
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "material": {
+        "path": "materials/glass.mtrl"
+      },
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "Cube2",
+      "parent": 7,
+      "transform": {
+        "position": [
+          -0.2634688913822174,
+          1.0749597549438477,
+          -5.913799285888672
         ],
         "rotation": [
           0.0,

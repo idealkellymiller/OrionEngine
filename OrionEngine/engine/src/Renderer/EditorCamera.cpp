@@ -119,6 +119,12 @@ namespace Orion {
         else {
             // Reset delta startup so next RMB press does not jump.
             m_FirstMouseFrame = true;
+
+            // Clear all key states to prevent "sticky keys".
+            // A key-down event can reach us while the viewport is focused, but the
+            // matching key-up may be swallowed by ImGui if focus moved to another panel.
+            // Clearing here ensures no phantom movement on the next RMB fly.
+            std::memset(m_KeyStates, 0, sizeof(m_KeyStates));
         }
 
         // Consume accumulated scroll delta

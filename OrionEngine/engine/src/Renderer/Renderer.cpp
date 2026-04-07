@@ -15,6 +15,7 @@
 #include "Application.h"
 
 #include "Layers/EditorLayer.h"
+#include "Core/ProjectSettings.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -61,6 +62,9 @@ namespace Orion {
 
 	GizmoPass Renderer::s_GizmoPass;
 
+	Shader Renderer::s_GradientShader;
+	unsigned int Renderer::s_EmptyVAO = 0;
+
 
 	bool Renderer::Init() {
 		// Create the editor viewport framebuffer
@@ -69,6 +73,7 @@ namespace Orion {
 
 		InitShadowResources();
 		InitPickingResources();
+		InitGradientResources();
 
 		// Enables depth testing.
 		// This tells OpenGL to compate fragment depth values so that.
@@ -120,9 +125,6 @@ namespace Orion {
 
 		s_GizmoPass.Init();
 
-
-
-
 		SetClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 		printf("Renderer Initialized.\n");
 		return true; //s_Backend->Init();
@@ -133,6 +135,7 @@ namespace Orion {
 
 		ShutdownShadowResources();
 		ShutdownPickingResources();
+		ShutdownGradientResources();
 
 		s_GizmoPass.Shutdown();
 	}
@@ -165,27 +168,38 @@ namespace Orion {
 	{
 		s_ViewportFramebuffer.Bind();
 
-		
-		// SetViewport(0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
-
-		glEnable(GL_DEPTH_TEST);
-		glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Set viewport as the framebuffer size
-		// Keep viewport synced to the frame
+		// Set viewport to framebuffer size
 		SetViewport(0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
 
+		glEnable(GL_DEPTH_TEST);
 
-		// glEnable(GL_DEPTH_TEST);
+		// --- Background: driven by ProjectSettings ---
+		ProjectSettings& settings = ProjectSettings::Get();
 
-		// Clear the color buffer using the color previously set by glClearColor.
-		// The color buffer is what ends up being displayed on screen.
-		//
-		// Clears the depth buffer as well.
-		// The depth buffer stores per-pixel depth information used for
-		// proper 3D visibilty testing.
-		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		switch (settings.backgroundMode)
+		{
+			case BackgroundMode::Gradient:
+			{
+				// Clear depth only — the gradient shader will fill color.
+				glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				RenderGradientBackground();
+				break;
+			}
+			case BackgroundMode::Cubemap:
+				// (Future) — fall through to solid color for now.
+			case BackgroundMode::SolidColor:
+			default:
+			{
+				glClearColor(
+					settings.solidColor.r,
+					settings.solidColor.g,
+					settings.solidColor.b,
+					settings.solidColor.a);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				break;
+			}
+		}
 
 
 
@@ -734,5 +748,55 @@ namespace Orion {
 		// glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
 
 		return static_cast<EntityID>(pickedID);
+	}
+
+
+	// ---------- Gradient background ----------
+
+	void Renderer::InitGradientResources()
+	{
+		// Load the gradient fullscreen shader
+		Shader gradientShader;
+		if (!gradientShader.CreateFromFiles(
+			"../engine/shaders/Gradient.vert",
+			"../engine/shaders/Gradient.frag"))
+		{
+			std::cout << "Failed to create gradient Shader\n";
+		}
+		s_GradientShader = gradientShader;
+
+		// Create an empty VAO for the fullscreen-triangle trick.
+		// The vertex shader generates positions from gl_VertexID alone,
+		// so no vertex buffer is needed.
+		glGenVertexArrays(1, &s_EmptyVAO);
+	}
+
+	void Renderer::ShutdownGradientResources()
+	{
+		if (s_EmptyVAO != 0) {
+			glDeleteVertexArrays(1, &s_EmptyVAO);
+			s_EmptyVAO = 0;
+		}
+	}
+
+	void Renderer::RenderGradientBackground()
+	{
+		ProjectSettings& settings = ProjectSettings::Get();
+
+		// Disable depth testing entirely — the gradient is just a background fill.
+		// Scene geometry rendered afterward will have depth testing re-enabled and
+		// will naturally draw in front.
+		glDisable(GL_DEPTH_TEST);
+
+		s_GradientShader.Bind();
+		s_GradientShader.SetVec4("u_TopColor", settings.gradientTopColor);
+		s_GradientShader.SetVec4("u_BottomColor", settings.gradientBottomColor);
+
+		glBindVertexArray(s_EmptyVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+
+		// Re-enable depth testing for the rest of the frame.
+		glEnable(GL_DEPTH_TEST);
 	}
 }

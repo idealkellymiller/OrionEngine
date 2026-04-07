@@ -9,9 +9,12 @@
         "path": "models/cube.obj"
       },
       "name": "Cube",
+      "script": {
+        "path": "scripts/rotate.lua"
+      },
       "transform": {
         "position": [
-          -5.124601364135742,
+          -6.240522861480713,
           0.0,
           4.1681976318359375
         ],
@@ -30,7 +33,7 @@
     {
       "id": 2,
       "material": {
-        "path": "materials/default.mtrl"
+        "path": "materials/stone.mtrl"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -48,9 +51,9 @@
           0.0
         ],
         "scale": [
-          13.055593490600586,
-          0.12874019145965576,
-          12.939863204956055
+          10.0,
+          0.10000000149011612,
+          10.0
         ]
       }
     },
@@ -110,19 +113,19 @@
       }
     },
     {
-      "id": 5,
+      "id": 7,
       "material": {
         "path": "materials/default.mtrl"
       },
       "mesh": {
         "path": "models/cube.obj"
       },
-      "name": "New Entity",
+      "name": "Cubert",
       "transform": {
         "position": [
-          5.51416540145874,
+          3.9306249618530273,
           0.0,
-          0.0
+          -0.22247612476348877
         ],
         "rotation": [
           0.0,
@@ -133,6 +136,34 @@
           1.0,
           1.0,
           1.0
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "material": {
+        "path": "materials/default.mtrl"
+      },
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "Cubert_jr",
+      "parent": 7,
+      "transform": {
+        "position": [
+          1.5970418453216553,
+          -0.9242123961448669,
+          0.6045892238616943
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.3050000071525574,
+          0.3050000071525574,
+          0.3050000071525574
         ]
       }
     }

@@ -1,0 +1,42 @@
+{
+    "background": {
+        "cubemapPath": "",
+        "gradientBottomColor": [
+            0.37254899740219116,
+            0.6678200364112854,
+            1.0,
+            1.0
+        ],
+        "gradientTopColor": [
+            0.4264705777168274,
+            0.8987888097763062,
+            1.0,
+            1.0
+        ],
+        "mode": 1,
+        "solidColor": [
+            0.4000000059604645,
+            0.4000000059604645,
+            0.4000000059604645,
+            1.0
+        ]
+    },
+    "lighting": {
+        "ambientIntensity": 0.15000000596046448,
+        "sunColor": [
+            1.0,
+            0.949999988079071,
+            0.8500000238418579
+        ],
+        "sunDirection": [
+            -0.5,
+            -1.0,
+            -0.20000000298023224
+        ],
+        "sunIntensity": 1.2000000476837158
+    },
+    "project": {
+        "name": "OrionEngine Project",
+        "startingScene": "default.scene"
+    }
+}

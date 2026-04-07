@@ -49,6 +49,12 @@ namespace Orion {
         std::vector<EntityID> children;
     };
 
+    // Points to a Lua script file that defines OnStart() and OnUpdate(dt).
+    // The ScriptEngine (Apollo) loads and runs these during play mode.
+    struct ScriptComponent {
+        std::string scriptPath;  // Relative to assets folder, e.g. "scripts/rotate.lua"
+    };
+
 
 
 
@@ -88,16 +94,25 @@ namespace Orion {
         void AddMeshComponent(EntityID entityID, const MeshComponent& component);
         MeshComponent* GetMeshComponent(EntityID entityID);
         bool HasMeshComponent(EntityID entityID) const;
+        void RemoveMeshComponent(EntityID entityID);
 
         // Material
         void AddMaterialComponent(EntityID entityID, const MaterialComponent& component);
         MaterialComponent* GetMaterialComponent(EntityID entityID);
         bool HasMaterialComponent(EntityID entityID) const;
+        void RemoveMaterialComponent(EntityID entityID);
 
         // Camera
         void AddCameraComponent(EntityID entityID, const CameraComponent& component);
         CameraComponent* GetCameraComponent(EntityID entityID);
         bool HasCameraComponent(EntityID entityID) const;
+        void RemoveCameraComponent(EntityID entityID);
+
+        // Script
+        void AddScriptComponent(EntityID entityID, const ScriptComponent& component);
+        ScriptComponent* GetScriptComponent(EntityID entityID);
+        bool HasScriptComponent(EntityID entityID) const;
+        void RemoveScriptComponent(EntityID entityID);
 
         // Relationships (parent-child hierarchy)
         void SetParent(EntityID child, EntityID parent);
@@ -127,6 +142,7 @@ namespace Orion {
         std::unordered_map<EntityID, MeshComponent> m_MeshComponents;
         std::unordered_map<EntityID, MaterialComponent> m_MaterialComponents;
         std::unordered_map<EntityID, CameraComponent> m_CameraComponents;
+        std::unordered_map<EntityID, ScriptComponent> m_ScriptComponents;
         std::unordered_map<EntityID, RelationshipComponent> m_Relationships;
 
         // Empty children vector returned by GetChildren when entity has no relationships.

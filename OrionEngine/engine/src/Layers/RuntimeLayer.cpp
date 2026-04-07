@@ -1,6 +1,7 @@
 #include "EngineCore.h"
 #include "Layers/RuntimeLayer.h"
 #include "ECS/SceneManager.h"
+#include "Assets/AssetManager.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/Camera.h"
 
@@ -38,7 +39,7 @@ namespace Orion {
 		if (!m_RuntimeScene)
 			return;
 
-		// Accumulate runtime clock
+		// Compute delta time for this frame.
 		static float lastTime = (float)glfwGetTime();
 		float now = (float)glfwGetTime();
 		float dt = now - lastTime;
@@ -46,15 +47,9 @@ namespace Orion {
 
 		m_RuntimeTime += dt;
 
-		// -------------------------------------------------------
-		// RUNTIME GAME LOGIC GOES HERE
-		// This is where scripting / gameplay systems will tick.
-		// For now this is a placeholder — future work:
-		//   - Tick script components (Lua, C#, native, etc.)
-		//   - Tick physics
-		//   - Tick audio
-		//   - Tick animation
-		// -------------------------------------------------------
+		// --- Apollo scripting: tick all entity scripts ---
+		if (m_ScriptEngine.IsInitialized())
+			m_ScriptEngine.OnUpdate(dt);
 
 		// --- Drive the renderer camera from the active CameraComponent ---
 		ApplyRuntimeCamera();
@@ -64,6 +59,7 @@ namespace Orion {
 	{
 		// During play mode, runtime-specific input can be handled here.
 		// For now, events pass through to other layers.
+		// (Scripts read input via Input.IsKeyDown polling, not events.)
 	}
 
 	void RuntimeLayer::BeginPlay(std::shared_ptr<Scene> editorScene)
@@ -79,11 +75,21 @@ namespace Orion {
 
 		m_RuntimeTime = 0.0f;
 
+		// 4. Initialize Apollo scripting — loads all ScriptComponents
+		m_ScriptEngine.Init(m_RuntimeScene, AssetManager::GetAssetsFolderPath());
+
+		// 5. Call OnStart() on all loaded scripts
+		m_ScriptEngine.OnStart();
+
 		std::cout << "[RuntimeLayer] Play mode started.\n";
 	}
 
 	void RuntimeLayer::EndPlay()
 	{
+		// Shut down Apollo before restoring the scene.
+		if (m_ScriptEngine.IsInitialized())
+			m_ScriptEngine.Shutdown();
+
 		if (!m_EditorSceneSnapshot)
 		{
 			std::cout << "[RuntimeLayer] Warning: No editor snapshot to restore.\n";
@@ -126,7 +132,7 @@ namespace Orion {
 
 			// --- Build forward direction from transform rotation ---
 			// Default camera looks down -Z (OpenGL convention).
-			// Apply the same X→Y→Z rotation order as RenderScene.
+			// Apply the same X->Y->Z rotation order as RenderScene.
 			glm::vec3 forward(0.0f, 0.0f, -1.0f);
 			glm::vec3 up(0.0f, 1.0f, 0.0f);
 
@@ -150,14 +156,11 @@ namespace Orion {
 			rendererCam->SetUp(up);
 
 			// Projection — use viewport aspect ratio from the renderer
-			float aspectRatio = rendererCam->GetAspectRatio(); // Already set by Renderer::BeginFrame
+			float aspectRatio = rendererCam->GetAspectRatio();
 			rendererCam->SetPerspective(camComp->fovDegrees, aspectRatio, camComp->nearPlane, camComp->farPlane);
 
 			return; // Use only the first active camera
 		}
-
-		// No active camera entity found — renderer keeps using whatever was set
-		// (e.g., the editor camera's last state, which is fine as a fallback)
 	}
 
 }

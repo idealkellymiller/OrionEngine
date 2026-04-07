@@ -73,6 +73,11 @@ namespace Orion {
             return "";
         }
 
+        // --- Full asset map access (for editor dropdowns, etc.) ---
+        static const std::unordered_map<AssetID, MeshAsset>& GetAllMeshAssets() { return m_MeshAssets; }
+        static const std::unordered_map<AssetID, MaterialAsset>& GetAllMaterialAssets() { return m_MaterialAssets; }
+        static const std::unordered_map<AssetID, TextureAsset>& GetAllTextureAssets() { return m_TextureAssets; }
+
         static void SetAssetsFolderPath(std::string filePath) { m_AssetsFolderPath = filePath; }
         static std::string GetAssetsFolderPath() { return m_AssetsFolderPath; }
 

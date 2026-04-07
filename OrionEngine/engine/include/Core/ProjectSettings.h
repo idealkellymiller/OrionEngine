@@ -40,6 +40,13 @@ namespace Orion {
         std::string projectName   = "OrionEngine Project";
         std::string startingScene = "default.scene";
 
+        // ---------- Persistence ----------
+        // Save all settings to a JSON file.
+        bool Save(const std::string& filePath) const;
+
+        // Load settings from a JSON file. Missing keys keep their defaults.
+        bool Load(const std::string& filePath);
+
         // ---------- Singleton access ----------
         static ProjectSettings& Get() {
             static ProjectSettings s_Instance;

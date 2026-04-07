@@ -55,6 +55,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/AppWindow.cpp"
 
             "engine/src/Core/Console.cpp"
+            "engine/src/Core/ProjectSettings.cpp"
 
             "engine/src/Layers/Layer.cpp"
             "engine/src/Layers/LayerStack.cpp"

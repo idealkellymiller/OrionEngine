@@ -4,6 +4,7 @@
 #include "Renderer/Renderer.h"
 #include "Assets/AssetManager.h"
 #include "ECS/SceneManager.h"
+#include "Core/ProjectSettings.h"
 
 namespace Orion {
 
@@ -91,6 +92,10 @@ namespace Orion {
 		AssetManager::SetAssetsFolderPath("..\\editor\\assets\\");
 		AssetManager::LoadAssetsFolder();
 
+		// Load project settings (from the assets folder, next to scene files).
+		// If the file doesn't exist yet, defaults are kept.
+		ProjectSettings::Get().Load(AssetManager::GetAssetsFolderPath() + "project.settings");
+
 		// Load (startup) Scene
 		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + "default.scene");
 
@@ -110,6 +115,9 @@ namespace Orion {
 			// update app window
 			m_Window->OnUpdate();
 		}
+
+		// Save project settings on exit so they persist between runs.
+		ProjectSettings::Get().Save(AssetManager::GetAssetsFolderPath() + "project.settings");
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)

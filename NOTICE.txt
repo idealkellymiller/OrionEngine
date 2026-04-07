@@ -1,0 +1,117 @@
+Orion Engine
+Copyright (c) 2026, Luke Holder, Kelly Miller, Myca Calvin
+
+This product include software from CMake (BSD 3-Clause)
+* CMake - Cross Platform Makefile Generator
+* Copyright 2000-2026 Kitware, Inc. and Contributors
+
+This product includes software from https://github.com/ocornut/imgui
+* This software is under an MIT license. For more details, see OrionEngine/engine/external/ImGUI/LICENSE.txt.
+* Copyright (c) 2014-2026 Omar Cornut
+
+This product includes software from https://github.com/gabime/spdlog
+* This software is under an MIT license. For more details, see OrionEngine/engine/external/spdlog/LICENSE.txt.
+* Copyright (c) 2016 - present, Gabi Melman and spdlog contributors.
+
+This product includes software from https://github.com/glfw/glfw
+* This software is under a Zlib license. For more details, see OrionEngine/engine/external/GLFW/LICENSE.md.
+* Copyright (c) 2002-2006 Marcus Geelnard
+* Copyright (c) 2006-2019 Camilla Löwy
+
+This product includes software from https://github.com/Dav1dde/glad
+* This software is under an MIT license:
+
+    Copyright (c) 2013-2022 David Herberth
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the "Software"), to deal in
+    the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+    the Software, and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+This product includes software from https://github.com/nlohmann/json
+* This software is under an MIT license. For more details, see OrionEngine/engine/external/json-3.12.0/LICENSE.MIT.
+* Copyright (c) 2013-2025 Niels Lohmann
+
+This product includes software from https://github.com/g-truc/glm
+* The below license is included for this software:
+================================================================================
+OpenGL Mathematics (GLM)
+--------------------------------------------------------------------------------
+GLM is licensed under The Happy Bunny License or MIT License
+
+================================================================================
+The Happy Bunny License (Modified MIT License)
+--------------------------------------------------------------------------------
+Copyright (c) 2005 - G-Truc Creation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+Restrictions:
+ By making use of the Software for military purposes, you choose to make a
+ Bunny unhappy.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+This product includes software from https://github.com/TheCherno/Hazel (Apache License 2.0)
+* Copyright (c) 2017-2026, Yan Chernikov; all rights reserved.
+* Files from this software that have been derived from, inspired by, and modified for use in Orion Engine: 
+  * Application.h, 
+  * Application.cpp, 
+  * Window.h, 
+  * WindowsWindow.cpp (AppWindow.cpp in Orion), 
+  * Event.h, 
+  * KeyEvent.h, 
+  * MouseEvent.h, 
+  * ApplicationEvent.h, 
+  * LayerStack.h, 
+  * LayerStack.cpp,
+  * Layer.cpp,
+  * Log.cpp
+
+This product includes software from https://github.com/nothings/stb
+* This software is under an MIT license:
+Copyright (c) 2017 Sean Barrett
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

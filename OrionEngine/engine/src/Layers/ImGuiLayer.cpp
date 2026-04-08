@@ -8,6 +8,8 @@
 #include "Core/ProjectSettings.h"
 
 #include "imgui.h"
+#include "libintl.h"
+
 // #include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
 #include "../external/ImGUI/backends/imgui_impl_glfw.h"
 #include "../external/ImGUI/backends/imgui_impl_opengl3.h"
@@ -19,6 +21,8 @@
 #include <format>
 #include <iostream>
 #include <algorithm>
+
+#define _(String) gettext(String)
 
 namespace Orion {
 
@@ -89,7 +93,7 @@ namespace Orion {
 		ImGui::DockSpaceOverViewport();
 
 		static bool show = true;
-		// ImGui::ShowDemoWindow(&show);
+		 //ImGui::ShowDemoWindow(&show);
 		ShowMainMenuBar();
 		ShowInspectorModule();
 		ShowViewportModule();
@@ -1197,6 +1201,14 @@ namespace Orion {
 				ImGui::Text("Ambient");
 				ImGui::DragFloat("Ambient Intensity", &settings.ambientIntensity, 0.005f, 0.0f, 1.0f);
 				ImGui::TextDisabled("(Ambient uniform not yet wired to shader)");
+			}
+
+			// ---------- Language ----------
+			if (ImGui::CollapsingHeader("Language", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				const char* languages[] = { "English", "Spanish"};
+				static int language_current = 0;
+				ImGui::Combo("Choose Editor Language", &language_current, languages, IM_COUNTOF(languages));
 			}
 		}
 		ImGui::End();

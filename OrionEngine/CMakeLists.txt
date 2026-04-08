@@ -13,6 +13,15 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/external/Glad/include/KHR"
         )
 
+    # add gettext and libintl (for language translation)
+    add_library(intl STATIC IMPORTED)
+        set_target_properties(intl PROPERTIES
+            IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/Gettext/lib/intl.lib"
+        )
+        target_include_directories(intl INTERFACE
+            "engine/external/Gettext/include"
+        )
+
    set(IMGUI_PATH "engine/external/ImGUI")
     file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp)
     add_library(ImGUI STATIC ${IMGUI_SOURCES})
@@ -105,6 +114,7 @@ project(OrionEngine LANGUAGES CXX C)
 
         target_link_libraries(Engine PUBLIC
             Glad
+            intl
             ImGUI
             glfw
             spdlog

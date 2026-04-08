@@ -13,15 +13,6 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/external/Glad/include/KHR"
         )
 
-    # add gettext and libintl (for language translation)
-    add_library(intl STATIC IMPORTED)
-        set_target_properties(intl PROPERTIES
-            IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/Gettext/lib/intl.lib"
-        )
-        target_include_directories(intl INTERFACE
-            "engine/external/Gettext/include"
-        )
-
    set(IMGUI_PATH "engine/external/ImGUI")
     file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp)
     add_library(ImGUI STATIC ${IMGUI_SOURCES})
@@ -31,6 +22,7 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory("engine/external/spdlog")
     add_subdirectory("engine/external/glm")
     add_subdirectory(engine/external/json-3.12.0)
+    add_subdirectory("engine/external/Gettext")
 
     # Lua 5.4 — built as a static C library
     file(GLOB LUA_SOURCES "engine/external/lua/*.c")
@@ -108,18 +100,16 @@ project(OrionEngine LANGUAGES CXX C)
             ORN_ENABLE_ASSERTS
         )
 
-        
-
         target_compile_definitions(Engine INTERFACE ORION_PLATFORM_WINDOWS)
 
         target_link_libraries(Engine PUBLIC
             Glad
-            intl
             ImGUI
             glfw
             spdlog
             nlohmann_json::nlohmann_json
             Lua
+            gettext_intl
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)

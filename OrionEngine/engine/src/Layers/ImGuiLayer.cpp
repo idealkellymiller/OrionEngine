@@ -22,7 +22,7 @@
 #include <iostream>
 #include <algorithm>
 
-#define _(String) gettext(String)
+#define _(x) gettext(x)
 
 namespace Orion {
 
@@ -227,7 +227,7 @@ namespace Orion {
 		if (ImGui::BeginMainMenuBar())
 		{
 			// file menu bar option
-			if (ImGui::BeginMenu("File"))
+			if (ImGui::BeginMenu(_("File")))
 			{
 				if (ImGui::MenuItem("Save", "CTRL + S")) {}
 				if (ImGui::MenuItem("Save as")) {}

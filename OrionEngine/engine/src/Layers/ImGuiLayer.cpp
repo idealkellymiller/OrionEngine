@@ -20,7 +20,14 @@
 
 #include <format>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
+#include <filesystem>
+
+#ifdef _WIN32
+#include <Windows.h>
+#include <shellapi.h>   // ShellExecuteA
+#endif
 
 #define _(x) gettext(x)
 
@@ -98,8 +105,9 @@ namespace Orion {
 		ShowInspectorModule();
 		ShowViewportModule();
 		ShowHierarchyModule();
-		ShowConsoleModule();
-		ShowControlsModule();
+		ShowAssetBrowser();
+		// ShowConsoleModule();
+		// ShowControlsModule();
 		ShowProjectSettingsWindow();
 
 		// Tell ImGui to finalize all UI draw data
@@ -1001,73 +1009,434 @@ namespace Orion {
 		}
 	}
 
-	////holds the files
-	//namespace fs = std::filesystem;
-	//void ImGuiLayer::DrawDirectoryTree(const fs::path& path)
-	//{
-	//	for (const auto& entry : fs::directory_iterator(path))
-	//	{
-	//		const auto& p = entry.path();
-	//		std::string name = p.filename().string();
-	//		if (entry.is_directory())
-	//		{
-	//			if (ImGui::TreeNode(name.c_str()))
-	//			{
-	//				DrawDirectoryTree(p);
-	//				ImGui::TreePop();
-	//			}
-	//		}
-	//		else
-	//		{
-	//			ImGui::BulletText("%s", name.c_str());
-	//		}
-	//	}
-	//}
+	// ========================== ASSET BROWSER ==========================
 
-	////search bar for files
-	//void ImGuiLayer::DrawDirectorySearch(const fs::path& path, ImGuiTextFilter& filter)
-	//{
-	//	for (const auto& entry : fs::recursive_directory_iterator(path))
-	//	{
-	//		std::string name = entry.path().filename().string();
+	namespace fs = std::filesystem;
 
-	//		if (filter.PassFilter(name.c_str()))
-	//		{
-	//			if (ImGui::Selectable(name.c_str()))
-	//			{
+	// Returns a label prefix based on file extension for visual identification.
+	static const char* FileTypeIcon(const std::string& ext)
+	{
+		if (ext == ".obj")   return "[Mesh]    ";
+		if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
+			return "[Tex]     ";
+		if (ext == ".mtrl")  return "[Mat]     ";
+		if (ext == ".lua")   return "[Script]  ";
+		if (ext == ".scene") return "[Scene]   ";
+		return "          ";
+	}
 
-	//			}
-	//		}
-	//	}
-	//}
+	// Returns a color for each file type so entries are visually distinct.
+	static ImVec4 FileTypeColor(const std::string& ext)
+	{
+		if (ext == ".obj")   return ImVec4(0.4f, 0.8f, 1.0f, 1.0f);  // light blue
+		if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
+			return ImVec4(0.9f, 0.7f, 0.3f, 1.0f);  // amber
+		if (ext == ".mtrl")  return ImVec4(0.5f, 1.0f, 0.5f, 1.0f);  // green
+		if (ext == ".lua")   return ImVec4(0.6f, 0.6f, 1.0f, 1.0f);  // purple-ish
+		if (ext == ".scene") return ImVec4(1.0f, 0.6f, 0.6f, 1.0f);  // salmon
+		return ImVec4(0.7f, 0.7f, 0.7f, 1.0f);  // grey
+	}
 
-	////puts them together
-	//void ImGuiLayer::DrawDirectory(const fs::path& path)
-	//{
-	//	static ImGuiTextFilter filter;
-	//	filter.Draw("Search");
-	//	bool searching = strlen(filter.InputBuf) > 0;
-	//	if (searching)
-	//		DrawDirectorySearch(path, filter);
-	//	else
-	//		DrawDirectoryTree(path);
-	//}
+	void ImGuiLayer::ShowAssetBrowser()
+	{
+		if (!showFileDirectoryModule)
+			return;
 
-	//void ImGuiLayer::ShowFileDirectoryModule()
-	//{
-	//	if (showFileDirectoryModule)
-	//	{
-	//		if (ImGui::Begin("File Directory", &showFileDirectoryModule))
-	//		{
-	//			//used the helper cause i thought it would be helpful lol
-	//			// HelpMarker("This showes the files in the project, you can use the search bar to find a specific files");
+		if (ImGui::Begin("Assets", &showFileDirectoryModule))
+		{
+			std::string assetsRoot = AssetManager::GetAssetsFolderPath();
+			if (assetsRoot.empty()) {
+				ImGui::TextDisabled("Assets folder path not set.");
+				ImGui::End();
+				return;
+			}
 
-	//			DrawDirectory(".");
+			// Ensure root path uses consistent separators
+			fs::path rootPath = fs::path(assetsRoot).make_preferred();
 
-	//		}
-	//		ImGui::End();
-	//	}
-	//}
+			// Initialise current directory to root on first open
+			if (m_AssetBrowserCurrentDir.empty())
+				m_AssetBrowserCurrentDir = rootPath.string();
+
+			fs::path currentPath(m_AssetBrowserCurrentDir);
+			if (!fs::exists(currentPath) || !fs::is_directory(currentPath))
+				currentPath = rootPath;
+
+			// ---------- Breadcrumb navigation ----------
+			{
+				// Build path segments from root to current
+				fs::path relative = fs::relative(currentPath, rootPath);
+				std::vector<std::pair<std::string, fs::path>> crumbs;
+
+				// Root crumb
+				crumbs.push_back({ "Assets", rootPath });
+
+				// Walk the relative path and build intermediate absolute paths
+				if (relative != "." && !relative.empty()) {
+					fs::path building = rootPath;
+					for (const auto& segment : relative) {
+						building /= segment;
+						crumbs.push_back({ segment.string(), building });
+					}
+				}
+
+				for (size_t i = 0; i < crumbs.size(); ++i) {
+					if (i > 0) {
+						ImGui::SameLine(0, 2);
+						ImGui::TextDisabled("/");
+						ImGui::SameLine(0, 2);
+					}
+
+					bool isCurrent = (i == crumbs.size() - 1);
+					if (isCurrent) {
+						ImGui::TextUnformatted(crumbs[i].first.c_str());
+					} else {
+						// Clickable breadcrumb — navigate to that folder
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+						if (ImGui::SmallButton(crumbs[i].first.c_str())) {
+							m_AssetBrowserCurrentDir = crumbs[i].second.string();
+						}
+						ImGui::PopStyleColor(2);
+					}
+				}
+			}
+
+			ImGui::Separator();
+
+			// ---------- Search filter ----------
+			static ImGuiTextFilter filter;
+			filter.Draw("Search##AssetFilter", -1);
+			bool isSearching = filter.IsActive();
+
+			ImGui::Separator();
+
+			// ---------- Back button (go to parent) ----------
+			if (!isSearching && currentPath != rootPath) {
+				if (ImGui::Selectable("..  [Up]", false)) {
+					fs::path parent = currentPath.parent_path();
+					// Don't go above root
+					if (parent.string().size() >= rootPath.string().size())
+						m_AssetBrowserCurrentDir = parent.string();
+					else
+						m_AssetBrowserCurrentDir = rootPath.string();
+				}
+			}
+
+			// ---------- Helpers: create new assets in the current directory ----------
+			// These lambdas generate a unique filename (e.g. "New Scene (2).scene")
+			// and write a minimal valid file so the asset system can pick it up.
+
+			static bool s_ShowRenamePopup = false;
+			static char s_RenameBuf[256] = "";
+			static std::string s_RenameTargetPath;   // absolute path of the file/folder being renamed
+
+			auto uniquePath = [&](const std::string& baseName, const std::string& ext) -> fs::path {
+				fs::path candidate = currentPath / (baseName + ext);
+				if (!fs::exists(candidate)) return candidate;
+				for (int i = 2; i < 100; ++i) {
+					candidate = currentPath / (baseName + " (" + std::to_string(i) + ")" + ext);
+					if (!fs::exists(candidate)) return candidate;
+				}
+				return candidate;
+			};
+
+			auto createNewScene = [&]() {
+				fs::path path = uniquePath("New Scene", ".scene");
+				std::ofstream file(path);
+				if (file.is_open()) {
+					file << "{\n  \"scene\": {\n    \"name\": \"" << path.stem().string()
+					     << "\",\n    \"version\": 1\n  },\n  \"entities\": []\n}\n";
+					file.close();
+					std::cout << "[Assets] Created: " << path.string() << "\n";
+				}
+			};
+
+			auto createNewMaterial = [&]() {
+				fs::path path = uniquePath("New Material", ".mtrl");
+				std::ofstream file(path);
+				if (file.is_open()) {
+					file << "# Material: " << path.stem().string() << "\n"
+					     << "dt none\n"
+					     << "c 0.9 0.9 0.9 1.0\n"
+					     << "sc 0.5 0.5 0.5\n"
+					     << "ss 32.0\n"
+					     << "it 0\n";
+					file.close();
+					std::cout << "[Assets] Created: " << path.string() << "\n";
+				}
+			};
+
+			auto createNewFolder = [&]() {
+				fs::path candidate = currentPath / "New Folder";
+				if (fs::exists(candidate)) {
+					for (int i = 2; i < 100; ++i) {
+						candidate = currentPath / ("New Folder (" + std::to_string(i) + ")");
+						if (!fs::exists(candidate)) break;
+					}
+				}
+				try {
+					fs::create_directory(candidate);
+					std::cout << "[Assets] Created folder: " << candidate.string() << "\n";
+				} catch (const std::exception& e) {
+					std::cout << "[Assets] Failed to create folder: " << e.what() << "\n";
+				}
+			};
+
+			auto createNewScript = [&]() {
+				fs::path path = uniquePath("New Script", ".lua");
+				std::ofstream file(path);
+				if (file.is_open()) {
+					file << "-- Script: " << path.stem().string() << "\n\n"
+					     << "function OnStart()\n"
+					     << "    -- Called once when play mode begins\n"
+					     << "end\n\n"
+					     << "function OnUpdate(dt)\n"
+					     << "    -- Called every frame with delta time\n"
+					     << "end\n";
+					file.close();
+					std::cout << "[Assets] Created: " << path.string() << "\n";
+				}
+			};
+
+			// ---------- Directory listing ----------
+			if (isSearching) {
+				// Recursive search across all assets
+				try {
+					for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
+						if (!entry.is_regular_file())
+							continue;
+
+						std::string filename = entry.path().filename().string();
+						if (!filter.PassFilter(filename.c_str()))
+							continue;
+
+						// Show relative path from assets root
+						std::string relPath = fs::relative(entry.path(), rootPath).string();
+						std::string ext = entry.path().extension().string();
+						for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+
+						std::string label = std::string(FileTypeIcon(ext)) + relPath;
+
+						ImGui::PushStyleColor(ImGuiCol_Text, FileTypeColor(ext));
+						if (ImGui::Selectable(label.c_str(), false)) {
+							// Navigate to the containing folder
+							m_AssetBrowserCurrentDir = entry.path().parent_path().string();
+							filter.Clear();
+						}
+						ImGui::PopStyleColor();
+					}
+				} catch (const std::exception&) { /* skip permission errors */ }
+			}
+			else {
+				// Collect and sort entries: directories first, then files alphabetically
+				std::vector<fs::directory_entry> dirs;
+				std::vector<fs::directory_entry> files;
+
+				try {
+					for (const auto& entry : fs::directory_iterator(currentPath)) {
+						if (entry.is_directory())
+							dirs.push_back(entry);
+						else if (entry.is_regular_file())
+							files.push_back(entry);
+					}
+				} catch (const std::exception&) { /* skip */ }
+
+				auto sortByName = [](const fs::directory_entry& a, const fs::directory_entry& b) {
+					return a.path().filename().string() < b.path().filename().string();
+				};
+				std::sort(dirs.begin(), dirs.end(), sortByName);
+				std::sort(files.begin(), files.end(), sortByName);
+
+				// Folders
+				for (const auto& dir : dirs) {
+					std::string name = dir.path().filename().string();
+					std::string label = std::string("[Folder]  ") + name;
+
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.5f, 1.0f)); // warm yellow
+					if (ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+						if (ImGui::IsMouseDoubleClicked(0)) {
+							m_AssetBrowserCurrentDir = dir.path().string();
+						}
+					}
+					ImGui::PopStyleColor();
+
+					// Right-click context menu for folders
+					if (ImGui::BeginPopupContextItem()) {
+						if (ImGui::MenuItem("Open")) {
+							m_AssetBrowserCurrentDir = dir.path().string();
+						}
+						if (ImGui::MenuItem("Rename")) {
+							s_RenameTargetPath = dir.path().string();
+							strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
+							s_ShowRenamePopup = true;
+						}
+						ImGui::Separator();
+						if (ImGui::MenuItem("Show in Explorer")) {
+							std::string absPath = fs::absolute(dir.path()).string();
+							ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+						}
+						ImGui::Separator();
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+						if (ImGui::MenuItem("Delete")) {
+							try {
+								fs::remove_all(dir.path());
+								std::cout << "[Assets] Deleted folder: " << dir.path().string() << "\n";
+							} catch (const std::exception& e) {
+								std::cout << "[Assets] Delete failed: " << e.what() << "\n";
+							}
+						}
+						ImGui::PopStyleColor();
+						ImGui::EndPopup();
+					}
+				}
+
+				// Files
+				for (const auto& file : files) {
+					std::string name = file.path().filename().string();
+					std::string ext = file.path().extension().string();
+					for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+
+					std::string label = std::string(FileTypeIcon(ext)) + name;
+
+					ImGui::PushStyleColor(ImGuiCol_Text, FileTypeColor(ext));
+					bool clicked = ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick);
+					ImGui::PopStyleColor();
+
+					// Right-click context menu for files
+					if (ImGui::BeginPopupContextItem()) {
+						if (ImGui::MenuItem("Open")) {
+							if (ext == ".scene") {
+								SceneManager::LoadScene(file.path().string());
+							} else {
+								std::string absPath = fs::absolute(file.path()).string();
+								ShellExecuteA(NULL, "open", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+							}
+						}
+						if (ImGui::MenuItem("Rename")) {
+							s_RenameTargetPath = file.path().string();
+							strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
+							s_ShowRenamePopup = true;
+						}
+						ImGui::Separator();
+						if (ImGui::MenuItem("Show in Explorer")) {
+							std::string absPath = fs::absolute(file.path().parent_path()).string();
+							ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+						}
+						ImGui::Separator();
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+						if (ImGui::MenuItem("Delete")) {
+							try {
+								fs::remove(file.path());
+								std::cout << "[Assets] Deleted: " << file.path().string() << "\n";
+							} catch (const std::exception& e) {
+								std::cout << "[Assets] Delete failed: " << e.what() << "\n";
+							}
+						}
+						ImGui::PopStyleColor();
+						ImGui::EndPopup();
+					}
+
+					// Tooltip with full relative path and file size
+					if (ImGui::IsItemHovered()) {
+						std::string relPath = fs::relative(file.path(), rootPath).string();
+						auto fileSize = file.file_size();
+						std::string sizeStr;
+						if (fileSize < 1024)
+							sizeStr = std::to_string(fileSize) + " B";
+						else if (fileSize < 1024 * 1024)
+							sizeStr = std::format("{:.1f} KB", fileSize / 1024.0);
+						else
+							sizeStr = std::format("{:.1f} MB", fileSize / (1024.0 * 1024.0));
+
+						ImGui::BeginTooltip();
+						ImGui::Text("Path: %s", relPath.c_str());
+						ImGui::Text("Size: %s", sizeStr.c_str());
+						ImGui::EndTooltip();
+					}
+
+					// Double-click opens the file with the OS-registered application
+					if (clicked && ImGui::IsMouseDoubleClicked(0)) {
+						if (ext == ".scene") {
+							SceneManager::LoadScene(file.path().string());
+						} else {
+							std::string absPath = fs::absolute(file.path()).string();
+							ShellExecuteA(NULL, "open", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+						}
+					}
+				}
+			}
+
+			// ---------- Right-click on empty space: "Create" context menu ----------
+			if (ImGui::BeginPopupContextWindow("AssetBrowserContextMenu", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+				if (ImGui::BeginMenu("New")) {
+					if (ImGui::MenuItem("Folder")) {
+						createNewFolder();
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("Scene (.scene)")) {
+						createNewScene();
+					}
+					if (ImGui::MenuItem("Material (.mtrl)")) {
+						createNewMaterial();
+					}
+					if (ImGui::MenuItem("Lua Script (.lua)")) {
+						createNewScript();
+					}
+					ImGui::EndMenu();
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Show in Explorer")) {
+					std::string absPath = fs::absolute(currentPath).string();
+					ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+				}
+				ImGui::EndPopup();
+			}
+
+			// ---------- Rename popup (modal) ----------
+			if (s_ShowRenamePopup) {
+				ImGui::OpenPopup("Rename##AssetRename");
+				s_ShowRenamePopup = false;
+			}
+
+			if (ImGui::BeginPopupModal("Rename##AssetRename", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+				ImGui::Text("Enter new name:");
+				bool enter = ImGui::InputText("##RenameInput", s_RenameBuf, sizeof(s_RenameBuf),
+					ImGuiInputTextFlags_EnterReturnsTrue);
+
+				// Auto-focus the text input on first frame
+				if (ImGui::IsWindowAppearing())
+					ImGui::SetKeyboardFocusHere(-1);
+
+				if (ImGui::Button("OK", ImVec2(80, 0)) || enter) {
+					std::string newName(s_RenameBuf);
+					if (!newName.empty() && !s_RenameTargetPath.empty()) {
+						fs::path oldPath(s_RenameTargetPath);
+						fs::path newPath = oldPath.parent_path() / newName;
+						try {
+							fs::rename(oldPath, newPath);
+							std::cout << "[Assets] Renamed: " << oldPath.filename().string()
+							          << " -> " << newName << "\n";
+							// If we renamed the current directory, update the path
+							if (m_AssetBrowserCurrentDir == oldPath.string())
+								m_AssetBrowserCurrentDir = newPath.string();
+						} catch (const std::exception& e) {
+							std::cout << "[Assets] Rename failed: " << e.what() << "\n";
+						}
+					}
+					s_RenameTargetPath.clear();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(80, 0))) {
+					s_RenameTargetPath.clear();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+		}
+		ImGui::End();
+	}
 
 	void ImGuiLayer::ShowConsoleTraceOutput(const char* source, const char* message)
 	{

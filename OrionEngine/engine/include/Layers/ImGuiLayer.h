@@ -91,6 +91,7 @@ namespace Orion {
 		void ShowViewportModule();
 		void ShowHierarchyModule();
 		void ShowProjectSettingsWindow();
+		void ShowAssetBrowser();
 		void DrawEntityNode(EntityID entity, Scene& scene);
 		void DrawDirectoryTree();
 		void DrawDirectorySearch();
@@ -103,6 +104,9 @@ namespace Orion {
 
 		// Drag-and-drop reparenting state
 		EntityID m_DragSourceEntity = INVALID_ENTITY;
+
+		// Asset browser state
+		std::string m_AssetBrowserCurrentDir;  // empty = root assets folder
 
 	};
 }

@@ -122,8 +122,8 @@
       "transform": {
         "position": [
           0.0,
-          2.0,
-          8.0
+          3.8073043823242188,
+          12.618836402893066
         ],
         "rotation": [
           -0.17000000178813934,
@@ -232,8 +232,38 @@
       "transform": {
         "position": [
           0.0,
-          4.256133079528809,
+          1.848191738128662,
           0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "material": {
+        "path": "materials/red.mtrl"
+      },
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "SCUBA",
+      "script": {
+        "path": "scripts/scuba.lua"
+      },
+      "transform": {
+        "position": [
+          4.849027633666992,
+          2.375941276550293,
+          4.816571235656738
         ],
         "rotation": [
           0.0,

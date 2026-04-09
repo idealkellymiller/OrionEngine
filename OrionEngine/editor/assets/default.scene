@@ -15,7 +15,7 @@
       "transform": {
         "position": [
           -6.240522861480713,
-          0.0,
+          4.887803554534912,
           4.1681976318359375
         ],
         "rotation": [
@@ -31,6 +31,21 @@
       }
     },
     {
+      "collider": {
+        "boxHalfExtents": [
+          10.0,
+          0.11999999731779099,
+          10.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
       "id": 2,
       "material": {
         "path": "materials/stone.mtrl"
@@ -39,10 +54,20 @@
         "path": "models/cube.obj"
       },
       "name": "Floor",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
       "transform": {
         "position": [
           0.0,
-          -4.0,
+          0.0,
           0.0
         ],
         "rotation": [
@@ -124,7 +149,7 @@
       "transform": {
         "position": [
           3.9306249618530273,
-          0.0,
+          3.7170767784118652,
           -0.22247612476348877
         ],
         "rotation": [
@@ -164,6 +189,61 @@
           0.3050000071525574,
           0.3050000071525574,
           0.3050000071525574
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.0
+      },
+      "id": 9,
+      "material": {
+        "path": "materials/stone.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "PhysMonke",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "script": {
+        "path": "scripts/phys.lua"
+      },
+      "transform": {
+        "position": [
+          0.0,
+          4.256133079528809,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
         ]
       }
     }

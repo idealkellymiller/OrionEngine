@@ -2,6 +2,7 @@
 #include "Layer.h"
 #include "ECS/Scene.h"
 #include "Scripting/Apollo.h"
+#include "Physics/PhysicsWorld.h"
 
 #include <memory>
 
@@ -46,6 +47,9 @@ namespace Orion {
 
 		// Apollo scripting engine — owns the Lua VM for this play session.
 		ScriptEngine m_ScriptEngine;
+
+		// Jolt physics world — created at BeginPlay, destroyed at EndPlay.
+		PhysicsWorld m_PhysicsWorld;
 	};
 
 }

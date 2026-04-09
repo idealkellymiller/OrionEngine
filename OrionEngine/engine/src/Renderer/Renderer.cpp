@@ -61,6 +61,7 @@ namespace Orion {
 	unsigned int Renderer::s_PickingDepthRBO = 0;
 
 	GizmoPass Renderer::s_GizmoPass;
+	DebugPass Renderer::s_DebugPass;
 
 	Shader Renderer::s_GradientShader;
 	unsigned int Renderer::s_EmptyVAO = 0;
@@ -124,6 +125,7 @@ namespace Orion {
 
 
 		s_GizmoPass.Init();
+		s_DebugPass.Init();
 
 		SetClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 		printf("Renderer Initialized.\n");
@@ -138,6 +140,7 @@ namespace Orion {
 		ShutdownGradientResources();
 
 		s_GizmoPass.Shutdown();
+		s_DebugPass.Shutdown();
 	}
 
 	void Renderer::SetViewport(int x, int y, int width, int height)
@@ -320,6 +323,21 @@ namespace Orion {
 			s_ShadowDepthTexture,
 			s_LightSpaceMatrix
 		);
+
+		// ---- Debug pass: grid + collider wireframe ----
+		if (!EditorLayer::IsPlaying()) {
+			// World grid
+			if (ProjectSettings::Get().showGrid)
+				s_DebugPass.DrawGrid(s_ActiveCamera);
+
+			// Collider wireframe for selected entity
+			EntityID selected = EditorLayer::GetSelectedEntity();
+			if (selected != INVALID_ENTITY) {
+				auto scene = SceneManager::GetActiveScene();
+				if (scene && scene->HasColliderComponent(selected))
+					s_DebugPass.DrawCollider(s_ActiveCamera, selected, *scene);
+			}
+		}
 
 		// Only render gizmo to screen if an object is selected and not in play mode
 		if (EditorLayer::GetSelectedEntity() != INVALID_ENTITY && !EditorLayer::IsPlaying()) {

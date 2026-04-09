@@ -21,3 +21,14 @@ Entity.SetPosition(id, x, y, z)
 -- Time
 Time.deltaTime()                 --> seconds since last frame
 Time.elapsed()                   --> seconds since play started
+
+
+
+-- Physics
+Physics.AddForce(x, y, z)	--> Continuous force — use in OnUpdate(), scaled by physics timestep
+Physics.AddImpulse(x, y, z)	--> Instantaneous velocity change (e.g. jump)
+Physics.AddTorque(x, y, z)	--> Rotational force
+Physics.SetVelocity(x, y, z)	--> Override linear velocity directly
+Physics.GetVelocity()		--> Returns x, y, z — current linear velocity
+Physics.AddForceToEntity(entityID, x, y, z)	--> Apply force to a specific entity
+Physics.AddImpulseToEntity(entityID, x, y, z)	--> Apply impulse to a specific entity

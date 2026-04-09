@@ -24,6 +24,16 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory(engine/external/json-3.12.0)
     add_subdirectory("engine/external/Gettext")
 
+    # Jolt Physics — built as a static library
+    set(TARGET_HELLO_WORLD OFF CACHE BOOL "" FORCE)
+    set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "" FORCE)
+    set(TARGET_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(TARGET_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+    set(TARGET_VIEWER OFF CACHE BOOL "" FORCE)
+    set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
+    add_subdirectory("engine/external/JoltPhysics/Build")
+
     # Lua 5.4 — built as a static C library
     file(GLOB LUA_SOURCES "engine/external/lua/*.c")
     add_library(Lua STATIC ${LUA_SOURCES})
@@ -45,6 +55,7 @@ project(OrionEngine LANGUAGES CXX C)
         PUBLIC
             "engine/include"
             ${CMAKE_CURRENT_SOURCE_DIR}/engine/external
+            ${CMAKE_CURRENT_SOURCE_DIR}/engine/external/JoltPhysics
         PRIVATE
             "engine/src"
         )
@@ -83,6 +94,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Renderer/Texture.cpp"
             "engine/src/Renderer/VertexArray.cpp"
             "engine/src/Renderer/VertexBuffer.cpp"
+            "engine/src/Renderer/DebugPass.cpp"
             
             "engine/src/Assets/AssetManager.cpp"
 
@@ -90,6 +102,8 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/ECS/SceneManager.cpp"
 
             "engine/src/Scripting/ScriptEngine.cpp"
+
+            "engine/src/Physics/PhysicsWorld.cpp"
         )
 
         target_compile_definitions(Engine 
@@ -110,6 +124,7 @@ project(OrionEngine LANGUAGES CXX C)
             nlohmann_json::nlohmann_json
             Lua
             gettext_intl
+            Jolt
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)

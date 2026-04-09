@@ -36,6 +36,11 @@ namespace Orion {
 
         float     ambientIntensity = 0.15f;
 
+        // ---------- Debug / Editor ----------
+        bool showGrid = true;                  // XZ world grid in the viewport
+        float gridSpacing = 1.0f;              // distance between grid lines
+        float gridHalfExtent = 50.0f;          // how far the grid extends from origin
+
         // ---------- Project Info ----------
         std::string projectName   = "OrionEngine Project";
         std::string startingScene = "default.scene";

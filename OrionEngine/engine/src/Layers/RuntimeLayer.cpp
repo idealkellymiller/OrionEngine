@@ -51,6 +51,10 @@ namespace Orion {
 		if (m_ScriptEngine.IsInitialized())
 			m_ScriptEngine.OnUpdate(dt);
 
+		// --- Step physics simulation ---
+		if (m_PhysicsWorld.IsInitialized())
+			m_PhysicsWorld.Step(dt);
+
 		// --- Drive the renderer camera from the active CameraComponent ---
 		ApplyRuntimeCamera();
 	}
@@ -76,9 +80,22 @@ namespace Orion {
 		m_RuntimeTime = 0.0f;
 
 		// 4. Initialize Apollo scripting — loads all ScriptComponents
-		m_ScriptEngine.Init(m_RuntimeScene, AssetManager::GetAssetsFolderPath());
+		//    Pass the PhysicsWorld pointer so Lua scripts can call Physics.AddForce(), etc.
+		m_ScriptEngine.Init(m_RuntimeScene, AssetManager::GetAssetsFolderPath(), &m_PhysicsWorld);
 
-		// 5. Call OnStart() on all loaded scripts
+		// 5. Initialize Jolt physics world from the runtime scene
+		m_PhysicsWorld.Init(m_RuntimeScene);
+
+		// 6. Set up collision callback — forwards to script OnCollision(otherID, isTrigger)
+		m_PhysicsWorld.SetCollisionCallback(
+			[this](EntityID a, EntityID b, bool isTrigger) {
+				if (m_ScriptEngine.IsInitialized()) {
+					m_ScriptEngine.OnCollision(a, b, isTrigger);
+				}
+			}
+		);
+
+		// 7. Call OnStart() on all loaded scripts
 		m_ScriptEngine.OnStart();
 
 		std::cout << "[RuntimeLayer] Play mode started.\n";
@@ -86,6 +103,10 @@ namespace Orion {
 
 	void RuntimeLayer::EndPlay()
 	{
+		// Shut down physics before restoring the scene.
+		if (m_PhysicsWorld.IsInitialized())
+			m_PhysicsWorld.Shutdown();
+
 		// Shut down Apollo before restoring the scene.
 		if (m_ScriptEngine.IsInitialized())
 			m_ScriptEngine.Shutdown();

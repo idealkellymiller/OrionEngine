@@ -22,6 +22,7 @@
 #include "Renderer/Framebuffer.h"
 #include "Renderer/DrawCommand.h"
 #include "Renderer/Gizmo.h"
+#include "Renderer/DebugPass.h"
 
 #include "ECS/Scene.h"
 
@@ -128,6 +129,7 @@ namespace Orion {
 		static unsigned int s_PickingDepthRBO;
 
 		static GizmoPass s_GizmoPass;
+		static DebugPass s_DebugPass;
 
 		// Gradient background resources
 		static Shader s_GradientShader;

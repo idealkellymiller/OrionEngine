@@ -5,6 +5,7 @@
 // Everything else just includes Apollo.h (which forward-declares sol::state).
 
 #include "Scripting/Apollo.h"
+#include "Physics/PhysicsWorld.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
 
@@ -41,10 +42,11 @@ namespace Orion {
     // Lifecycle
     // ================================================================
 
-    void ScriptEngine::Init(std::shared_ptr<Scene> scene, const std::string& assetsPath)
+    void ScriptEngine::Init(std::shared_ptr<Scene> scene, const std::string& assetsPath, PhysicsWorld* physicsWorld)
     {
         m_Scene = scene;
         m_AssetsPath = assetsPath;
+        m_PhysicsWorld = physicsWorld;
 
         // Create the Lua virtual machine and open the standard libraries
         // (string, table, math, etc. — no io/os for sandboxing).
@@ -61,6 +63,7 @@ namespace Orion {
         RegisterInputBindings();
         RegisterEntityBindings();
         RegisterTimeBindings();
+        RegisterPhysicsBindings();
 
         // Walk every entity that has a ScriptComponent and load its script file.
         for (EntityID entity : scene->GetEntities()) {
@@ -446,6 +449,100 @@ namespace Orion {
 
         // Time.elapsed -> total seconds since play mode started
         time["elapsed"] = [this]() -> float { return m_ElapsedTime; };
+    }
+
+    // ================================================================
+    // Collision dispatch
+    // ================================================================
+    // Called by PhysicsWorld's ContactListener. Invokes OnCollision(otherID, isTrigger)
+    // on both entities' scripts (if they have one).
+
+    void ScriptEngine::OnCollision(EntityID entityA, EntityID entityB, bool isTrigger)
+    {
+        if (!m_Lua) return;
+
+        // Helper: call OnCollision on one entity's script
+        auto dispatch = [&](EntityID self, EntityID other) {
+            auto envIt = m_ScriptEnvs.find(self);
+            if (envIt == m_ScriptEnvs.end()) return;
+
+            sol::environment env(m_Lua->lua_state(), sol::ref_index(envIt->second));
+            sol::optional<sol::function> onCollision = env["OnCollision"];
+            if (!onCollision) return;
+
+            m_CurrentEntity = self;
+            sol::protected_function_result result = (*onCollision)((int)other, isTrigger);
+            if (!result.valid()) {
+                sol::error err = result;
+                std::cout << "[Apollo] OnCollision error (entity " << self << "): "
+                          << err.what() << "\n";
+            }
+        };
+
+        dispatch(entityA, entityB);
+        dispatch(entityB, entityA);
+
+        m_CurrentEntity = INVALID_ENTITY;
+    }
+
+    // ================================================================
+    // Bindings: Physics
+    // ================================================================
+    // Exposes Physics.AddForce(x,y,z), Physics.AddImpulse(x,y,z),
+    // Physics.SetVelocity(x,y,z), Physics.GetVelocity() -> x,y,z,
+    // Physics.AddTorque(x,y,z).
+    // All act on the current entity (the one whose script is running).
+    // Also supports targeting other entities by ID.
+
+    void ScriptEngine::RegisterPhysicsBindings()
+    {
+        sol::state& lua = *m_Lua;
+
+        sol::table physics = lua.create_named_table("Physics");
+
+        // Physics.AddForce(x, y, z) — continuous force (applied over time, use in OnUpdate)
+        physics["AddForce"] = [this](float x, float y, float z) {
+            if (!m_PhysicsWorld || m_CurrentEntity == INVALID_ENTITY) return;
+            m_PhysicsWorld->AddForce(m_CurrentEntity, { x, y, z });
+        };
+
+        // Physics.AddForceToEntity(entityID, x, y, z) — apply force to a specific entity
+        physics["AddForceToEntity"] = [this](EntityID id, float x, float y, float z) {
+            if (!m_PhysicsWorld) return;
+            m_PhysicsWorld->AddForce(id, { x, y, z });
+        };
+
+        // Physics.AddImpulse(x, y, z) — instantaneous velocity change (e.g. jump)
+        physics["AddImpulse"] = [this](float x, float y, float z) {
+            if (!m_PhysicsWorld || m_CurrentEntity == INVALID_ENTITY) return;
+            m_PhysicsWorld->AddImpulse(m_CurrentEntity, { x, y, z });
+        };
+
+        // Physics.AddImpulseToEntity(entityID, x, y, z)
+        physics["AddImpulseToEntity"] = [this](EntityID id, float x, float y, float z) {
+            if (!m_PhysicsWorld) return;
+            m_PhysicsWorld->AddImpulse(id, { x, y, z });
+        };
+
+        // Physics.AddTorque(x, y, z) — rotational force
+        physics["AddTorque"] = [this](float x, float y, float z) {
+            if (!m_PhysicsWorld || m_CurrentEntity == INVALID_ENTITY) return;
+            m_PhysicsWorld->AddTorque(m_CurrentEntity, { x, y, z });
+        };
+
+        // Physics.SetVelocity(x, y, z) — override linear velocity directly
+        physics["SetVelocity"] = [this](float x, float y, float z) {
+            if (!m_PhysicsWorld || m_CurrentEntity == INVALID_ENTITY) return;
+            m_PhysicsWorld->SetLinearVelocity(m_CurrentEntity, { x, y, z });
+        };
+
+        // Physics.GetVelocity() -> x, y, z
+        physics["GetVelocity"] = [this]() -> std::tuple<float, float, float> {
+            if (!m_PhysicsWorld || m_CurrentEntity == INVALID_ENTITY)
+                return { 0, 0, 0 };
+            glm::vec3 vel = m_PhysicsWorld->GetLinearVelocity(m_CurrentEntity);
+            return { vel.x, vel.y, vel.z };
+        };
     }
 
 }

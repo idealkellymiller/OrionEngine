@@ -269,6 +269,8 @@ namespace Orion {
 			case ComponentType::Material:   return "Material";
 			case ComponentType::Camera:     return "Camera";
 			case ComponentType::Script:     return "Script";
+			case ComponentType::Rigidbody:  return "Rigidbody";
+			case ComponentType::Collider:   return "Collider";
 			default:                        return "Unknown";
 		}
 	}
@@ -296,6 +298,10 @@ namespace Orion {
 			order.push_back(ComponentType::Camera);
 		if (scene.HasScriptComponent(entity))
 			order.push_back(ComponentType::Script);
+		if (scene.HasRigidbodyComponent(entity))
+			order.push_back(ComponentType::Rigidbody);
+		if (scene.HasColliderComponent(entity))
+			order.push_back(ComponentType::Collider);
 
 		m_ComponentOrder[entity] = order;
 	}
@@ -480,6 +486,60 @@ namespace Orion {
 		}
 	}
 
+	void ImGuiLayer::DrawRigidbodyFields(EntityID entity, Scene& scene)
+	{
+		RigidbodyComponent* rb = scene.GetRigidbodyComponent(entity);
+		if (!rb) return;
+
+		// Body type dropdown
+		const char* bodyTypes[] = { "Static", "Kinematic", "Dynamic" };
+		int currentType = static_cast<int>(rb->bodyType);
+		if (ImGui::Combo("Body Type", &currentType, bodyTypes, IM_ARRAYSIZE(bodyTypes))) {
+			rb->bodyType = static_cast<BodyType>(currentType);
+		}
+
+		// Only show mass for dynamic bodies
+		if (rb->bodyType == BodyType::Dynamic) {
+			ImGui::DragFloat("Mass", &rb->mass, 0.1f, 0.01f, 10000.0f, "%.2f");
+		}
+
+		ImGui::DragFloat("Linear Damping", &rb->linearDamping, 0.01f, 0.0f, 100.0f, "%.3f");
+		ImGui::DragFloat("Angular Damping", &rb->angularDamping, 0.01f, 0.0f, 100.0f, "%.3f");
+		ImGui::DragFloat("Gravity Scale", &rb->gravityScale, 0.05f, 0.0f, 10.0f, "%.2f");
+
+		ImGui::Separator();
+		ImGui::Text("Freeze Rotation");
+		ImGui::Checkbox("X##FreezeRotX", &rb->freezeRotationX);
+		ImGui::SameLine();
+		ImGui::Checkbox("Y##FreezeRotY", &rb->freezeRotationY);
+		ImGui::SameLine();
+		ImGui::Checkbox("Z##FreezeRotZ", &rb->freezeRotationZ);
+	}
+
+	void ImGuiLayer::DrawColliderFields(EntityID entity, Scene& scene)
+	{
+		ColliderComponent* col = scene.GetColliderComponent(entity);
+		if (!col) return;
+
+		// Shape dropdown
+		const char* shapes[] = { "Box", "Sphere" };
+		int currentShape = static_cast<int>(col->shape);
+		if (ImGui::Combo("Shape", &currentShape, shapes, IM_ARRAYSIZE(shapes))) {
+			col->shape = static_cast<ColliderShape>(currentShape);
+		}
+
+		// Shape-specific fields
+		if (col->shape == ColliderShape::Box) {
+			ImGui::DragFloat3("Half Extents", &col->boxHalfExtents.x, 0.05f, 0.01f, 1000.0f, "%.3f");
+		}
+		else if (col->shape == ColliderShape::Sphere) {
+			ImGui::DragFloat("Radius", &col->sphereRadius, 0.05f, 0.01f, 1000.0f, "%.3f");
+		}
+
+		ImGui::Checkbox("Is Trigger", &col->isTrigger);
+		ImGui::DragFloat3("Offset", &col->offset.x, 0.05f, -1000.0f, 1000.0f, "%.3f");
+	}
+
 	// ---------- Draw one component entry ----------
 
 	// Helper: draw a button that appears grayed-out and does nothing when disabled.
@@ -559,6 +619,8 @@ namespace Orion {
 				case ComponentType::Material:   DrawMaterialFields(entity, scene);    break;
 				case ComponentType::Camera:     DrawCameraFields(entity, scene);      break;
 				case ComponentType::Script:     DrawScriptFields(entity, scene);      break;
+				case ComponentType::Rigidbody:  DrawRigidbodyFields(entity, scene);   break;
+				case ComponentType::Collider:   DrawColliderFields(entity, scene);    break;
 			}
 			ImGui::TreePop();
 		}
@@ -570,8 +632,10 @@ namespace Orion {
 			switch (type) {
 				case ComponentType::Mesh:     scene.RemoveMeshComponent(entity);     break;
 				case ComponentType::Material: scene.RemoveMaterialComponent(entity);  break;
-				case ComponentType::Camera:   scene.RemoveCameraComponent(entity);    break;
-				case ComponentType::Script:   scene.RemoveScriptComponent(entity);    break;
+				case ComponentType::Camera:    scene.RemoveCameraComponent(entity);    break;
+				case ComponentType::Script:    scene.RemoveScriptComponent(entity);    break;
+				case ComponentType::Rigidbody: scene.RemoveRigidbodyComponent(entity); break;
+				case ComponentType::Collider:  scene.RemoveColliderComponent(entity);  break;
 				default: break;
 			}
 			order.erase(order.begin() + index);
@@ -629,6 +693,24 @@ namespace Orion {
 				if (ImGui::Selectable("Script")) {
 					scene.AddScriptComponent(entity, ScriptComponent{});
 					order.push_back(ComponentType::Script);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::Rigidbody)) {
+				addableCount++;
+				if (ImGui::Selectable("Rigidbody")) {
+					scene.AddRigidbodyComponent(entity, RigidbodyComponent{});
+					order.push_back(ComponentType::Rigidbody);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::Collider)) {
+				addableCount++;
+				if (ImGui::Selectable("Collider")) {
+					scene.AddColliderComponent(entity, ColliderComponent{});
+					order.push_back(ComponentType::Collider);
 					ImGui::CloseCurrentPopup();
 				}
 			}
@@ -1197,21 +1279,37 @@ namespace Orion {
 				ImGui::ColorEdit3("Sun Color", &settings.sunColor.x);
 				ImGui::DragFloat("Sun Intensity", &settings.sunIntensity, 0.01f, 0.0f, 10.0f);
 
-				ImGui::Separator();
-				ImGui::Text("Ambient");
-				ImGui::DragFloat("Ambient Intensity", &settings.ambientIntensity, 0.005f, 0.0f, 1.0f);
-				ImGui::TextDisabled("(Ambient uniform not yet wired to shader)");
+				//ImGui::Separator();
+				//ImGui::Text("Ambient");
+				//ImGui::DragFloat("Ambient Intensity", &settings.ambientIntensity, 0.005f, 0.0f, 1.0f);
+				//ImGui::TextDisabled("(Ambient uniform not yet wired to shader)");
 			}
+
+			ImGui::Separator();
 
 			// ---------- Language ----------
 			if (ImGui::CollapsingHeader("Language", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				const char* languages[] = { "English", "Spanish"};
+				const char* languages[] = { "English", "Spanish" };
 				static int language_current = 0;
 				ImGui::Combo("Choose Editor Language", &language_current, languages, IM_COUNTOF(languages));
 			}
-		}
-		ImGui::End();
-	}
 
+			ImGui::Separator();
+
+			// ---------- Debug / Editor ----------
+			if (ImGui::CollapsingHeader("Debug Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Checkbox("Show World Grid", &settings.showGrid);
+				if (settings.showGrid) {
+					ImGui::DragFloat("Grid Spacing", &settings.gridSpacing, 0.25f, 0.25f, 20.0f, "%.2f");
+					ImGui::DragFloat("Grid Extent", &settings.gridHalfExtent, 5.0f, 10.0f, 500.0f, "%.0f");
+				}
+
+			}
+		
+		ImGui::End();
+		}
+
+	}
 }

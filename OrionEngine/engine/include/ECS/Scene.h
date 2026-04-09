@@ -55,7 +55,29 @@ namespace Orion {
         std::string scriptPath;  // Relative to assets folder, e.g. "scripts/rotate.lua"
     };
 
+    // Whether a rigidbody is dynamic (simulated), kinematic (script-driven), or static (immovable).
+    enum class BodyType { Static, Kinematic, Dynamic };
 
+    struct RigidbodyComponent {
+        BodyType bodyType = BodyType::Dynamic;
+        float mass = 1.0f;
+        float linearDamping = 0.05f;
+        float angularDamping = 0.05f;
+        float gravityScale = 1.0f;     // 0 = no gravity, 1 = full gravity
+        bool freezeRotationX = false;
+        bool freezeRotationY = false;
+        bool freezeRotationZ = false;
+    };
+
+    enum class ColliderShape { Box, Sphere };
+
+    struct ColliderComponent {
+        ColliderShape shape = ColliderShape::Box;
+        glm::vec3 boxHalfExtents = { 0.5f, 0.5f, 0.5f };  // used when shape == Box
+        float sphereRadius = 0.5f;                           // used when shape == Sphere
+        bool isTrigger = false;                               // trigger = callbacks only, no physical response
+        glm::vec3 offset = { 0.0f, 0.0f, 0.0f };            // local offset from entity transform
+    };
 
 
 
@@ -114,6 +136,18 @@ namespace Orion {
         bool HasScriptComponent(EntityID entityID) const;
         void RemoveScriptComponent(EntityID entityID);
 
+        // Rigidbody
+        void AddRigidbodyComponent(EntityID entityID, const RigidbodyComponent& component);
+        RigidbodyComponent* GetRigidbodyComponent(EntityID entityID);
+        bool HasRigidbodyComponent(EntityID entityID) const;
+        void RemoveRigidbodyComponent(EntityID entityID);
+
+        // Collider
+        void AddColliderComponent(EntityID entityID, const ColliderComponent& component);
+        ColliderComponent* GetColliderComponent(EntityID entityID);
+        bool HasColliderComponent(EntityID entityID) const;
+        void RemoveColliderComponent(EntityID entityID);
+
         // Relationships (parent-child hierarchy)
         void SetParent(EntityID child, EntityID parent);
         void RemoveParent(EntityID child);
@@ -143,6 +177,8 @@ namespace Orion {
         std::unordered_map<EntityID, MaterialComponent> m_MaterialComponents;
         std::unordered_map<EntityID, CameraComponent> m_CameraComponents;
         std::unordered_map<EntityID, ScriptComponent> m_ScriptComponents;
+        std::unordered_map<EntityID, RigidbodyComponent> m_RigidbodyComponents;
+        std::unordered_map<EntityID, ColliderComponent> m_ColliderComponents;
         std::unordered_map<EntityID, RelationshipComponent> m_Relationships;
 
         // Empty children vector returned by GetChildren when entity has no relationships.

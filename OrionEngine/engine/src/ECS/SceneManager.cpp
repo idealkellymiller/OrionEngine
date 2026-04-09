@@ -175,6 +175,37 @@ namespace Orion {
 				sc.scriptPath = entityJson["script"]["path"].get<std::string>();
 				newScene->AddScriptComponent(entity, sc);
 			}
+
+			// --- Rigidbody ---
+			if (entityJson.contains("rigidbody")) {
+				const auto& rb = entityJson["rigidbody"];
+				RigidbodyComponent comp;
+				if (rb.contains("bodyType"))       comp.bodyType       = static_cast<BodyType>(rb["bodyType"].get<int>());
+				if (rb.contains("mass"))           comp.mass           = rb["mass"].get<float>();
+				if (rb.contains("linearDamping"))  comp.linearDamping  = rb["linearDamping"].get<float>();
+				if (rb.contains("angularDamping")) comp.angularDamping = rb["angularDamping"].get<float>();
+				if (rb.contains("gravityScale"))   comp.gravityScale   = rb["gravityScale"].get<float>();
+				if (rb.contains("freezeRotX"))     comp.freezeRotationX = rb["freezeRotX"].get<bool>();
+				if (rb.contains("freezeRotY"))     comp.freezeRotationY = rb["freezeRotY"].get<bool>();
+				if (rb.contains("freezeRotZ"))     comp.freezeRotationZ = rb["freezeRotZ"].get<bool>();
+				newScene->AddRigidbodyComponent(entity, comp);
+			}
+
+			// --- Collider ---
+			if (entityJson.contains("collider")) {
+				const auto& col = entityJson["collider"];
+				ColliderComponent comp;
+				if (col.contains("shape"))         comp.shape         = static_cast<ColliderShape>(col["shape"].get<int>());
+				if (col.contains("boxHalfExtents") && col["boxHalfExtents"].is_array() && col["boxHalfExtents"].size() == 3) {
+					comp.boxHalfExtents = { col["boxHalfExtents"][0].get<float>(), col["boxHalfExtents"][1].get<float>(), col["boxHalfExtents"][2].get<float>() };
+				}
+				if (col.contains("sphereRadius"))  comp.sphereRadius  = col["sphereRadius"].get<float>();
+				if (col.contains("isTrigger"))     comp.isTrigger     = col["isTrigger"].get<bool>();
+				if (col.contains("offset") && col["offset"].is_array() && col["offset"].size() == 3) {
+					comp.offset = { col["offset"][0].get<float>(), col["offset"][1].get<float>(), col["offset"][2].get<float>() };
+				}
+				newScene->AddColliderComponent(entity, comp);
+			}
 		}
 
 		// --- Second pass: resolve parent-child relationships ---
@@ -265,6 +296,29 @@ namespace Orion {
 			ScriptComponent* sc = s_ActiveScene->GetScriptComponent(entity);
 			if (sc && !sc->scriptPath.empty()) {
 				entityJson["script"]["path"] = sc->scriptPath;
+			}
+
+			// --- Rigidbody ---
+			RigidbodyComponent* rb = s_ActiveScene->GetRigidbodyComponent(entity);
+			if (rb) {
+				entityJson["rigidbody"]["bodyType"]       = static_cast<int>(rb->bodyType);
+				entityJson["rigidbody"]["mass"]           = rb->mass;
+				entityJson["rigidbody"]["linearDamping"]  = rb->linearDamping;
+				entityJson["rigidbody"]["angularDamping"] = rb->angularDamping;
+				entityJson["rigidbody"]["gravityScale"]   = rb->gravityScale;
+				entityJson["rigidbody"]["freezeRotX"]     = rb->freezeRotationX;
+				entityJson["rigidbody"]["freezeRotY"]     = rb->freezeRotationY;
+				entityJson["rigidbody"]["freezeRotZ"]     = rb->freezeRotationZ;
+			}
+
+			// --- Collider ---
+			ColliderComponent* col = s_ActiveScene->GetColliderComponent(entity);
+			if (col) {
+				entityJson["collider"]["shape"]          = static_cast<int>(col->shape);
+				entityJson["collider"]["boxHalfExtents"] = { col->boxHalfExtents.x, col->boxHalfExtents.y, col->boxHalfExtents.z };
+				entityJson["collider"]["sphereRadius"]   = col->sphereRadius;
+				entityJson["collider"]["isTrigger"]      = col->isTrigger;
+				entityJson["collider"]["offset"]         = { col->offset.x, col->offset.y, col->offset.z };
 			}
 
 			j["entities"].push_back(entityJson);

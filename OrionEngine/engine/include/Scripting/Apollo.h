@@ -31,6 +31,9 @@
 #include <unordered_map>
 #include <memory>
 
+// Forward declarations
+namespace Orion { class PhysicsWorld; }
+
 // Forward-declare sol::state to avoid pulling sol2 into every header.
 // Only ScriptEngine.cpp includes the full sol2 headers.
 namespace sol { class state; }
@@ -57,7 +60,8 @@ namespace Orion {
 
         // Create the Lua VM, register all engine bindings (Transform, Input, etc.),
         // and load every ScriptComponent in the scene.
-        void Init(std::shared_ptr<Scene> scene, const std::string& assetsPath);
+        // physicsWorld can be nullptr if physics is not initialized.
+        void Init(std::shared_ptr<Scene> scene, const std::string& assetsPath, PhysicsWorld* physicsWorld = nullptr);
 
         // Call OnStart() on all scripts that haven't started yet.
         void OnStart();
@@ -67,6 +71,10 @@ namespace Orion {
 
         // Destroy the Lua VM and all script instances.
         void Shutdown();
+
+        // Called by PhysicsWorld's contact listener when two entities collide.
+        // Invokes OnCollision(otherEntityID, isTrigger) on both entities' scripts.
+        void OnCollision(EntityID entityA, EntityID entityB, bool isTrigger);
 
         bool IsInitialized() const { return m_Lua != nullptr; }
 
@@ -78,6 +86,7 @@ namespace Orion {
         void RegisterInputBindings();       // Input.IsKeyDown(), .IsMouseButtonDown(), etc.
         void RegisterEntityBindings();      // Entity.FindByName(), .GetID(), etc.
         void RegisterTimeBindings();        // Time.deltaTime, Time.elapsed
+        void RegisterPhysicsBindings();     // Physics.AddForce(), .AddImpulse(), .GetVelocity(), etc.
 
         // ----- Script loading -----
 
@@ -109,6 +118,10 @@ namespace Orion {
         // The entity currently being executed (set before each script call).
         // Bindings like Transform.GetPosition() use this to know which entity to act on.
         EntityID m_CurrentEntity = INVALID_ENTITY;
+
+        // Pointer to the PhysicsWorld (owned by RuntimeLayer, not us).
+        // May be nullptr if physics is not active.
+        PhysicsWorld* m_PhysicsWorld = nullptr;
     };
 
 }

@@ -67,6 +67,8 @@ namespace Orion {
         m_MaterialComponents.erase(entityID);
         m_CameraComponents.erase(entityID);
         m_ScriptComponents.erase(entityID);
+        m_RigidbodyComponents.erase(entityID);
+        m_ColliderComponents.erase(entityID);
     }
 
     bool Scene::IsValidEntity(EntityID entityID) const
@@ -88,6 +90,8 @@ namespace Orion {
         m_TransformComponents.clear();
         m_CameraComponents.clear();
         m_ScriptComponents.clear();
+        m_RigidbodyComponents.clear();
+        m_ColliderComponents.clear();
         m_Relationships.clear();
     }
 
@@ -102,6 +106,8 @@ namespace Orion {
         newScene->m_MaterialComponents = m_MaterialComponents;
         newScene->m_CameraComponents = m_CameraComponents;
         newScene->m_ScriptComponents = m_ScriptComponents;
+        newScene->m_RigidbodyComponents = m_RigidbodyComponents;
+        newScene->m_ColliderComponents = m_ColliderComponents;
         newScene->m_Relationships = m_Relationships;
         return newScene;
     }
@@ -251,6 +257,56 @@ namespace Orion {
     void Scene::RemoveScriptComponent(EntityID entityID)
     {
         m_ScriptComponents.erase(entityID);
+    }
+
+
+    // --- Rigidbody ---
+    void Scene::AddRigidbodyComponent(EntityID entityID, const RigidbodyComponent& component)
+    {
+        m_RigidbodyComponents[entityID] = component;
+    }
+
+    RigidbodyComponent* Scene::GetRigidbodyComponent(EntityID entityID)
+    {
+        auto it = m_RigidbodyComponents.find(entityID);
+        if (it != m_RigidbodyComponents.end())
+            return &it->second;
+        return nullptr;
+    }
+
+    bool Scene::HasRigidbodyComponent(EntityID entityID) const
+    {
+        return m_RigidbodyComponents.find(entityID) != m_RigidbodyComponents.end();
+    }
+
+    void Scene::RemoveRigidbodyComponent(EntityID entityID)
+    {
+        m_RigidbodyComponents.erase(entityID);
+    }
+
+
+    // --- Collider ---
+    void Scene::AddColliderComponent(EntityID entityID, const ColliderComponent& component)
+    {
+        m_ColliderComponents[entityID] = component;
+    }
+
+    ColliderComponent* Scene::GetColliderComponent(EntityID entityID)
+    {
+        auto it = m_ColliderComponents.find(entityID);
+        if (it != m_ColliderComponents.end())
+            return &it->second;
+        return nullptr;
+    }
+
+    bool Scene::HasColliderComponent(EntityID entityID) const
+    {
+        return m_ColliderComponents.find(entityID) != m_ColliderComponents.end();
+    }
+
+    void Scene::RemoveColliderComponent(EntityID entityID)
+    {
+        m_ColliderComponents.erase(entityID);
     }
 
 

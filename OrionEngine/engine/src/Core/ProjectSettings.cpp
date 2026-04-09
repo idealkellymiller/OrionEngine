@@ -54,6 +54,11 @@ namespace Orion {
         root["lighting"]["sunIntensity"]     = sunIntensity;
         root["lighting"]["ambientIntensity"] = ambientIntensity;
 
+        // Debug / Editor
+        root["debug"]["showGrid"]       = showGrid;
+        root["debug"]["gridSpacing"]    = gridSpacing;
+        root["debug"]["gridHalfExtent"] = gridHalfExtent;
+
         // Write to disk
         std::ofstream file(filePath);
         if (!file.is_open()) {
@@ -126,6 +131,14 @@ namespace Orion {
                 sunIntensity = lt["sunIntensity"].get<float>();
             if (lt.contains("ambientIntensity"))
                 ambientIntensity = lt["ambientIntensity"].get<float>();
+        }
+
+        // Debug / Editor
+        if (root.contains("debug")) {
+            auto& db = root["debug"];
+            if (db.contains("showGrid"))       showGrid       = db["showGrid"].get<bool>();
+            if (db.contains("gridSpacing"))    gridSpacing    = db["gridSpacing"].get<float>();
+            if (db.contains("gridHalfExtent")) gridHalfExtent = db["gridHalfExtent"].get<float>();
         }
 
         std::cout << "[ProjectSettings] Loaded from: " << filePath << "\n";

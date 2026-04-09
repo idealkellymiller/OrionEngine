@@ -796,8 +796,6 @@ namespace Orion {
 
 	void ImGuiLayer::ShowViewportModule()
 	{
-
-
 		if (showViewportModule)
 		{
 
@@ -828,6 +826,8 @@ namespace Orion {
 				// Get the size available inside this window for content
 				// Save image rect before drawing.
 				s_ViewportImageMin = ImGui::GetCursorScreenPos();
+				ImDrawList* drawlist = ImGui::GetWindowDrawList();
+
 				// Show the framebuffer's color texture inside ImGui
 				// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
 				// UVs are flipped vertically because OpenGL texture origin is bottom-left,
@@ -838,6 +838,10 @@ namespace Orion {
 					ImVec2(0, 1),   // UV top-left
 					ImVec2(1, 0)    // UV bottom-right
 				);
+
+				// display framerate as overlay in top left corner
+				std::string framerateText = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
+				drawlist->AddText(s_ViewportImageMin, IM_COL32(255, 255, 255, 255), framerateText.c_str());
 
 				// IMPORTANT for picking
 				// Top-left of where the image will be drawn in screen coordinates

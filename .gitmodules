@@ -8,3 +8,6 @@
 	path = OrionEngine/engine/external/ImGUI
 	url = https://github.com/idealkellymiller/imgui
 	branch = docking
+[submodule "OrionEngine/engine/external/JoltPhysics"]
+	path = OrionEngine/engine/external/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics

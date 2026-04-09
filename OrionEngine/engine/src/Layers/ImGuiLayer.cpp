@@ -107,7 +107,7 @@ namespace Orion {
 		ShowHierarchyModule();
 		ShowAssetBrowser();
 		// ShowConsoleModule();
-		// ShowControlsModule();
+		ShowControlsModule();
 		ShowProjectSettingsWindow();
 
 		// Tell ImGui to finalize all UI draw data
@@ -237,7 +237,7 @@ namespace Orion {
 			// file menu bar option
 			if (ImGui::BeginMenu(_("File")))
 			{
-				if (ImGui::MenuItem("Save", "CTRL + S")) {}
+				if (ImGui::MenuItem(_("Save", "CTRL + S"))) {}
 				if (ImGui::MenuItem("Save as")) {}
 				if (ImGui::MenuItem("Import")) {}
 				ImGui::EndMenu();
@@ -839,16 +839,16 @@ namespace Orion {
 					ImVec2(1, 0)    // UV bottom-right
 				);
 
-				// display framerate as overlay in top left corner
-				std::string framerateText = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
-				drawlist->AddText(s_ViewportImageMin, IM_COL32(255, 255, 255, 255), framerateText.c_str());
-
 				// IMPORTANT for picking
 				// Top-left of where the image will be drawn in screen coordinates
 				s_ViewportImageMax = ImVec2(
 					s_ViewportImageMin.x + viewportSize.x,
 					s_ViewportImageMin.y + viewportSize.y
 				);
+
+				// display rolling avg. framerate as overlay in top right corner
+				std::string framerateText = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
+				drawlist->AddText(ImVec2(s_ViewportImageMax.x - 80, s_ViewportImageMin.y), IM_COL32(255, 255, 255, 255), framerateText.c_str());
 			}
 
 
@@ -1562,8 +1562,8 @@ namespace Orion {
 					}
 					ImGui::EndTable();
 				}
-				ImGui::End();
 			}
+			ImGui::End();
 		}
 	}
 

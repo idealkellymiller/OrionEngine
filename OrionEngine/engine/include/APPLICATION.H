@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <iostream>
 
 namespace Orion
 {

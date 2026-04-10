@@ -26,6 +26,9 @@
         "gridSpacing": 1.0,
         "showGrid": true
     },
+    "language": {
+        "locale": "en"
+    },
     "lighting": {
         "ambientIntensity": 0.15000000596046448,
         "sunColor": [

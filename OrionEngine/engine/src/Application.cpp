@@ -14,6 +14,10 @@ namespace Orion {
 
 	Application::Application()
 	{
+		bindtextdomain("orion-engine", "locales");
+		textdomain("orion-engine");
+		std::cout << _("Test translation") << std::endl;
+
 		s_Instance = this;
 		// sets this application's Window reference to Window instance
 		m_Window = std::unique_ptr<Window>(Window::Create());

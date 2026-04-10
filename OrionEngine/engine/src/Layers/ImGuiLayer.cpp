@@ -29,9 +29,12 @@
 #include <shellapi.h>   // ShellExecuteA
 #endif
 
-#define _(x) gettext(x)
+#define IMGUI_ELEMENT_TITLE(displayName, id) std::string(_(displayName) + std::format("###{}", id)).c_str()
 
 namespace Orion {
+
+	// common UI text that can be reused (so we don't have to translate as much later)
+	std::string noneText = _("(none)");
 
 	// Initialize static members
 	EntityID ImGuiLayer::s_HoveredEntity = INVALID_ENTITY;
@@ -236,30 +239,30 @@ namespace Orion {
 		if (ImGui::BeginMainMenuBar())
 		{
 			// file menu bar option
-			if (ImGui::BeginMenu(_("File")))
+			if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("File", "File")))
 			{
-				if (ImGui::MenuItem(_("Save", "CTRL + S"))) {}
-				if (ImGui::MenuItem("Save as")) {}
-				if (ImGui::MenuItem("Import")) {}
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save", "Save"), "CTRL + S")) {}
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save as", "Save as"), "CTRL + SHIFT + S")) {}
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Import", "Import"))) {}
 				ImGui::EndMenu();
 			}
 			// settings menu bar option
-			if (ImGui::BeginMenu("Settings"))
+			if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("Settings", "Settings")))
 			{
-				if (ImGui::MenuItem("Project Settings"))
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Project Settings", "Project Settings")))
 					showProjectSettings = true;
 				ImGui::EndMenu();
 			}
 			// view module menu bar option
-			if (ImGui::BeginMenu("View Module"))
+			if (ImGui::BeginMenu(_("View Module")))
 			{
 				// show all module options to close/open specific modules
-				CHECKED_MENU_ITEM("Inspector", showInspectorModule);
-				CHECKED_MENU_ITEM("Viewport", showViewportModule);
-				CHECKED_MENU_ITEM("Hierarchy", showHierarchyModule);
-				CHECKED_MENU_ITEM("File Directory", showFileDirectoryModule);
-				CHECKED_MENU_ITEM("Console", showConsoleModule);
-				CHECKED_MENU_ITEM("Controls", showControlsModule);
+				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Inspector", "InspectorCheck"), showInspectorModule);
+				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Viewport", "ViewportCheck"), showViewportModule);
+				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Hierarchy", "HierarchyCheck"), showHierarchyModule);
+				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("File Directory", "FileDirectoryCheck"), showFileDirectoryModule);
+				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Console", "ConsoleCheck"), showConsoleModule);
+				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Controls", "ControlsCheck"), showControlsModule);
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
@@ -338,14 +341,14 @@ namespace Orion {
 		TransformComponent* tc = scene.GetTransformComponent(entity);
 		if (!tc) return;
 
-		ImGui::DragFloat3("Position", &tc->position.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
-		ImGui::DragFloat3("Rotation", &tc->rotation.x, 0.1f,   -FLT_MAX, +FLT_MAX, "%.3f");
+		ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Position", "Position"), &tc->position.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
+		ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Rotation", "Rotation"), &tc->rotation.x, 0.1f, -FLT_MAX, +FLT_MAX, "%.3f");
 
 		// Uniform-scale toggle
 		static bool scaleUniform = false;
 		glm::vec3 oldScale = tc->scale;
 
-		if (ImGui::DragFloat3("Scale", &tc->scale.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f"))
+		if (ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Scale", "Scale"), &tc->scale.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f"))
 		{
 			if (scaleUniform) {
 				glm::vec3 delta = tc->scale - oldScale;
@@ -363,7 +366,7 @@ namespace Orion {
 				}
 			}
 		}
-		ImGui::Checkbox("Scale Uniform", &scaleUniform);
+		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Scale Uniform", "Scale Uniform"), &scaleUniform);
 	}
 
 	void ImGuiLayer::DrawMeshFields(EntityID entity, Scene& scene)
@@ -372,7 +375,7 @@ namespace Orion {
 		if (!mc) return;
 
 		// Build the preview label for the dropdown (current selection)
-		std::string previewLabel = "(none)";
+		std::string previewLabel = noneText;
 		if (mc->mesh != INVALID_ASSET_ID) {
 			MeshAsset* current = AssetManager::GetMeshAsset(mc->mesh);
 			if (current && !current->name.empty())
@@ -382,10 +385,10 @@ namespace Orion {
 		}
 
 		// Dropdown to pick a mesh asset
-		if (ImGui::BeginCombo("Mesh", previewLabel.c_str()))
+		if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Mesh", "Mesh"), previewLabel.c_str()))
 		{
 			// Option to clear the mesh
-			if (ImGui::Selectable("(none)", mc->mesh == INVALID_ASSET_ID))
+			if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("(none)", "MeshNone"), mc->mesh == INVALID_ASSET_ID))
 				mc->mesh = INVALID_ASSET_ID;
 
 			// List every loaded mesh asset
@@ -419,7 +422,7 @@ namespace Orion {
 		if (!matComp) return;
 
 		// Build the preview label for the dropdown (current selection)
-		std::string previewLabel = "(none)";
+		std::string previewLabel = noneText;
 		if (matComp->material != INVALID_ASSET_ID) {
 			MaterialAsset* current = AssetManager::GetMaterialAsset(matComp->material);
 			if (current && !current->name.empty())
@@ -429,10 +432,10 @@ namespace Orion {
 		}
 
 		// Dropdown to pick a material asset
-		if (ImGui::BeginCombo("Material", previewLabel.c_str()))
+		if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Material", "MaterialCombo"), previewLabel.c_str()))
 		{
 			// Option to clear the material
-			if (ImGui::Selectable("(none)", matComp->material == INVALID_ASSET_ID))
+			if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("(none)", "MaterialNone"), matComp->material == INVALID_ASSET_ID))
 				matComp->material = INVALID_ASSET_ID;
 
 			// List every loaded material asset
@@ -458,10 +461,10 @@ namespace Orion {
 			if (asset) {
 				ImGui::TextDisabled("Path: %s", asset->filePath.c_str());
 				ImGui::Separator();
-				ImGui::ColorEdit4("Color Tint", &asset->colorTint.x);
-				ImGui::ColorEdit3("Specular Color", &asset->specularColor.x);
-				ImGui::DragFloat("Shininess", &asset->specularShininess, 0.5f, 0.0f, 256.0f);
-				ImGui::Checkbox("Transparent", &asset->isTransparent);
+				ImGui::ColorEdit4(IMGUI_ELEMENT_TITLE("Color Tint", "Color Tint"), &asset->colorTint.x);
+				ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Specular Color", "Specular Color"), &asset->specularColor.x);
+				ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Shininess", "Shininess"), &asset->specularShininess, 0.5f, 0.0f, 256.0f);
+				ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Transparent", "Transparent"), &asset->isTransparent);
 			}
 		}
 	}
@@ -471,10 +474,10 @@ namespace Orion {
 		CameraComponent* cam = scene.GetCameraComponent(entity);
 		if (!cam) return;
 
-		ImGui::DragFloat("FOV (degrees)", &cam->fovDegrees, 0.5f, 1.0f, 179.0f);
-		ImGui::DragFloat("Near Plane", &cam->nearPlane, 0.01f, 0.001f, 100.0f, "%.3f");
-		ImGui::DragFloat("Far Plane", &cam->farPlane, 1.0f, 1.0f, 10000.0f);
-		ImGui::Checkbox("Active", &cam->isActive);
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("FOV (degrees)", "FOV"), &cam->fovDegrees, 0.5f, 1.0f, 179.0f);
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Near Plane", "Near Plane"), &cam->nearPlane, 0.01f, 0.001f, 100.0f, "%.3f");
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Far Plane", "Far Plane"), &cam->farPlane, 1.0f, 1.0f, 10000.0f);
+		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Active", "CamActive"), &cam->isActive);
 	}
 
 	void ImGuiLayer::DrawScriptFields(EntityID entity, Scene& scene)
@@ -486,12 +489,12 @@ namespace Orion {
 		char pathBuf[512];
 		strncpy_s(pathBuf, sc->scriptPath.c_str(), sizeof(pathBuf) - 1);
 		pathBuf[sizeof(pathBuf) - 1] = '\0';
-		if (ImGui::InputText("Script Path", pathBuf, sizeof(pathBuf))) {
+		if (ImGui::InputText(IMGUI_ELEMENT_TITLE("Script Path", "Script Path"), pathBuf, sizeof(pathBuf))) {
 			sc->scriptPath = pathBuf;
 		}
 
 		if (sc->scriptPath.empty()) {
-			ImGui::TextDisabled("(no script assigned)");
+			ImGui::TextDisabled(IMGUI_ELEMENT_TITLE("(no script assigned)", "ScriptPathNone"));
 		}
 	}
 
@@ -501,23 +504,23 @@ namespace Orion {
 		if (!rb) return;
 
 		// Body type dropdown
-		const char* bodyTypes[] = { "Static", "Kinematic", "Dynamic" };
+		const char* bodyTypes[] = { _("Static"), _("Kinematic"), _("Dynamic") };
 		int currentType = static_cast<int>(rb->bodyType);
-		if (ImGui::Combo("Body Type", &currentType, bodyTypes, IM_ARRAYSIZE(bodyTypes))) {
+		if (ImGui::Combo(IMGUI_ELEMENT_TITLE("Body Type", "Body Type"), &currentType, bodyTypes, IM_ARRAYSIZE(bodyTypes))) {
 			rb->bodyType = static_cast<BodyType>(currentType);
 		}
 
 		// Only show mass for dynamic bodies
 		if (rb->bodyType == BodyType::Dynamic) {
-			ImGui::DragFloat("Mass", &rb->mass, 0.1f, 0.01f, 10000.0f, "%.2f");
+			ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Mass", "Mass"), &rb->mass, 0.1f, 0.01f, 10000.0f, "%.2f");
 		}
 
-		ImGui::DragFloat("Linear Damping", &rb->linearDamping, 0.01f, 0.0f, 100.0f, "%.3f");
-		ImGui::DragFloat("Angular Damping", &rb->angularDamping, 0.01f, 0.0f, 100.0f, "%.3f");
-		ImGui::DragFloat("Gravity Scale", &rb->gravityScale, 0.05f, 0.0f, 10.0f, "%.2f");
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Linear Damping", "Linear Damping"), &rb->linearDamping, 0.01f, 0.0f, 100.0f, "%.3f");
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Angular Damping", "Angular Damping"), &rb->angularDamping, 0.01f, 0.0f, 100.0f, "%.3f");
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Gravity Scale", "Gravity Scale"), &rb->gravityScale, 0.05f, 0.0f, 10.0f, "%.2f");
 
 		ImGui::Separator();
-		ImGui::Text("Freeze Rotation");
+		ImGui::Text(IMGUI_ELEMENT_TITLE("Freeze Rotation", "Freeze Rotation"));
 		ImGui::Checkbox("X##FreezeRotX", &rb->freezeRotationX);
 		ImGui::SameLine();
 		ImGui::Checkbox("Y##FreezeRotY", &rb->freezeRotationY);
@@ -531,22 +534,22 @@ namespace Orion {
 		if (!col) return;
 
 		// Shape dropdown
-		const char* shapes[] = { "Box", "Sphere" };
+		const char* shapes[] = { _("Box"), _("Sphere") };
 		int currentShape = static_cast<int>(col->shape);
-		if (ImGui::Combo("Shape", &currentShape, shapes, IM_ARRAYSIZE(shapes))) {
+		if (ImGui::Combo(IMGUI_ELEMENT_TITLE("Shape", "ColliderShape"), &currentShape, shapes, IM_ARRAYSIZE(shapes))) {
 			col->shape = static_cast<ColliderShape>(currentShape);
 		}
 
 		// Shape-specific fields
 		if (col->shape == ColliderShape::Box) {
-			ImGui::DragFloat3("Half Extents", &col->boxHalfExtents.x, 0.05f, 0.01f, 1000.0f, "%.3f");
+			ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Half Extents", "Half Extents"), &col->boxHalfExtents.x, 0.05f, 0.01f, 1000.0f, "%.3f");
 		}
 		else if (col->shape == ColliderShape::Sphere) {
-			ImGui::DragFloat("Radius", &col->sphereRadius, 0.05f, 0.01f, 1000.0f, "%.3f");
+			ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Radius", "Radius"), &col->sphereRadius, 0.05f, 0.01f, 1000.0f, "%.3f");
 		}
 
-		ImGui::Checkbox("Is Trigger", &col->isTrigger);
-		ImGui::DragFloat3("Offset", &col->offset.x, 0.05f, -1000.0f, 1000.0f, "%.3f");
+		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Is Trigger", "Is Trigger"), &col->isTrigger);
+		ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Offset", "Collider Offset"), &col->offset.x, 0.05f, -1000.0f, 1000.0f, "%.3f");
 	}
 
 	// ---------- Draw one component entry ----------
@@ -658,7 +661,7 @@ namespace Orion {
 	void ImGuiLayer::DrawAddComponentPopup(EntityID entity, Scene& scene)
 	{
 		if (ImGui::BeginPopup("AddComponentPopup")) {
-			ImGui::Text("Add Component");
+			ImGui::Text(IMGUI_ELEMENT_TITLE("Add Component", "Add Component"));
 			ImGui::Separator();
 
 			auto& order = m_ComponentOrder[entity];
@@ -672,7 +675,7 @@ namespace Orion {
 
 			if (!hasType(ComponentType::Mesh)) {
 				addableCount++;
-				if (ImGui::Selectable("Mesh")) {
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Mesh", "AddMeshComp"))) {
 					scene.AddMeshComponent(entity, MeshComponent{});
 					order.push_back(ComponentType::Mesh);
 					ImGui::CloseCurrentPopup();
@@ -681,7 +684,7 @@ namespace Orion {
 
 			if (!hasType(ComponentType::Material)) {
 				addableCount++;
-				if (ImGui::Selectable("Material")) {
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Material", "AddMaterialComp"))) {
 					scene.AddMaterialComponent(entity, MaterialComponent{});
 					order.push_back(ComponentType::Material);
 					ImGui::CloseCurrentPopup();
@@ -690,7 +693,7 @@ namespace Orion {
 
 			if (!hasType(ComponentType::Camera)) {
 				addableCount++;
-				if (ImGui::Selectable("Camera")) {
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Camera", "AddCamComp"))) {
 					scene.AddCameraComponent(entity, CameraComponent{});
 					order.push_back(ComponentType::Camera);
 					ImGui::CloseCurrentPopup();
@@ -699,7 +702,7 @@ namespace Orion {
 
 			if (!hasType(ComponentType::Script)) {
 				addableCount++;
-				if (ImGui::Selectable("Script")) {
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Script", "AddScriptComp"))) {
 					scene.AddScriptComponent(entity, ScriptComponent{});
 					order.push_back(ComponentType::Script);
 					ImGui::CloseCurrentPopup();
@@ -708,7 +711,7 @@ namespace Orion {
 
 			if (!hasType(ComponentType::Rigidbody)) {
 				addableCount++;
-				if (ImGui::Selectable("Rigidbody")) {
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Rigidbody", "AddRigidbodyComp"))) {
 					scene.AddRigidbodyComponent(entity, RigidbodyComponent{});
 					order.push_back(ComponentType::Rigidbody);
 					ImGui::CloseCurrentPopup();
@@ -717,7 +720,7 @@ namespace Orion {
 
 			if (!hasType(ComponentType::Collider)) {
 				addableCount++;
-				if (ImGui::Selectable("Collider")) {
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Collider", "AddColliderComp"))) {
 					scene.AddColliderComponent(entity, ColliderComponent{});
 					order.push_back(ComponentType::Collider);
 					ImGui::CloseCurrentPopup();
@@ -725,7 +728,7 @@ namespace Orion {
 			}
 
 			if (addableCount == 0) {
-				ImGui::TextDisabled("All components added");
+				ImGui::TextDisabled(IMGUI_ELEMENT_TITLE("All components added", "AllCompsAdded"));
 			}
 
 			ImGui::EndPopup();
@@ -738,7 +741,7 @@ namespace Orion {
 	{
 		if (showInspectorModule)
 		{
-			if (ImGui::Begin("Inspector", &showInspectorModule))
+			if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Inspector", "Inspector"), &showInspectorModule))
 			{
 				EntityID selected = EditorLayer::GetSelectedEntity();
 				auto scene = SceneManager::GetActiveScene();
@@ -755,7 +758,7 @@ namespace Orion {
 						}
 					}
 
-					ImGui::Text("Entity ID: %u", selected);
+					ImGui::Text(IMGUI_ELEMENT_TITLE(std::format("Entity ID: %u", selected).c_str(), std::format("Entity ID: %u")));
 					ImGui::Separator();
 
 					// Draw each component in the user-defined display order
@@ -776,7 +779,7 @@ namespace Orion {
 					float cursorX = (windowWidth - buttonWidth) * 0.5f;
 					if (cursorX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + cursorX);
 
-					if (ImGui::Button("Add Component", ImVec2(buttonWidth, 0))) {
+					if (ImGui::Button(IMGUI_ELEMENT_TITLE("Add Component", "InspectorAddComp"), ImVec2(buttonWidth, 0))) {
 						ImGui::OpenPopup("AddComponentPopup");
 					}
 
@@ -784,7 +787,7 @@ namespace Orion {
 				}
 				else
 				{
-					ImGui::TextDisabled("No entity selected");
+					ImGui::TextDisabled(_("No entity selected"));
 				}
 			}
 			ImGui::End();
@@ -804,7 +807,7 @@ namespace Orion {
 			//bool viewportHovered = false;
 			//bool viewportFocused = false;
 
-			if (ImGui::Begin("Viewport", &showViewportModule))
+			if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Viewport", "Viewport"), &showViewportModule))
 			{
 				s_ViewportHovered = ImGui::IsWindowHovered();
 				s_ViewportFocused = ImGui::IsWindowFocused();
@@ -866,7 +869,7 @@ namespace Orion {
 		if (!showHierarchyModule)
 			return;
 
-		if (ImGui::Begin("Hierarchy", &showHierarchyModule))
+		if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Hierarchy", "Hierarchy"), &showHierarchyModule))
 		{
 			auto scene = SceneManager::GetActiveScene();
 			if (scene)
@@ -882,7 +885,7 @@ namespace Orion {
 				// Right-click on empty space = context menu for the whole panel
 				if (ImGui::BeginPopupContextWindow("HierarchyContextMenu",
 					ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
-					if (ImGui::MenuItem("Create Empty Entity")) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Empty Entity", "HierCreateEmptyEntity"))) {
 						EntityID newEntity = scene->CreateEntity();
 						scene->AddEntityDataComponent(newEntity, EntityDataComponent{});
 						scene->AddTransformComponent(newEntity, TransformComponent{});
@@ -967,7 +970,7 @@ namespace Orion {
 		// --- Right-click context menu on this entity ---
 		if (ImGui::BeginPopupContextItem())
 		{
-			if (ImGui::MenuItem("Create Child Entity"))
+			if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Child Entity", "HierCreateChildEntity")))
 			{
 				EntityID child = scene.CreateEntity();
 				scene.AddEntityDataComponent(child, EntityDataComponent{});
@@ -976,7 +979,7 @@ namespace Orion {
 				EditorLayer::SetSelectedEntity(child);
 			}
 
-			if (ImGui::MenuItem("Delete Entity"))
+			if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete Entity", "HierDeleteChildEntity")))
 			{
 				// If this was selected, clear selection.
 				if (EditorLayer::GetSelectedEntity() == entity)
@@ -993,7 +996,7 @@ namespace Orion {
 
 			if (scene.HasParent(entity))
 			{
-				if (ImGui::MenuItem("Unparent"))
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Unparent", "Unparent")))
 				{
 					scene.RemoveParent(entity);
 				}
@@ -1047,11 +1050,11 @@ namespace Orion {
 		if (!showFileDirectoryModule)
 			return;
 
-		if (ImGui::Begin("Assets", &showFileDirectoryModule))
+		if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Assets", "Assets"), &showFileDirectoryModule))
 		{
 			std::string assetsRoot = AssetManager::GetAssetsFolderPath();
 			if (assetsRoot.empty()) {
-				ImGui::TextDisabled("Assets folder path not set.");
+				ImGui::TextDisabled(IMGUI_ELEMENT_TITLE("Assets folder path not set.", "AssetsFolderPathNone"));
 				ImGui::End();
 				return;
 			}
@@ -1268,22 +1271,22 @@ namespace Orion {
 
 					// Right-click context menu for folders
 					if (ImGui::BeginPopupContextItem()) {
-						if (ImGui::MenuItem("Open")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Open", "FolderOpen"))) {
 							m_AssetBrowserCurrentDir = dir.path().string();
 						}
-						if (ImGui::MenuItem("Rename")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Rename", "FolderOpen"))) {
 							s_RenameTargetPath = dir.path().string();
 							strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
 							s_ShowRenamePopup = true;
 						}
 						ImGui::Separator();
-						if (ImGui::MenuItem("Show in Explorer")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Show in Explorer", "FolderShowInExplorer"))) {
 							std::string absPath = fs::absolute(dir.path()).string();
 							ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 						}
 						ImGui::Separator();
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-						if (ImGui::MenuItem("Delete")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FolderDelete"))) {
 							try {
 								fs::remove_all(dir.path());
 								std::cout << "[Assets] Deleted folder: " << dir.path().string() << "\n";
@@ -1310,7 +1313,7 @@ namespace Orion {
 
 					// Right-click context menu for files
 					if (ImGui::BeginPopupContextItem()) {
-						if (ImGui::MenuItem("Open")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Open", "FileOpen"))) {
 							if (ext == ".scene") {
 								SceneManager::LoadScene(file.path().string());
 							} else {
@@ -1318,19 +1321,19 @@ namespace Orion {
 								ShellExecuteA(NULL, "open", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 							}
 						}
-						if (ImGui::MenuItem("Rename")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Rename", "FileRename"))) {
 							s_RenameTargetPath = file.path().string();
 							strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
 							s_ShowRenamePopup = true;
 						}
 						ImGui::Separator();
-						if (ImGui::MenuItem("Show in Explorer")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Show in Explorer", "FileShowInExplorer"))) {
 							std::string absPath = fs::absolute(file.path().parent_path()).string();
 							ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 						}
 						ImGui::Separator();
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-						if (ImGui::MenuItem("Delete")) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FileDelete"))) {
 							try {
 								fs::remove(file.path());
 								std::cout << "[Assets] Deleted: " << file.path().string() << "\n";
@@ -1374,24 +1377,24 @@ namespace Orion {
 
 			// ---------- Right-click on empty space: "Create" context menu ----------
 			if (ImGui::BeginPopupContextWindow("AssetBrowserContextMenu", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
-				if (ImGui::BeginMenu("New")) {
-					if (ImGui::MenuItem("Folder")) {
+				if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("New", "NewAsset"))) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Folder", "NewFolder"))) {
 						createNewFolder();
 					}
 					ImGui::Separator();
-					if (ImGui::MenuItem("Scene (.scene)")) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Scene (.scene)", "NewScene"))) {
 						createNewScene();
 					}
-					if (ImGui::MenuItem("Material (.mtrl)")) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Material (.mtrl)", "NewMaterial"))) {
 						createNewMaterial();
 					}
-					if (ImGui::MenuItem("Lua Script (.lua)")) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Lua Script (.lua)", "NewScript"))) {
 						createNewScript();
 					}
 					ImGui::EndMenu();
 				}
 				ImGui::Separator();
-				if (ImGui::MenuItem("Show in Explorer")) {
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Show in Explorer", "ShowInExplorerAsset"))) {
 					std::string absPath = fs::absolute(currentPath).string();
 					ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 				}
@@ -1400,12 +1403,12 @@ namespace Orion {
 
 			// ---------- Rename popup (modal) ----------
 			if (s_ShowRenamePopup) {
-				ImGui::OpenPopup("Rename##AssetRename");
+				ImGui::OpenPopup(IMGUI_ELEMENT_TITLE("Rename", "AssetRename"));
 				s_ShowRenamePopup = false;
 			}
 
-			if (ImGui::BeginPopupModal("Rename##AssetRename", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-				ImGui::Text("Enter new name:");
+			if (ImGui::BeginPopupModal(IMGUI_ELEMENT_TITLE("Rename", "AssetRenamePopupModal"), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+				ImGui::Text(IMGUI_ELEMENT_TITLE("Enter new name:", "AssetRenameNewNamePrompt"));
 				bool enter = ImGui::InputText("##RenameInput", s_RenameBuf, sizeof(s_RenameBuf),
 					ImGuiInputTextFlags_EnterReturnsTrue);
 
@@ -1433,7 +1436,7 @@ namespace Orion {
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Cancel", ImVec2(80, 0))) {
+				if (ImGui::Button(IMGUI_ELEMENT_TITLE("Cancel", "AssetRenameCancel"), ImVec2(80, 0))) {
 					s_RenameTargetPath.clear();
 					ImGui::CloseCurrentPopup();
 				}
@@ -1468,7 +1471,7 @@ namespace Orion {
 	{
 		if (showConsoleModule)
 		{
-			if (ImGui::Begin("Console", &showConsoleModule))
+			if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Console", "Console"), &showConsoleModule))
 			{
 				static ImGuiTextFilter filter;
 				filter.Draw("Search");
@@ -1520,22 +1523,22 @@ namespace Orion {
 		// control keybinds - hardcoded because not planning on being customizable
 		std::vector<std::pair<const char*, const char*>> ControlTextMap =
 		{
-			{"Undo", "CTRL + Z"},
-			{"Redo", "CTRL + Y"},
-			{"Rotate Viewport Angle", "ALT + MMB"},
-			{"Zoom In","Mouse Scroll Down"},
-			{"Zoom Out","Mouse Scroll Up"},
-			{"Create Camera From View","CTRL + SHIFT + C"},
-			{"Move","W"},
-			{"Rotate","E"},
-			{"Scale","R"},
-			{"Duplicate","CTRL + D"},
-			{"Delete","DELETE"}
+			{_("Undo"), "CTRL + Z"},
+			{_("Redo"), "CTRL + Y"},
+			{_("Rotate Viewport Angle"), "ALT + MMB"},
+			{_("Zoom In"), _("Mouse Scroll Down")},
+			{_("Zoom Out"),_("Mouse Scroll Up")},
+			{_("Create Camera From View"), "CTRL + SHIFT + C"},
+			{_("Move"),"W"},
+			{_("Rotate"),"E"},
+			{_("Scale"),"R"},
+			{_("Duplicate"),"CTRL + D"},
+			{_("Delete"),"DELETE"}
 		};
 
 		if (showControlsModule)
 		{
-			if (ImGui::Begin("Controls", &showControlsModule))
+			if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Controls", "Controls"), &showControlsModule))
 			{
 				// HelpMarker("Control keybinds in Orion are not currently editable!");
 				static ImGuiTableFlags flags =
@@ -1545,8 +1548,8 @@ namespace Orion {
 				if (ImGui::BeginTable("ControlsTable", 3, flags))
 				{
 					// make control name column fixed width, keybind column stretch
-					ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Keybind", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableSetupColumn(IMGUI_ELEMENT_TITLE("Control", "ControlCol"), ImGuiTableColumnFlags_WidthFixed);
+					ImGui::TableSetupColumn(IMGUI_ELEMENT_TITLE("Keybind", "KeybindCol"), ImGuiTableColumnFlags_WidthStretch);
 					auto it = ControlTextMap.begin();
 
 					// set up all row entries
@@ -1578,33 +1581,33 @@ namespace Orion {
 		ProjectSettings& settings = ProjectSettings::Get();
 
 		ImGui::SetNextWindowSize(ImVec2(480, 520), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Project Settings", &showProjectSettings))
+		if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Project Settings", "Project Settings"), &showProjectSettings))
 		{
 			// ---------- Project Info ----------
-			if (ImGui::CollapsingHeader("Project Info", ImGuiTreeNodeFlags_DefaultOpen))
+			if (ImGui::CollapsingHeader(IMGUI_ELEMENT_TITLE("Project Info", "Project Info"), ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				char nameBuf[256];
 				strncpy_s(nameBuf, settings.projectName.c_str(), sizeof(nameBuf) - 1);
 				nameBuf[sizeof(nameBuf) - 1] = '\0';
-				if (ImGui::InputText("Project Name", nameBuf, sizeof(nameBuf)))
+				if (ImGui::InputText(IMGUI_ELEMENT_TITLE("Project Name", "Project Name"), nameBuf, sizeof(nameBuf)))
 					settings.projectName = nameBuf;
 
 				char sceneBuf[512];
 				strncpy_s(sceneBuf, settings.startingScene.c_str(), sizeof(sceneBuf) - 1);
 				sceneBuf[sizeof(sceneBuf) - 1] = '\0';
-				if (ImGui::InputText("Starting Scene", sceneBuf, sizeof(sceneBuf)))
+				if (ImGui::InputText(IMGUI_ELEMENT_TITLE("Starting Scene", "Starting Scene"), sceneBuf, sizeof(sceneBuf)))
 					settings.startingScene = sceneBuf;
 			}
 
 			ImGui::Separator();
 
 			// ---------- Background / Sky ----------
-			if (ImGui::CollapsingHeader("Background", ImGuiTreeNodeFlags_DefaultOpen))
+			if (ImGui::CollapsingHeader(IMGUI_ELEMENT_TITLE("Background", "Background"), ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				// Mode selector dropdown
-				const char* modeNames[] = { "Solid Color", "Gradient", "Cubemap (coming soon)" };
+				const char* modeNames[] = { _("Solid Color"), _("Gradient"), _("Cubemap (coming soon)") };
 				int currentMode = static_cast<int>(settings.backgroundMode);
-				if (ImGui::Combo("Mode", &currentMode, modeNames, IM_ARRAYSIZE(modeNames)))
+				if (ImGui::Combo(IMGUI_ELEMENT_TITLE("Mode", "BackgroundMode"), &currentMode, modeNames, IM_ARRAYSIZE(modeNames)))
 				{
 					// Don't allow selecting Cubemap yet — snap back to current if attempted
 					if (currentMode == static_cast<int>(BackgroundMode::Cubemap))
@@ -1617,26 +1620,26 @@ namespace Orion {
 				{
 					case BackgroundMode::SolidColor:
 					{
-						ImGui::ColorEdit3("Color", &settings.solidColor.x);
+						ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Color", "BackgroundColor"), &settings.solidColor.x);
 						break;
 					}
 					case BackgroundMode::Gradient:
 					{
-						ImGui::ColorEdit3("Top Color", &settings.gradientTopColor.x);
-						ImGui::ColorEdit3("Bottom Color", &settings.gradientBottomColor.x);
+						ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Top Color", "BackgroundTopColor"), &settings.gradientTopColor.x);
+						ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Bottom Color", "BackgroundBotColor"), &settings.gradientBottomColor.x);
 						break;
 					}
 					case BackgroundMode::Cubemap:
 					{
-						ImGui::TextDisabled("Cubemap skyboxes are not yet implemented.");
-						ImGui::TextDisabled("This will support 6-face cubemap textures.");
+						ImGui::TextDisabled(IMGUI_ELEMENT_TITLE("Cubemap skyboxes are not yet implemented.", "CubemapNotif"));
+						ImGui::TextDisabled(IMGUI_ELEMENT_TITLE("This will support 6-face cubemap textures.", "CubemapTextureNotif"));
 
 						char cubeBuf[512];
 						strncpy_s(cubeBuf, settings.cubemapPath.c_str(), sizeof(cubeBuf) - 1);
 						cubeBuf[sizeof(cubeBuf) - 1] = '\0';
 
 						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-						ImGui::InputText("Cubemap Path", cubeBuf, sizeof(cubeBuf));
+						ImGui::InputText(IMGUI_ELEMENT_TITLE("Cubemap Path", "Cubemap Path"), cubeBuf, sizeof(cubeBuf));
 						ImGui::PopStyleVar();
 						break;
 					}
@@ -1646,12 +1649,12 @@ namespace Orion {
 			ImGui::Separator();
 
 			// ---------- Lighting ----------
-			if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
+			if (ImGui::CollapsingHeader(IMGUI_ELEMENT_TITLE("Lighting", "Lighting"), ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				ImGui::Text("Directional Light (Sun)");
-				ImGui::DragFloat3("Direction", &settings.sunDirection.x, 0.01f, -1.0f, 1.0f);
-				ImGui::ColorEdit3("Sun Color", &settings.sunColor.x);
-				ImGui::DragFloat("Sun Intensity", &settings.sunIntensity, 0.01f, 0.0f, 10.0f);
+				ImGui::Text(IMGUI_ELEMENT_TITLE("Directional Light (Sun)", "DirectionalLight"));
+				ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Direction", "Direction"), &settings.sunDirection.x, 0.01f, -1.0f, 1.0f);
+				ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Sun Color", "SunColor"), &settings.sunColor.x);
+				ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Sun Intensity", "SunIntensity"), &settings.sunIntensity, 0.01f, 0.0f, 10.0f);
 
 				//ImGui::Separator();
 				//ImGui::Text("Ambient");
@@ -1664,20 +1667,20 @@ namespace Orion {
 			// ---------- Language ----------
 			if (ImGui::CollapsingHeader("Language", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				const char* languages[] = { "English", "Spanish" };
+				const char* languages[] = { _("English"), _("Spanish") };
 				static int language_current = 0;
-				ImGui::Combo("Choose Editor Language", &language_current, languages, IM_COUNTOF(languages));
+				ImGui::Combo(IMGUI_ELEMENT_TITLE("Choose Editor Language", "LanguageCombo"), &language_current, languages, IM_COUNTOF(languages));
 			}
 
 			ImGui::Separator();
 
 			// ---------- Debug / Editor ----------
-			if (ImGui::CollapsingHeader("Debug Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+			if (ImGui::CollapsingHeader(IMGUI_ELEMENT_TITLE("Debug Rendering", "Debug Rendering"), ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				ImGui::Checkbox("Show World Grid", &settings.showGrid);
+				ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Show World Grid", "Show World Grid"), &settings.showGrid);
 				if (settings.showGrid) {
-					ImGui::DragFloat("Grid Spacing", &settings.gridSpacing, 0.25f, 0.25f, 20.0f, "%.2f");
-					ImGui::DragFloat("Grid Extent", &settings.gridHalfExtent, 5.0f, 10.0f, 500.0f, "%.0f");
+					ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Grid Spacing", "Grid Spacing"), &settings.gridSpacing, 0.25f, 0.25f, 20.0f, "%.2f");
+					ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Grid Extent", "Grid Extent"), &settings.gridHalfExtent, 5.0f, 10.0f, 500.0f, "%.0f");
 				}
 
 			}

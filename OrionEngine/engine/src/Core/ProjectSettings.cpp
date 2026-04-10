@@ -31,6 +31,29 @@ namespace Orion {
         return { j[0].get<float>(), j[1].get<float>(), j[2].get<float>(), j[3].get<float>() };
     }
 
+    static Language LocaleToLanguage(const char* locale)
+    {
+        if (locale == "en") { return Language::English; }
+        else if (locale == "es") { return Language::Spanish; }
+
+        // default langauge
+        return Language::English;
+
+    }
+
+    static const char* LanguageToLocale(Language lang)
+    {
+        switch (lang)
+        {
+        case Language::English:
+            return "en";
+        case Language::Spanish:
+            return "es";
+        default:
+            return "en";
+        }
+    }
+
     // ---------- Save ----------
 
     bool ProjectSettings::Save(const std::string& filePath) const
@@ -53,6 +76,9 @@ namespace Orion {
         root["lighting"]["sunColor"]         = Vec3ToJson(sunColor);
         root["lighting"]["sunIntensity"]     = sunIntensity;
         root["lighting"]["ambientIntensity"] = ambientIntensity;
+
+        // Language
+        root["language"]["locale"] = LanguageToLocale(editorLanguage);
 
         // Debug / Editor
         root["debug"]["showGrid"]       = showGrid;

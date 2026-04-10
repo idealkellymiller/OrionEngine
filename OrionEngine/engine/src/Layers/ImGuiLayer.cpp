@@ -1668,8 +1668,9 @@ namespace Orion {
 			if (ImGui::CollapsingHeader("Language", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				const char* languages[] = { _("English"), _("Spanish") };
-				static int language_current = 0;
-				ImGui::Combo(IMGUI_ELEMENT_TITLE("Choose Editor Language", "LanguageCombo"), &language_current, languages, IM_COUNTOF(languages));
+				int currentLanguage = static_cast<int>(settings.editorLanguage);
+				ImGui::Combo(IMGUI_ELEMENT_TITLE("Choose Editor Language", "LanguageCombo"), &currentLanguage, languages, IM_COUNTOF(languages));
+				settings.editorLanguage = static_cast<Language>(currentLanguage);
 			}
 
 			ImGui::Separator();

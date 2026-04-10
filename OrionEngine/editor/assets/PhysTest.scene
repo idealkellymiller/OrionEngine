@@ -296,9 +296,165 @@
       },
       "transform": {
         "position": [
-          0.0,
+          -2.9838922023773193,
           13.881857872009277,
           0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.0
+      },
+      "id": 9,
+      "material": {
+        "path": "materials/stone.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "Monkey2",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          2.995256185531616,
+          13.881857872009277,
+          -0.7243704199790955
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.0
+      },
+      "id": 12,
+      "material": {
+        "path": "materials/stone.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "Monkey3",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -1.4317777156829834,
+          11.487842559814453,
+          -0.6997435092926025
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.0
+      },
+      "id": 13,
+      "material": {
+        "path": "materials/stone.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "Monkey4",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          0.0,
+          13.881857872009277,
+          0.7181372046470642
         ],
         "rotation": [
           0.0,
@@ -319,16 +475,120 @@
         "isActive": true,
         "near": 0.10000000149011612
       },
-      "id": 8,
+      "id": 14,
       "name": "Camera",
       "transform": {
         "position": [
           0.0,
-          10.860235214233398,
-          19.375396728515625
+          10.189322471618652,
+          17.118547439575195
         ],
         "rotation": [
-          -0.35989224910736084,
+          -0.31005725264549255,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.0
+      },
+      "id": 15,
+      "material": {
+        "path": "materials/stone.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "Monkey5",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          1.3455265760421753,
+          11.50794792175293,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.0
+      },
+      "id": 16,
+      "material": {
+        "path": "materials/stone.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "Money6",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          0.0,
+          16.49445152282715,
+          -0.4310520887374878
+        ],
+        "rotation": [
+          0.0,
           0.0,
           0.0
         ],

@@ -277,7 +277,7 @@ namespace Orion {
 		ClearQueues();
 
 		// Build internal draw commands from the submitted scene.
-		BuildRenderQueue(s_ActiveRenderScene);	// dereference the pointer
+		BuildRenderQueue(s_ActiveRenderScene);
 
 		// Sort once before running passes.
 		SortDrawQueues();
@@ -395,9 +395,10 @@ namespace Orion {
 
 		for (const Renderable& renderable : renderables) {
 
+			// !!!!! --- SKIP CULLING FOR NOW UNTIL DISAPPEARING SHADOWS BUG IS FIXED --- !!!!!
 			// Skip invalid entries or culled objects before creating draw commands.
-			if (!ShouldSubmitRenderable(renderable, frustum))
-				continue;
+			// if (!ShouldSubmitRenderable(renderable, frustum))
+			// 	continue;
 
 			// Convert scene submission into renderer-owned frame data
 			DrawCommand cmd = BuildDrawCommand(renderable, s_ActiveCamera);

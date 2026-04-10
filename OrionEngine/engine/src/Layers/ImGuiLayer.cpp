@@ -107,6 +107,7 @@ namespace Orion {
 		ShowHierarchyModule();
 		ShowAssetBrowser();
 		// ShowConsoleModule();
+		ShowConsoleModule();
 		ShowControlsModule();
 		ShowProjectSettingsWindow();
 

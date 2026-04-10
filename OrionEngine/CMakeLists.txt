@@ -21,7 +21,7 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory("engine/external/GLFW")
     add_subdirectory("engine/external/spdlog")
     add_subdirectory("engine/external/glm")
-    add_subdirectory(engine/external/json-3.12.0)
+    add_subdirectory("engine/external/json-3.12.0")
     add_subdirectory("engine/external/Gettext")
 
     # Jolt Physics — built as a static library
@@ -81,7 +81,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Renderer/EditorCamera.cpp"
             "engine/src/Renderer/Framebuffer.cpp"
             "engine/src/Renderer/Frustum.cpp"
-	        "engine/src/Renderer/Gizmo.cpp"
+	    "engine/src/Renderer/Gizmo.cpp"
             "engine/src/Renderer/IndexBuffer.cpp"
             "engine/src/Renderer/Material.cpp"
             "engine/src/Renderer/Mesh.cpp"

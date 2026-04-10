@@ -231,7 +231,7 @@
       },
       "transform": {
         "position": [
-          0.0,
+          0.3747393786907196,
           1.848191738128662,
           0.0
         ],
@@ -274,6 +274,33 @@
           1.0,
           1.0,
           1.0
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "material": {
+        "path": "materials/Sun.mtrl"
+      },
+      "mesh": {
+        "path": "models/monkey.obj"
+      },
+      "name": "SunMonke",
+      "transform": {
+        "position": [
+          36.54722213745117,
+          30.0,
+          -50.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          10.0,
+          10.0,
+          10.0
         ]
       }
     }

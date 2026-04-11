@@ -67,6 +67,8 @@ namespace Orion {
             return s_Instance;
         }
 
+    public:
+        static const std::string_view LanguageToLocale(Language lang);
     private:
         ProjectSettings() = default;
     };

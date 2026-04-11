@@ -6,6 +6,7 @@
 #include "Window.h"
 #include "Layers/LayerStack.h"
 #include "Events/ApplicationEvent.h"
+#include "Core/ProjectSettings.h"
 
 #include <memory>
 #include <vector>
@@ -37,6 +38,7 @@ namespace Orion
             // all Event object EventCallbacks are set to THIS
             void OnEvent(Event& e);
 
+            void SetLocalization(Language lang);
 
         private:
             static Application* s_Instance; // static singleton instance of Application

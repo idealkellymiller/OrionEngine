@@ -254,7 +254,7 @@ namespace Orion {
 				ImGui::EndMenu();
 			}
 			// view module menu bar option
-			if (ImGui::BeginMenu(_("View Module")))
+			if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("View Module", "ModuleMenu")))
 			{
 				// show all module options to close/open specific modules
 				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Inspector", "InspectorCheck"), showInspectorModule);
@@ -757,8 +757,8 @@ namespace Orion {
 							RebuildComponentOrder(selected, *scene);
 						}
 					}
-
-					ImGui::Text(IMGUI_ELEMENT_TITLE(std::format("Entity ID: %u", selected).c_str(), std::format("Entity ID: %u")));
+					std::string entID = _("Entity ID: ") + std::format("{}", selected);
+					ImGui::Text(entID.c_str(), std::format("Entity ID: {}", selected));
 					ImGui::Separator();
 
 					// Draw each component in the user-defined display order
@@ -1651,7 +1651,7 @@ namespace Orion {
 			// ---------- Lighting ----------
 			if (ImGui::CollapsingHeader(IMGUI_ELEMENT_TITLE("Lighting", "Lighting"), ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				ImGui::Text(IMGUI_ELEMENT_TITLE("Directional Light (Sun)", "DirectionalLight"));
+				ImGui::Text(_("Directional Light (Sun)"));
 				ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Direction", "Direction"), &settings.sunDirection.x, 0.01f, -1.0f, 1.0f);
 				ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Sun Color", "SunColor"), &settings.sunColor.x);
 				ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Sun Intensity", "SunIntensity"), &settings.sunIntensity, 0.01f, 0.0f, 10.0f);
@@ -1669,8 +1669,30 @@ namespace Orion {
 			{
 				const char* languages[] = { _("English"), _("Spanish") };
 				int currentLanguage = static_cast<int>(settings.editorLanguage);
-				ImGui::Combo(IMGUI_ELEMENT_TITLE("Choose Editor Language", "LanguageCombo"), &currentLanguage, languages, IM_COUNTOF(languages));
-				settings.editorLanguage = static_cast<Language>(currentLanguage);
+
+				// language choice drop-down
+				if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Choose Editor Language", "LanguageCombo"), languages[currentLanguage]))
+				{
+					for (int i = 0; i < IM_ARRAYSIZE(languages); i++)
+					{
+						const bool isSelected = (currentLanguage == i);
+
+						if (ImGui::Selectable(languages[i], isSelected))
+						{
+							// change editor language when user selects different choice
+							currentLanguage = i;
+							settings.editorLanguage = static_cast<Language>(currentLanguage);
+							Application::Get().SetLocalization(settings.editorLanguage);
+						}
+
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
 			}
 
 			ImGui::Separator();

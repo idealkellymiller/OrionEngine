@@ -4,7 +4,10 @@
 #include "Renderer/Renderer.h"
 #include "Assets/AssetManager.h"
 #include "ECS/SceneManager.h"
-#include "Core/ProjectSettings.h"
+
+#if ORN_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
 namespace Orion {
 
@@ -14,9 +17,6 @@ namespace Orion {
 
 	Application::Application()
 	{
-		bindtextdomain("orion-engine", "locales");
-		textdomain("orion-engine");
-		std::cout << _("Test translation") << std::endl;
 
 		s_Instance = this;
 		// sets this application's Window reference to Window instance
@@ -32,7 +32,6 @@ namespace Orion {
 	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack.PushLayer(layer);
-		//printf("Attaching %s to stack...\n", layer->GetName().c_str());
 		layer->OnAttach();
 	}
 
@@ -87,6 +86,30 @@ namespace Orion {
 
 	}
 
+	void Application::SetLocalization(Language lang)
+	{
+		std::string_view locale = ProjectSettings::LanguageToLocale(lang);
+		std::cout << "Setting locale to " << locale << std::endl;
+#if ORN_PLATFORM_WINDOWS
+		// convert std::string_view locale to lpcwstr for LocaleNameToLCID
+		const auto wStringSize = MultiByteToWideChar(CP_UTF8, 0, locale.data(), static_cast<int>(locale.length()), nullptr, 0);
+		std::wstring localeName;
+		localeName.reserve(wStringSize);
+		MultiByteToWideChar(CP_UTF8, 0, locale.data(), static_cast<int>(locale.length()), localeName.data(), wStringSize);
+
+		// configure all threads to the project settings locale
+		_configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
+		const auto localeID = LocaleNameToLCID(localeName.c_str(), LOCALE_ALLOW_NEUTRAL_NAMES);
+		SetThreadLocale(localeID);
+#else
+		setlocale(LC_MESSAGES, locale.data());
+#endif
+
+		bindtextdomain(GETTEXT_DOMAIN, GETTEXT_OUTPUT_DIR);
+		bind_textdomain_codeset(GETTEXT_DOMAIN, "UTF-8");
+		textdomain(GETTEXT_DOMAIN);
+	}
+
 	void Application::Run()
 	{
 		// initialize Renderer here, after window creation in main.
@@ -99,6 +122,9 @@ namespace Orion {
 		// Load project settings (from the assets folder, next to scene files).
 		// If the file doesn't exist yet, defaults are kept.
 		ProjectSettings::Get().Load(AssetManager::GetAssetsFolderPath() + "project.settings");
+
+		// set localization
+		SetLocalization(ProjectSettings::Get().editorLanguage);
 
 		// Load (startup) Scene
 		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + "default.scene");

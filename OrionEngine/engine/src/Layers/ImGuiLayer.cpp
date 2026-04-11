@@ -329,11 +329,11 @@ namespace Orion {
 		char nameBuf[256];
 		strncpy_s(nameBuf, data->name.c_str(), sizeof(nameBuf) - 1);
 		nameBuf[sizeof(nameBuf) - 1] = '\0';
-		if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
+		if (ImGui::InputText(IMGUI_ELEMENT_TITLE("Name", "EntityNameField"), nameBuf, sizeof(nameBuf))) {
 			data->name = nameBuf;
 		}
 
-		ImGui::Checkbox("Enabled", &data->enabled);
+		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Enabled", "EnabledEntity"), &data->enabled);
 	}
 
 	void ImGuiLayer::DrawTransformFields(EntityID entity, Scene& scene)
@@ -520,7 +520,7 @@ namespace Orion {
 		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Gravity Scale", "Gravity Scale"), &rb->gravityScale, 0.05f, 0.0f, 10.0f, "%.2f");
 
 		ImGui::Separator();
-		ImGui::Text(IMGUI_ELEMENT_TITLE("Freeze Rotation", "Freeze Rotation"));
+		ImGui::Text(_("Freeze Rotation"));
 		ImGui::Checkbox("X##FreezeRotX", &rb->freezeRotationX);
 		ImGui::SameLine();
 		ImGui::Checkbox("Y##FreezeRotY", &rb->freezeRotationY);
@@ -585,7 +585,8 @@ namespace Orion {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
 		float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-		bool open = ImGui::TreeNodeEx(ComponentTypeName(type), flags);
+		const char* componentTypeName = ComponentTypeName(type);
+		bool open = ImGui::TreeNodeEx(IMGUI_ELEMENT_TITLE(componentTypeName, componentTypeName), flags);
 		ImGui::PopStyleVar();
 
 		// Right-aligned buttons: [^] [v] [X]
@@ -661,7 +662,7 @@ namespace Orion {
 	void ImGuiLayer::DrawAddComponentPopup(EntityID entity, Scene& scene)
 	{
 		if (ImGui::BeginPopup("AddComponentPopup")) {
-			ImGui::Text(IMGUI_ELEMENT_TITLE("Add Component", "Add Component"));
+			ImGui::Text(_("Add Component"));
 			ImGui::Separator();
 
 			auto& order = m_ComponentOrder[entity];
@@ -1358,8 +1359,13 @@ namespace Orion {
 							sizeStr = std::format("{:.1f} MB", fileSize / (1024.0 * 1024.0));
 
 						ImGui::BeginTooltip();
-						ImGui::Text("Path: %s", relPath.c_str());
-						ImGui::Text("Size: %s", sizeStr.c_str());
+						//ImGui::Text("Path: %s", relPath.c_str());
+						//ImGui::Text("Size: %s", sizeStr.c_str());
+						std::string pathTooltip = _("Path") + std::format(": {}", relPath.c_str());
+						std::string sizeTooltip = _("Size") + std::format(": {}", sizeStr.c_str());
+
+						ImGui::Text(pathTooltip.c_str());
+						ImGui::Text(sizeTooltip.c_str());
 						ImGui::EndTooltip();
 					}
 
@@ -1665,7 +1671,7 @@ namespace Orion {
 			ImGui::Separator();
 
 			// ---------- Language ----------
-			if (ImGui::CollapsingHeader("Language", ImGuiTreeNodeFlags_DefaultOpen))
+			if (ImGui::CollapsingHeader(IMGUI_ELEMENT_TITLE("Language", "ProjSettingLanguage"), ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				const char* languages[] = { _("English"), _("Spanish") };
 				int currentLanguage = static_cast<int>(settings.editorLanguage);

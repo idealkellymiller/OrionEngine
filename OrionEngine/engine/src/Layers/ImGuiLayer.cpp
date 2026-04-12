@@ -412,7 +412,10 @@ namespace Orion {
 		if (mc->mesh != INVALID_ASSET_ID) {
 			MeshAsset* asset = AssetManager::GetMeshAsset(mc->mesh);
 			if (asset)
-				ImGui::TextDisabled("Path: %s", asset->filePath.c_str());
+			{
+				std::string assetPath = _("Path") + std::format(": {}", asset->filePath);
+				ImGui::TextDisabled(assetPath.c_str());
+			}
 		}
 	}
 
@@ -459,7 +462,8 @@ namespace Orion {
 		if (matComp->material != INVALID_ASSET_ID) {
 			MaterialAsset* asset = AssetManager::GetMaterialAsset(matComp->material);
 			if (asset) {
-				ImGui::TextDisabled("Path: %s", asset->filePath.c_str());
+				std::string assetPath = _("Path") + std::format(": {}", asset->filePath);
+				ImGui::TextDisabled(assetPath.c_str());
 				ImGui::Separator();
 				ImGui::ColorEdit4(IMGUI_ELEMENT_TITLE("Color Tint", "Color Tint"), &asset->colorTint.x);
 				ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Specular Color", "Specular Color"), &asset->specularColor.x);

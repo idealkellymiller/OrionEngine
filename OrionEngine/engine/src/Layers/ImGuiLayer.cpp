@@ -341,10 +341,10 @@ namespace Orion {
 		TransformComponent* tc = scene.GetTransformComponent(entity);
 		if (!tc) return;
 
-		ImGui::DragFloat3("Position", &tc->position.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
+		ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Position", "Position"), &tc->position.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
 		// Display rotation in degrees, store in radians
 		glm::vec3 rotDeg = glm::degrees(tc->rotation);
-		if (ImGui::DragFloat3("Rotation", &rotDeg.x, 0.1f, -FLT_MAX, +FLT_MAX, "%.1f"))
+		if (ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Rotation", "Rotation"), &rotDeg.x, 0.1f, -FLT_MAX, +FLT_MAX, "%.1f"))
 			tc->rotation = glm::radians(rotDeg);
 
 		// Uniform-scale toggle

@@ -81,7 +81,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Renderer/EditorCamera.cpp"
             "engine/src/Renderer/Framebuffer.cpp"
             "engine/src/Renderer/Frustum.cpp"
-	    "engine/src/Renderer/Gizmo.cpp"
+	        "engine/src/Renderer/Gizmo.cpp"
             "engine/src/Renderer/IndexBuffer.cpp"
             "engine/src/Renderer/Material.cpp"
             "engine/src/Renderer/Mesh.cpp"
@@ -106,12 +106,17 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Physics/PhysicsWorld.cpp"
         )
 
+        set(GETTEXT_DOMAIN "orion-engine")
+        set(GETTEXT_OUTPUT_DIR "../engine/locales")
+
         target_compile_definitions(Engine 
         PRIVATE 
             ORN_BUILD_DLL
         PUBLIC
             ORN_PLATFORM_WINDOWS
             ORN_ENABLE_ASSERTS
+            "GETTEXT_DOMAIN=\"${GETTEXT_DOMAIN}\""
+            "GETTEXT_OUTPUT_DIR=\"${GETTEXT_OUTPUT_DIR}\""
         )
 
         target_compile_definitions(Engine INTERFACE ORION_PLATFORM_WINDOWS)

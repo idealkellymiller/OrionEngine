@@ -33,7 +33,7 @@ namespace Orion
             // Use this when pushing/popping layers from inside OnUpdate or OnEvent.
             void QueueLayerOp(std::function<void()> op);
 
-            void Run();
+            void Run(int argc = 0, char** argv = nullptr);
 
             // all Event object EventCallbacks are set to THIS
             void OnEvent(Event& e);

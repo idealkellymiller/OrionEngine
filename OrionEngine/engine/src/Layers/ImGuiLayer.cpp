@@ -71,6 +71,10 @@ namespace Orion {
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
+		// Defer ini path setup — assets folder isn't configured until Application::Run().
+		// We set IniFilename to null here so ImGui doesn't try to load a stale path,
+		// then set the real path on the first frame in OnUpdate().
+		io.IniFilename = nullptr;
 
 		Application& app = Application::Get();
 		ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow()), true);
@@ -86,10 +90,25 @@ namespace Orion {
 
 	void ImGuiLayer::OnUpdate()
 	{
-		
+
 		// -------------------------------- ImGui ------------------------------------
-		
-		
+
+		// Deferred UI layout setup: on the first frame, AssetManager's path is ready,
+		// so we can set the ini file path and load any saved layout.
+		static bool iniLoaded = false;
+		if (!iniLoaded) {
+			std::string assetsPath = AssetManager::GetAssetsFolderPath();
+			if (!assetsPath.empty()) {
+				static std::string iniPath = assetsPath + "imgui_layout.ini";
+				ImGui::GetIO().IniFilename = iniPath.c_str();
+				// Load the layout file if it exists
+				if (std::filesystem::exists(iniPath))
+					ImGui::LoadIniSettingsFromDisk(iniPath.c_str());
+				iniLoaded = true;
+			}
+		}
+
+
 		ImGuiIO& io = ImGui::GetIO();
 		Application& app = Application::Get();
 		io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
@@ -242,7 +261,11 @@ namespace Orion {
 			// file menu bar option
 			if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("File", "File")))
 			{
-				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save", "Save"), "CTRL + S")) {}
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save", "Save"), "CTRL + S")) {
+						const std::string& path = SceneManager::GetActiveScenePath();
+						if (!path.empty())
+							SceneManager::SaveScene(path);
+					}
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save as", "Save as"), "CTRL + SHIFT + S")) {}
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Import", "Import"))) {}
 				ImGui::EndMenu();
@@ -264,6 +287,13 @@ namespace Orion {
 				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("File Directory", "FileDirectoryCheck"), showFileDirectoryModule);
 				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Console", "ConsoleCheck"), showConsoleModule);
 				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Controls", "ControlsCheck"), showControlsModule);
+				ImGui::Separator();
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Reset Layout", "ResetLayout"))) {
+					// Delete the saved layout file. Layout resets on next app restart.
+					ImGuiIO& menuIO = ImGui::GetIO();
+					if (menuIO.IniFilename)
+						std::filesystem::remove(menuIO.IniFilename);
+				}
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();

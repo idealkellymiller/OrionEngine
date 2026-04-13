@@ -5,11 +5,15 @@
 #include "Assets/AssetManager.h"
 #include "ECS/SceneManager.h"
 
+#include <filesystem>
+
 #if ORN_PLATFORM_WINDOWS
 #include <Windows.h>
 #endif
 
 namespace Orion {
+
+namespace fs = std::filesystem;
 
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
 
@@ -110,13 +114,28 @@ namespace Orion {
 		textdomain(GETTEXT_DOMAIN);
 	}
 
-	void Application::Run()
+	void Application::Run(int argc, char** argv)
 	{
 		// initialize Renderer here, after window creation in main.
 		Orion::Renderer::Init();
 
+		// Determine assets folder and startup scene.
+		// If a .scene file was passed as argument (e.g. double-click from Explorer),
+		// use its parent directory as the assets folder.
+		std::string assetsFolderPath = "..\\editor\\assets\\";
+		std::string startupScene = "default.scene";
+
+		if (argc > 1) {
+			fs::path scenePath = fs::absolute(argv[1]);
+			if (fs::exists(scenePath) && scenePath.extension() == ".scene") {
+				assetsFolderPath = scenePath.parent_path().string() + "\\";
+				startupScene = scenePath.filename().string();
+				std::cout << "[App] Opened scene from command line: " << scenePath.string() << "\n";
+			}
+		}
+
 		// Load Assets
-		AssetManager::SetAssetsFolderPath("..\\editor\\assets\\");
+		AssetManager::SetAssetsFolderPath(assetsFolderPath);
 		AssetManager::LoadAssetsFolder();
 
 		// Load project settings (from the assets folder, next to scene files).
@@ -127,7 +146,7 @@ namespace Orion {
 		SetLocalization(ProjectSettings::Get().editorLanguage);
 
 		// Load (startup) Scene
-		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + "default.scene");
+		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + startupScene);
 
 		//--------------------------MAIN APP LOOP--------------------------
 		while (m_Running) {

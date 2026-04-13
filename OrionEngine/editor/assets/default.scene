@@ -3,7 +3,8 @@
     {
       "id": 1,
       "material": {
-        "path": "materials/stone.mtrl"
+        "mtl": "materials/stone.mtl",
+        "name": "stone"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -48,7 +49,8 @@
       },
       "id": 2,
       "material": {
-        "path": "materials/stone.mtrl"
+        "mtl": "materials/default.mtl",
+        "name": "default"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -85,7 +87,8 @@
     {
       "id": 3,
       "material": {
-        "path": "materials/glass.mtrl"
+        "mtl": "materials/glass.mtl",
+        "name": "glass"
       },
       "mesh": {
         "path": "models/monkey.obj"
@@ -94,7 +97,7 @@
       "parent": 1,
       "transform": {
         "position": [
-          3.4338226318359375,
+          2.4418206214904785,
           1.0,
           -2.0
         ],
@@ -140,10 +143,11 @@
     {
       "id": 7,
       "material": {
-        "path": "materials/default.mtrl"
+        "mtl": "materials/12140_Skull_v3_L2.mtl",
+        "name": "12140_Skull_v3"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "models/12140_Skull_v3_L2.obj"
       },
       "name": "Cubert",
       "transform": {
@@ -153,42 +157,14 @@
           -0.23397912085056305
         ],
         "rotation": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "id": 8,
-      "material": {
-        "path": "materials/default.mtrl"
-      },
-      "mesh": {
-        "path": "models/cube.obj"
-      },
-      "name": "Cubert_jr",
-      "parent": 7,
-      "transform": {
-        "position": [
-          1.5970418453216553,
-          -0.9242123961448669,
-          0.6045892238616943
-        ],
-        "rotation": [
-          0.0,
+          -1.5707963705062866,
           0.0,
           0.0
         ],
         "scale": [
-          0.3050000071525574,
-          0.3050000071525574,
-          0.3050000071525574
+          0.05000000074505806,
+          0.05000000074505806,
+          0.05000000074505806
         ]
       }
     },
@@ -203,14 +179,15 @@
         "offset": [
           0.0,
           0.0,
-          0.0
+          1.0
         ],
         "shape": 1,
-        "sphereRadius": 1.0
+        "sphereRadius": 1.2999999523162842
       },
       "id": 9,
       "material": {
-        "path": "materials/stone.mtrl"
+        "mtl": "materials/stone.mtl",
+        "name": "stone"
       },
       "mesh": {
         "path": "models/monkey.obj"
@@ -250,7 +227,8 @@
     {
       "id": 10,
       "material": {
-        "path": "materials/red.mtrl"
+        "mtl": "materials/red.mtl",
+        "name": "red"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -274,33 +252,6 @@
           1.0,
           1.0,
           1.0
-        ]
-      }
-    },
-    {
-      "id": 11,
-      "material": {
-        "path": "materials/Sun.mtrl"
-      },
-      "mesh": {
-        "path": "models/monkey.obj"
-      },
-      "name": "SunMonke",
-      "transform": {
-        "position": [
-          36.54722213745117,
-          30.0,
-          -50.0
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          10.0,
-          10.0,
-          10.0
         ]
       }
     }

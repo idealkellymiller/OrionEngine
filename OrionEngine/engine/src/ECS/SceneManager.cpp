@@ -135,14 +135,31 @@ namespace Orion {
 			}
 
 			// --- Material ---
-			if (entityJson.contains("material") && entityJson["material"].contains("path")) {
-				std::string materialPath = AssetManager::GetAssetsFolderPath() + entityJson["material"]["path"].get<std::string>();
-				// Change the json '/' to '\' cause that's what the asset loader uses, but json doesn't like it
-				std::replace(materialPath.begin(), materialPath.end(), '/', '\\');
+			if (entityJson.contains("material")) {
+				AssetID materialID = INVALID_ASSET_ID;
+				const auto& matJson = entityJson["material"];
 
-				AssetID materialID = AssetManager::GetMaterialID(materialPath);
-				if (materialID == INVALID_ASSET_ID) {
-					AssetManager::LoadMaterial(materialPath);
+				if (matJson.contains("mtl") && matJson.contains("name")) {
+					// .mtl material: stored as mtl file path + material name
+					std::string mtlRelPath = matJson["mtl"].get<std::string>();
+					std::string matName = matJson["name"].get<std::string>();
+					std::string mtlAbsPath = AssetManager::GetAssetsFolderPath() + mtlRelPath;
+					std::replace(mtlAbsPath.begin(), mtlAbsPath.end(), '/', '\\');
+
+					// Build the key used by AssetManager: "<abs_mtl_path>::<name>"
+					std::string matKey = mtlAbsPath + "::" + matName;
+					materialID = AssetManager::GetMaterialID(matKey);
+
+					if (materialID == INVALID_ASSET_ID) {
+						// Try loading the .mtl file
+						AssetManager::LoadMTLFile(mtlAbsPath);
+						materialID = AssetManager::GetMaterialID(matKey);
+					}
+				}
+				else if (matJson.contains("path")) {
+					// Legacy path-based material (backwards compat)
+					std::string materialPath = AssetManager::GetAssetsFolderPath() + matJson["path"].get<std::string>();
+					std::replace(materialPath.begin(), materialPath.end(), '/', '\\');
 					materialID = AssetManager::GetMaterialID(materialPath);
 				}
 
@@ -152,7 +169,7 @@ namespace Orion {
 					newScene->AddMaterialComponent(entity, materialComp);
 				}
 				else {
-					std::cout << "Warning: failed to resolve material: " << materialPath << "\n";
+					std::cout << "Warning: failed to resolve material in scene.\n";
 				}
 			}
 
@@ -233,6 +250,9 @@ namespace Orion {
 			return false;
 		}
 
+		// Write material property changes back to .mtl files on disk
+		AssetManager::SaveAllMaterials();
+
 		json j;
 		j["scene"]["name"] = "Saved Scene";
 		j["scene"]["version"] = 1;
@@ -276,11 +296,29 @@ namespace Orion {
 			// --- Material ---
 			MaterialComponent* matc = s_ActiveScene->GetMaterialComponent(entity);
 			if (matc && matc->material != INVALID_ASSET_ID) {
-				std::string matPath = AssetManager::GetMaterialPath(matc->material);
-				if (matPath.find(assetsPath) == 0)
-					matPath = matPath.substr(assetsPath.size());
-				std::replace(matPath.begin(), matPath.end(), '\\', '/');
-				entityJson["material"]["path"] = matPath;
+				std::string matKey = AssetManager::GetMaterialPath(matc->material);
+
+				// Check if this is an .mtl-sourced material (key format: "path.mtl::MaterialName")
+				size_t sep = matKey.find("::");
+				if (sep != std::string::npos) {
+					std::string mtlAbsPath = matKey.substr(0, sep);
+					std::string matName = matKey.substr(sep + 2);
+
+					// Make mtl path relative to assets folder
+					if (mtlAbsPath.find(assetsPath) == 0)
+						mtlAbsPath = mtlAbsPath.substr(assetsPath.size());
+					std::replace(mtlAbsPath.begin(), mtlAbsPath.end(), '\\', '/');
+
+					entityJson["material"]["mtl"] = mtlAbsPath;
+					entityJson["material"]["name"] = matName;
+				}
+				else {
+					// Legacy path-based fallback
+					if (matKey.find(assetsPath) == 0)
+						matKey = matKey.substr(assetsPath.size());
+					std::replace(matKey.begin(), matKey.end(), '\\', '/');
+					entityJson["material"]["path"] = matKey;
+				}
 			}
 
 			// --- Camera ---

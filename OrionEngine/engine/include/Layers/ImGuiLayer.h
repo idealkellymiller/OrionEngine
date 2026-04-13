@@ -107,6 +107,7 @@ namespace Orion {
 
 		// Asset browser state
 		std::string m_AssetBrowserCurrentDir;  // empty = root assets folder
+		std::string m_SelectedAssetPath;       // path of the asset selected in the browser (for inspector)
 
 	};
 }

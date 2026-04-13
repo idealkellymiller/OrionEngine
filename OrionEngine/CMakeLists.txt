@@ -86,6 +86,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Renderer/Material.cpp"
             "engine/src/Renderer/Mesh.cpp"
             "engine/src/Renderer/OBJLoader.cpp"
+            "engine/src/Renderer/MTLLoader.cpp"
             "engine/src/Renderer/Renderer.cpp"
             "engine/src/Renderer/RenderPass.cpp"
             "engine/src/Renderer/RenderScene.cpp"

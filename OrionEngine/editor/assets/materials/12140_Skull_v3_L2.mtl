@@ -1,0 +1,8 @@
+# Wavefront Material
+
+newmtl 12140_Skull_v3
+Kd 1 1 1
+Ks 0.117 0.117 0.117
+Ns 24
+d 1
+map_Kd ../editor/assets/textures/Skull.jpg

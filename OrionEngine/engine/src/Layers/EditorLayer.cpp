@@ -428,7 +428,7 @@ namespace Orion {
 		mc.mesh = meshID;
 		scene->AddMeshComponent(entity, mc);
 
-		std::string matPath = AssetManager::GetAssetsFolderPath() + "materials\\default.mtrl";
+		std::string matPath = AssetManager::GetAssetsFolderPath() + "materials\\default.mtl::default";
 		AssetID matID = AssetManager::GetMaterialID(matPath);
 		MaterialComponent matc;
 		matc.material = matID;

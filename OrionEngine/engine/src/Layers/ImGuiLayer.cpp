@@ -21,6 +21,7 @@
 #include <format>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <algorithm>
 #include <filesystem>
 
@@ -461,18 +462,11 @@ namespace Orion {
 			ImGui::EndCombo();
 		}
 
-		// Show editable material properties below the dropdown
+		// Show material name hint below the dropdown
 		if (matComp->material != INVALID_ASSET_ID) {
 			MaterialAsset* asset = AssetManager::GetMaterialAsset(matComp->material);
-			if (asset) {
-				std::string assetPath = _("Path") + std::format(": {}", asset->filePath);
-				ImGui::TextDisabled(assetPath.c_str());
-				ImGui::Separator();
-				ImGui::ColorEdit4(IMGUI_ELEMENT_TITLE("Color Tint", "Color Tint"), &asset->colorTint.x);
-				ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Specular Color", "Specular Color"), &asset->specularColor.x);
-				ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Shininess", "Shininess"), &asset->specularShininess, 0.5f, 0.0f, 256.0f);
-				ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Transparent", "Transparent"), &asset->isTransparent);
-			}
+			if (asset)
+				ImGui::TextDisabled("Edit in Assets browser");
 		}
 	}
 
@@ -754,9 +748,10 @@ namespace Orion {
 				EntityID selected = EditorLayer::GetSelectedEntity();
 				auto scene = SceneManager::GetActiveScene();
 
-				// Only show content if a valid entity is selected and the scene exists
+				// Entity selection takes priority — clear asset selection
 				if (selected != INVALID_ENTITY && scene && scene->IsValidEntity(selected))
 				{
+					m_SelectedAssetPath.clear();
 					// Rebuild the component display order when selection changes
 					if (m_InspectorEntity != selected) {
 						m_InspectorEntity = selected;
@@ -792,6 +787,98 @@ namespace Orion {
 					}
 
 					DrawAddComponentPopup(selected, *scene);
+				}
+				else if (!m_SelectedAssetPath.empty())
+				{
+					// Show asset inspector based on selected file type
+					std::filesystem::path selPath(m_SelectedAssetPath);
+					std::string selExt = selPath.extension().string();
+					for (char& c : selExt) c = (char)std::tolower((unsigned char)c);
+
+					if (selExt == ".mtl") {
+						ImGui::Text("Material: %s", selPath.filename().string().c_str());
+						ImGui::Separator();
+
+						// Collect matching material IDs first (avoid iterating const map while editing)
+						std::vector<AssetID> matchingMats;
+						for (auto& [id, asset] : AssetManager::GetAllMaterialAssets()) {
+							if (asset.filePath.find(m_SelectedAssetPath + "::") == 0
+								|| asset.filePath == m_SelectedAssetPath)
+								matchingMats.push_back(id);
+						}
+
+						for (AssetID id : matchingMats) {
+							MaterialAsset* asset = AssetManager::GetMaterialAsset(id);
+							if (!asset) continue;
+
+							if (matchingMats.size() > 1)
+								ImGui::Text("%s", asset->name.c_str());
+
+							auto mat = AssetManager::GetMaterial(id);
+
+							ImGui::PushID((int)id);
+
+							// Color tint
+							glm::vec4 color = mat ? mat->GetColor() : asset->colorTint;
+							if (ImGui::ColorEdit4(IMGUI_ELEMENT_TITLE("Color", "MatColor"), &color.x)) {
+								asset->colorTint = color;
+								if (mat) mat->SetColor(color);
+							}
+
+							// Specular color
+							glm::vec3 spec = mat ? mat->GetSpecularColor() : asset->specularColor;
+							if (ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Specular", "MatSpec"), &spec.x)) {
+								asset->specularColor = spec;
+								if (mat) mat->SetSpecularColor(spec);
+							}
+
+							// Shininess
+							if (ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Shininess", "MatShine"), &asset->specularShininess, 0.5f, 0.0f, 512.0f)) {
+								if (mat) mat->SetShininess(asset->specularShininess);
+							}
+
+							// Transparency
+							if (ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Transparent", "MatTransparent"), &asset->isTransparent)) {
+								if (mat) mat->SetTransparent(asset->isTransparent);
+							}
+
+							// Texture picker
+							{
+								auto currentTex = mat ? mat->GetDiffuseTexture() : nullptr;
+								std::string currentName = currentTex ? std::filesystem::path(currentTex->GetPath()).filename().string() : "None";
+
+								if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Texture", "MatTexture"), currentName.c_str())) {
+									// "None" option to clear the texture
+									bool isNone = (currentTex == nullptr);
+									if (ImGui::Selectable("None", isNone)) {
+										if (mat) mat->SetDiffuseTexture(nullptr);
+										asset->diffuseTexture = TextureAsset{}; // clear
+									}
+
+									// List all loaded textures
+									for (auto& [texID, texAsset] : AssetManager::GetAllTextureAssets()) {
+										bool isSelected = (currentTex && currentTex->GetPath() == texAsset.filePath);
+										if (ImGui::Selectable(texAsset.name.c_str(), isSelected)) {
+											auto newTex = AssetManager::GetTexture(texID);
+											if (mat && newTex) mat->SetDiffuseTexture(newTex);
+											asset->diffuseTexture = texAsset;
+										}
+									}
+									ImGui::EndCombo();
+								}
+
+								if (currentTex) {
+									ImGui::Text("Size: %dx%d", currentTex->GetWidth(), currentTex->GetHeight());
+								}
+							}
+
+							ImGui::PopID();
+							ImGui::Separator();
+						}
+					}
+					else {
+						ImGui::TextDisabled(_("No entity selected"));
+					}
 				}
 				else
 				{
@@ -1035,7 +1122,7 @@ namespace Orion {
 		if (ext == ".obj")   return "[Mesh]    ";
 		if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
 			return "[Tex]     ";
-		if (ext == ".mtrl")  return "[Mat]     ";
+		if (ext == ".mtl")   return "[Mat]     ";
 		if (ext == ".lua")   return "[Script]  ";
 		if (ext == ".scene") return "[Scene]   ";
 		return "          ";
@@ -1047,7 +1134,7 @@ namespace Orion {
 		if (ext == ".obj")   return ImVec4(0.4f, 0.8f, 1.0f, 1.0f);  // light blue
 		if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
 			return ImVec4(0.9f, 0.7f, 0.3f, 1.0f);  // amber
-		if (ext == ".mtrl")  return ImVec4(0.5f, 1.0f, 0.5f, 1.0f);  // green
+		if (ext == ".mtl")   return ImVec4(0.5f, 1.0f, 0.5f, 1.0f);  // green
 		if (ext == ".lua")   return ImVec4(0.6f, 0.6f, 1.0f, 1.0f);  // purple-ish
 		if (ext == ".scene") return ImVec4(1.0f, 0.6f, 0.6f, 1.0f);  // salmon
 		return ImVec4(0.7f, 0.7f, 0.7f, 1.0f);  // grey
@@ -1169,16 +1256,17 @@ namespace Orion {
 			};
 
 			auto createNewMaterial = [&]() {
-				fs::path path = uniquePath("New Material", ".mtrl");
+				fs::path path = uniquePath("New Material", ".mtl");
 				std::ofstream file(path);
 				if (file.is_open()) {
-					file << "# Material: " << path.stem().string() << "\n"
-					     << "dt none\n"
-					     << "c 0.9 0.9 0.9 1.0\n"
-					     << "sc 0.5 0.5 0.5\n"
-					     << "ss 32.0\n"
-					     << "it 0\n";
+					file << "# Wavefront Material\n"
+					     << "newmtl " << path.stem().string() << "\n"
+					     << "Kd 0.9 0.9 0.9\n"
+					     << "Ks 0.5 0.5 0.5\n"
+					     << "Ns 32.0\n"
+					     << "d 1.0\n";
 					file.close();
+					AssetManager::LoadMTLFile(path.string());
 					std::cout << "[Assets] Created: " << path.string() << "\n";
 				}
 			};
@@ -1315,9 +1403,16 @@ namespace Orion {
 
 					std::string label = std::string(FileTypeIcon(ext)) + name;
 
+					bool isSelected = (m_SelectedAssetPath == file.path().string());
 					ImGui::PushStyleColor(ImGuiCol_Text, FileTypeColor(ext));
-					bool clicked = ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick);
+					bool clicked = ImGui::Selectable(label.c_str(), isSelected, ImGuiSelectableFlags_AllowDoubleClick);
 					ImGui::PopStyleColor();
+
+					// Single click selects the asset (for inspector editing)
+					if (clicked && !ImGui::IsMouseDoubleClicked(0)) {
+						m_SelectedAssetPath = file.path().string();
+						EditorLayer::SetSelectedEntity(INVALID_ENTITY);
+					}
 
 					// Right-click context menu for files
 					if (ImGui::BeginPopupContextItem()) {
@@ -1398,7 +1493,7 @@ namespace Orion {
 					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Scene (.scene)", "NewScene"))) {
 						createNewScene();
 					}
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Material (.mtrl)", "NewMaterial"))) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Material (.mtl)", "NewMaterial"))) {
 						createNewMaterial();
 					}
 					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Lua Script (.lua)", "NewScript"))) {
@@ -1420,7 +1515,7 @@ namespace Orion {
 				s_ShowRenamePopup = false;
 			}
 
-			if (ImGui::BeginPopupModal(IMGUI_ELEMENT_TITLE("Rename", "AssetRenamePopupModal"), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+			if (ImGui::BeginPopupModal(IMGUI_ELEMENT_TITLE("Rename", "AssetRename"), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
 				ImGui::Text(IMGUI_ELEMENT_TITLE("Enter new name:", "AssetRenameNewNamePrompt"));
 				bool enter = ImGui::InputText("##RenameInput", s_RenameBuf, sizeof(s_RenameBuf),
 					ImGuiInputTextFlags_EnterReturnsTrue);
@@ -1438,9 +1533,55 @@ namespace Orion {
 							fs::rename(oldPath, newPath);
 							std::cout << "[Assets] Renamed: " << oldPath.filename().string()
 							          << " -> " << newName << "\n";
+
 							// If we renamed the current directory, update the path
 							if (m_AssetBrowserCurrentDir == oldPath.string())
 								m_AssetBrowserCurrentDir = newPath.string();
+
+							// If we renamed a selected asset, update the selection
+							if (m_SelectedAssetPath == oldPath.string())
+								m_SelectedAssetPath = newPath.string();
+
+							// If it's a .mtl file, update newmtl tags and AssetManager keys
+							std::string ext = newPath.extension().string();
+							for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+							if (ext == ".mtl") {
+								std::string newStem = newPath.stem().string();
+
+								// Rewrite newmtl lines inside the file
+								std::ifstream inFile(newPath);
+								if (inFile.is_open()) {
+									std::stringstream buf;
+									std::string line;
+									while (std::getline(inFile, line)) {
+										if (line.rfind("newmtl ", 0) == 0)
+											buf << "newmtl " << newStem << "\n";
+										else
+											buf << line << "\n";
+									}
+									inFile.close();
+									std::ofstream outFile(newPath, std::ios::trunc);
+									outFile << buf.str();
+									outFile.close();
+								}
+
+								// Re-key materials in AssetManager from old path to new
+								std::string oldPathStr = oldPath.string();
+								std::string newPathStr = newPath.string();
+								std::vector<std::pair<AssetID, std::string>> toRekey;
+								for (auto& [id, asset] : AssetManager::GetAllMaterialAssets()) {
+									if (asset.filePath.find(oldPathStr + "::") == 0)
+										toRekey.push_back({id, asset.filePath});
+								}
+								for (auto& [id, oldKey] : toRekey) {
+									MaterialAsset* asset = AssetManager::GetMaterialAsset(id);
+									if (!asset) continue;
+									std::string newKey = newPathStr + "::" + newStem;
+									asset->name = newStem;
+									asset->filePath = newKey;
+									AssetManager::RekeyMaterial(oldKey, newKey);
+								}
+							}
 						} catch (const std::exception& e) {
 							std::cout << "[Assets] Rename failed: " << e.what() << "\n";
 						}

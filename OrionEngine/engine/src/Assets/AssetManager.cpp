@@ -1,9 +1,13 @@
 #include "Assets/AssetManager.h"
 #include "Renderer/OBJLoader.h"
+#include "Renderer/MTLLoader.h"
+#include "Renderer/Renderer.h"
 
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <string>
+#include <algorithm>
 
 namespace Orion {
 
@@ -23,6 +27,13 @@ namespace Orion {
     std::unordered_map<std::string, AssetID> AssetManager::m_TexturePathToID;
     std::unordered_map<std::string, AssetID> AssetManager::m_MaterialPathToID;
 
+
+    // Helper: is this extension a supported image format?
+    static bool IsTextureExtension(const std::string& ext)
+    {
+        return ext == ".png" || ext == ".jpg" || ext == ".jpeg"
+            || ext == ".tga" || ext == ".bmp" || ext == ".hdr";
+    }
 
     namespace fs = std::filesystem;
     void AssetManager::LoadAssetsFolder()
@@ -46,21 +57,20 @@ namespace Orion {
             return;
         }
 
-        // Collect first, load second (to allow for textures to be loaded before mats)
+        // Collect first, load second
         std::vector<fs::path> meshFiles;
         std::vector<fs::path> textureFiles;
-        std::vector<fs::path> materialFiles;
+        std::vector<fs::path> mtlFiles;
 
-        // Recursively walk trhough every file/folder under asset root.
+        // Recursively walk through every file/folder under asset root.
         for (const auto& entry : fs::recursive_directory_iterator(assetRoot)) {
-            // Skip anything that is not a regular file
             if (!entry.is_regular_file())
                 continue;
 
             const fs::path& filePath = entry.path();
             std::string extension = filePath.extension().string();
 
-            // Normalize to lowercase just in case files are .PNG, etc
+            // Normalize to lowercase
             for (char& c : extension)
                 c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 
@@ -68,41 +78,35 @@ namespace Orion {
             {
                 meshFiles.push_back(filePath);
             }
-            else if (extension == ".png")
+            else if (IsTextureExtension(extension))
             {
                 textureFiles.push_back(filePath);
             }
-            else if (extension == ".mtrl")
+            else if (extension == ".mtl")
             {
-                materialFiles.push_back(filePath);
+                mtlFiles.push_back(filePath);
             }
-            else {
-                std::cout << "Invalid file while loading assets folder: " << extension << "\n";
-            }
+            // .lua, .scene, etc. are handled elsewhere — skip silently
         }
 
-        // Optional: sort alphabetically for deterministic loading within each group
+        // Sort for deterministic load order
         std::sort(meshFiles.begin(), meshFiles.end());
         std::sort(textureFiles.begin(), textureFiles.end());
-        std::sort(materialFiles.begin(), materialFiles.end());
+        std::sort(mtlFiles.begin(), mtlFiles.end());
 
-
-        // Load in the chosen order: 
-        // Meshes -> Textures -> Materials
-        for (const auto& path : meshFiles)
-            LoadMesh(path.string());
-
+        // Load order: Textures first, then standalone .mtl files,
+        // then Meshes (which also auto-import their referenced .mtl)
         for (const auto& path : textureFiles)
             LoadTexture(path.string());
 
-        for (const auto& path : materialFiles)
-            LoadMaterial(path.string());
+        for (const auto& path : mtlFiles)
+            LoadMTLFile(path.string());
+
+        for (const auto& path : meshFiles)
+            LoadMesh(path.string());
 
         std::cout << "\nSuccessfully loaded assets.\n";
     }
-
-
-
 
 
     std::shared_ptr<Mesh> AssetManager::GetMesh(AssetID assetID)
@@ -110,7 +114,7 @@ namespace Orion {
         auto it = m_LoadedMeshes.find(assetID);
         if (it != m_LoadedMeshes.end())
             return it->second;
-        
+
         return nullptr;
     }
 
@@ -133,9 +137,6 @@ namespace Orion {
     }
 
 
-
-
-
     void AssetManager::LoadMesh(const std::string filePath)
     {
         // Avoid duplicate loads
@@ -143,18 +144,16 @@ namespace Orion {
         if (existing != m_MeshPathToID.end())
             return;
 
-        std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
-
-        std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
-
-        if (!OBJLoader::Load(filePath, vertices, indices)) {
+        // Use the full OBJ loader to get geometry + material refs
+        OBJResult objResult;
+        if (!OBJLoader::Load(filePath, objResult)) {
             std::cout << "Failed to parse OBJ: " << filePath << "\n";
             return;
         }
 
-        if (!mesh->Create(vertices, indices)) {
-            std::cout << "Failed to load mesh: " << filePath << "\n";
+        std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
+        if (!mesh->Create(objResult.vertices, objResult.indices)) {
+            std::cout << "Failed to create mesh: " << filePath << "\n";
             return;
         }
 
@@ -164,18 +163,20 @@ namespace Orion {
         asset.assetID = assetID;
         asset.filePath = filePath;
 
-        std::filesystem::path path(filePath);   // convert to Path to use .stem()
+        std::filesystem::path path(filePath);
         asset.name = path.stem().string();
 
-        // Store metadata
         m_MeshAssets[assetID] = asset;
-        // Store runtime object
         m_LoadedMeshes[assetID] = mesh;
-        // Store reverse lookup
         m_MeshPathToID[filePath] = assetID;
 
+        std::cout << "OBJ loaded to AssetID: " << assetID << " --- " << filePath << "\n"
+            << " --- Vertices: " << objResult.vertices.size() << "\n"
+            << " --- Indices: " << objResult.indices.size() << "\n";
 
-        std::cout << "OBJ loaded to AssetID: " << assetID << " --- " << filePath << "\n" << " --- Vertices: " << vertices.size() << "\n" << " --- Indices: " << indices.size() << "\n";
+        // Auto-import materials from the .mtl file referenced by this OBJ
+        if (!objResult.mtlLibPath.empty())
+            LoadMTLFile(objResult.mtlLibPath);
     }
 
     void AssetManager::LoadTexture(const std::string filePath)
@@ -185,7 +186,6 @@ namespace Orion {
         if (existing != m_TexturePathToID.end())
             return;
 
-        // Create texture on heap (shared ownership)
         std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 
         if (!texture->LoadFromFile(filePath)) {
@@ -198,14 +198,11 @@ namespace Orion {
         TextureAsset asset;
         asset.assetID = assetID;
         asset.filePath = filePath;
-        std::filesystem::path path(filePath);   // convert to Path to use .stem()
+        std::filesystem::path path(filePath);
         asset.name = path.stem().string();
 
-        // Store metadata
         m_TextureAssets[assetID] = asset;
-        // Store runtime object
         m_LoadedTextures[assetID] = texture;
-        // Store reverse lookup
         m_TexturePathToID[filePath] = assetID;
 
         std::cout << "Texture loaded to AssetID: " << assetID << " --- " << filePath << "\n";
@@ -213,46 +210,164 @@ namespace Orion {
 
     void AssetManager::LoadMaterial(const std::string filePath)
     {
-        // Avoid duplicate loads
-        auto existing = m_MaterialPathToID.find(filePath);
-        if (existing != m_MaterialPathToID.end())
-            return;
+        // .mtl files are parsed via LoadMTLFile (may contain multiple materials)
+        std::filesystem::path p(filePath);
+        std::string ext = p.extension().string();
+        for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 
-        std::shared_ptr<Material> material = std::make_shared<Material>();
-
-        if (!material->LoadFromFile(filePath)) {
-            std::cout << "Failed to load material: " << filePath << "\n";
+        if (ext == ".mtl") {
+            LoadMTLFile(filePath);
             return;
         }
 
-        AssetID assetID = m_NextAssetID++;
+        std::cout << "Unsupported material format: " << filePath << "\n";
+    }
 
-        MaterialAsset asset;
-        asset.assetID = assetID;
-        asset.filePath = filePath;
 
-        std::filesystem::path path(filePath);   // convert to Path to use .stem()
-        asset.name = path.stem().string();
+    void AssetManager::LoadMTLFile(const std::string& mtlPath)
+    {
+        std::vector<MTLMaterial> mtlMaterials;
+        if (!MTLLoader::Load(mtlPath, mtlMaterials))
+            return;
 
-        asset.colorTint = material->GetColor();
-        asset.specularColor = material->GetSpecularColor();
-        asset.specularShininess = material->GetShininess();
-        asset.isTransparent = material->IsTransparent();
+        // For each material in the .mtl, auto-load its textures and create a Material asset
+        for (const MTLMaterial& mtlMat : mtlMaterials)
+        {
+            // Build a virtual path key: "<mtl_path>::<material_name>"
+            // This allows multiple .mtl files to have materials with the same name
+            std::string matKey = mtlPath + "::" + mtlMat.name;
 
-        // asset.diffuseTexture = 
-        // Get texture id based on stored path in
-        // AssetID textureID = m_TexturePathToID[]
-        AssetID textureID = GetTextureID(material->GetDiffusePath());
-        asset.diffuseTexture = *GetTextureAsset(textureID);
+            // Skip if already loaded
+            if (m_MaterialPathToID.find(matKey) != m_MaterialPathToID.end())
+                continue;
 
-        // Store metadata
-        m_MaterialAssets[assetID] = asset;
-        // Store runtime object
-        m_LoadedMaterials[assetID] = material;
-        // Store reverse lookup
-        m_MaterialPathToID[filePath] = assetID;
+            // Resolve and auto-load the diffuse texture if referenced
+            std::string resolvedTexPath = mtlMat.diffuseMap;
+            if (!resolvedTexPath.empty()) {
+                // If the path from MTLLoader isn't absolute or doesn't exist,
+                // try resolving relative to the assets folder
+                if (!std::filesystem::exists(resolvedTexPath)) {
+                    std::string assetsRelative = m_AssetsFolderPath + resolvedTexPath;
+                    std::replace(assetsRelative.begin(), assetsRelative.end(), '/', '\\');
+                    if (std::filesystem::exists(assetsRelative)) {
+                        resolvedTexPath = assetsRelative;
+                    }
+                }
 
-        std::cout << "Material loaded to AssetID: " << assetID << " --- " << filePath << "\n";
+                // Check if already loaded under any path
+                AssetID existingTex = GetTextureID(resolvedTexPath);
+                if (existingTex == INVALID_ASSET_ID)
+                    LoadTexture(resolvedTexPath);
+            }
+
+            // Build engine Material
+            auto material = std::make_shared<Material>();
+            material->SetShader(Renderer::GetLitShader());
+            material->SetColor(glm::vec4(mtlMat.diffuseColor, mtlMat.opacity));
+            material->SetSpecularColor(mtlMat.specularColor);
+            material->SetShininess(mtlMat.shininess);
+            material->SetTransparent(mtlMat.opacity < 0.99f);
+
+            // Attach diffuse texture if loaded
+            if (!resolvedTexPath.empty()) {
+                AssetID texID = GetTextureID(resolvedTexPath);
+                if (texID != INVALID_ASSET_ID)
+                    material->SetDiffuseTexture(GetTexture(texID));
+            }
+
+            // Register as asset
+            AssetID assetID = m_NextAssetID++;
+
+            MaterialAsset asset;
+            asset.assetID = assetID;
+            asset.filePath = matKey;
+            asset.name = mtlMat.name;
+            asset.colorTint = glm::vec4(mtlMat.diffuseColor, mtlMat.opacity);
+            asset.specularColor = mtlMat.specularColor;
+            asset.specularShininess = mtlMat.shininess;
+            asset.isTransparent = mtlMat.opacity < 0.99f;
+
+            if (!resolvedTexPath.empty()) {
+                AssetID texID = GetTextureID(resolvedTexPath);
+                if (texID != INVALID_ASSET_ID) {
+                    auto* texAsset = GetTextureAsset(texID);
+                    if (texAsset)
+                        asset.diffuseTexture = *texAsset;
+                }
+            }
+
+            m_MaterialAssets[assetID] = asset;
+            m_LoadedMaterials[assetID] = material;
+            m_MaterialPathToID[matKey] = assetID;
+
+            std::cout << "[MTL->Material] '" << mtlMat.name << "' -> AssetID " << assetID << "\n";
+        }
+    }
+
+
+    void AssetManager::RekeyMaterial(const std::string& oldKey, const std::string& newKey)
+    {
+        auto it = m_MaterialPathToID.find(oldKey);
+        if (it != m_MaterialPathToID.end()) {
+            AssetID id = it->second;
+            m_MaterialPathToID.erase(it);
+            m_MaterialPathToID[newKey] = id;
+            std::cout << "[Assets] Re-keyed material: " << oldKey << " -> " << newKey << "\n";
+        }
+    }
+
+    void AssetManager::SaveAllMaterials()
+    {
+        // Group materials by their .mtl file path
+        // Key format is "<abs_mtl_path>::<material_name>"
+        std::unordered_map<std::string, std::vector<AssetID>> mtlFileToIDs;
+
+        for (const auto& [key, id] : m_MaterialPathToID) {
+            size_t sep = key.find("::");
+            if (sep == std::string::npos) continue;
+            std::string mtlPath = key.substr(0, sep);
+            mtlFileToIDs[mtlPath].push_back(id);
+        }
+
+        for (const auto& [mtlPath, ids] : mtlFileToIDs) {
+            std::ofstream file(mtlPath);
+            if (!file.is_open()) {
+                std::cout << "[Assets] Failed to write: " << mtlPath << "\n";
+                continue;
+            }
+
+            file << "# Wavefront Material\n";
+
+            for (AssetID id : ids) {
+                MaterialAsset* asset = GetMaterialAsset(id);
+                if (!asset) continue;
+
+                file << "\nnewmtl " << asset->name << "\n";
+                file << "Kd " << asset->colorTint.r << " " << asset->colorTint.g << " " << asset->colorTint.b << "\n";
+                file << "Ks " << asset->specularColor.r << " " << asset->specularColor.g << " " << asset->specularColor.b << "\n";
+                file << "Ns " << asset->specularShininess << "\n";
+                file << "d " << asset->colorTint.a << "\n";
+
+                // Write texture reference if one is assigned
+                if (asset->diffuseTexture.assetID != INVALID_ASSET_ID && !asset->diffuseTexture.filePath.empty()) {
+                    // Try to make path relative to the .mtl file's directory
+                    fs::path texAbsPath(asset->diffuseTexture.filePath);
+                    fs::path mtlDir = fs::path(mtlPath).parent_path();
+                    std::string texRef = asset->diffuseTexture.filePath;
+
+                    // If both are under the assets folder, make relative to .mtl dir
+                    auto relPath = fs::relative(texAbsPath, mtlDir);
+                    if (!relPath.empty() && relPath.string().find("..") != 0) {
+                        texRef = relPath.string();
+                    }
+                    std::replace(texRef.begin(), texRef.end(), '\\', '/');
+                    file << "map_Kd " << texRef << "\n";
+                }
+            }
+
+            file.close();
+            std::cout << "[Assets] Saved: " << mtlPath << "\n";
+        }
     }
 
     void AssetManager::PrintMatsPathToID()

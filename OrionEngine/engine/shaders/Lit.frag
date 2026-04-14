@@ -45,27 +45,49 @@ uniform MaterialData u_Material;
 uniform int u_NumPointLights;
 uniform PointLightData u_PointLights[MAX_POINT_LIGHTS];
 
+// Convert sRGB color to linear space for correct lighting math.
+vec3 SRGBToLinear(vec3 srgb)
+{
+    return pow(srgb, vec3(2.2));
+}
+
+// Convert linear color back to sRGB for display.
+vec3 LinearToSRGB(vec3 linear)
+{
+    return pow(linear, vec3(1.0 / 2.2));
+}
+
+// PCF (Percentage-Closer Filtering) soft shadows.
+// Samples a 5x5 grid around the projected position and averages the results.
 float ComputeShadow(vec4 lightSpacePos, vec3 normal, vec3 lightDir)
 {
-    // Convert clip-space position to normalized device coordinates.
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-
-    // Convert from [-1, 1] to [0, 1].
     projCoords = projCoords * 0.5 + 0.5;
 
     // Outside shadow map depth range = not shadowed.
     if (projCoords.z > 1.0)
-    {
         return 0.0;
-    }
 
-    float closestDepth = texture(u_ShadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
 
-    // Bias reduces self-shadowing acne.
+    // Slope-scaled bias to reduce shadow acne.
     float bias = max(0.0005 * (1.0 - dot(normal, lightDir)), 0.00005);
 
-    return (currentDepth - bias > closestDepth) ? 1.0 : 0.0;
+    // PCF: sample a 5x5 neighborhood and average.
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
+
+    for (int x = -2; x <= 2; x++)
+    {
+        for (int y = -2; y <= 2; y++)
+        {
+            float pcfDepth = texture(u_ShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 25.0;
+
+    return shadow;
 }
 
 void main()
@@ -76,8 +98,15 @@ void main()
     // Multiply by texture if one is used.
     if (u_UseTexture == 1)
     {
-        baseColor *= texture(u_DiffuseTexture, v_UV);
+        vec4 texColor = texture(u_DiffuseTexture, v_UV);
+        // Convert texture from sRGB to linear space before lighting.
+        texColor.rgb = SRGBToLinear(texColor.rgb);
+        baseColor *= texColor;
     }
+
+    // Convert material colors to linear space for correct lighting math.
+    baseColor.rgb = SRGBToLinear(baseColor.rgb);
+    vec3 specColor = SRGBToLinear(u_Material.SpecularColor);
 
     vec3 normal = normalize(v_WorldNormal);
     vec3 viewDir = normalize(u_CameraPos - v_WorldPos);
@@ -104,7 +133,7 @@ void main()
         float spec = pow(max(dot(normal, halfDir), 0.0), u_Material.Shininess);
         vec3 specular =
             spec *
-            u_Material.SpecularColor *
+            specColor *
             u_DirectionalLight.color *
             u_DirectionalLight.intensity;
 
@@ -141,12 +170,15 @@ void main()
         float spec = pow(max(dot(normal, halfDir), 0.0), u_Material.Shininess);
         vec3 specular =
             spec *
-            u_Material.SpecularColor *
+            specColor *
             u_PointLights[i].color *
             u_PointLights[i].intensity;
 
         lighting += attenuation * (diffuse + specular);
     }
+
+    // Gamma correction: convert from linear back to sRGB for display.
+    lighting = LinearToSRGB(lighting);
 
     FragColor = vec4(lighting, baseColor.a);
 }

@@ -327,6 +327,8 @@ namespace Orion {
 		RenderPassDesc transparentPass;
 		transparentPass.Type = RenderPassType::Transparent;
 
+		const auto& pointLights = s_ActiveRenderScene.GetPointLights();
+
 		RenderPass::ExecutePass(
 			opaquePass,
 			reinterpret_cast<std::vector<DrawCommand>&>(s_OpaqueQueue),
@@ -334,7 +336,8 @@ namespace Orion {
 			s_DirectionalLight,
 			s_HasDirectionalLight,
 			s_ShadowDepthTexture,
-			s_LightSpaceMatrix
+			s_LightSpaceMatrix,
+			pointLights
 		);
 
 		RenderPass::ExecutePass(
@@ -344,7 +347,8 @@ namespace Orion {
 			s_DirectionalLight,
 			s_HasDirectionalLight,
 			s_ShadowDepthTexture,
-			s_LightSpaceMatrix
+			s_LightSpaceMatrix,
+			pointLights
 		);
 
 		// ---- Debug pass: grid + collider wireframe ----

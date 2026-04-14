@@ -518,6 +518,7 @@ namespace Orion {
 			case ComponentType::Script:     return "Script";
 			case ComponentType::Rigidbody:  return "Rigidbody";
 			case ComponentType::Collider:   return "Collider";
+			case ComponentType::PointLight: return "Point Light";
 			default:                        return "Unknown";
 		}
 	}
@@ -549,6 +550,8 @@ namespace Orion {
 			order.push_back(ComponentType::Rigidbody);
 		if (scene.HasColliderComponent(entity))
 			order.push_back(ComponentType::Collider);
+		if (scene.HasPointLightComponent(entity))
+			order.push_back(ComponentType::PointLight);
 
 		m_ComponentOrder[entity] = order;
 	}
@@ -787,6 +790,18 @@ namespace Orion {
 		ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Offset", "Collider Offset"), &col->offset.x, 0.05f, -1000.0f, 1000.0f, "%.3f");
 	}
 
+	void ImGuiLayer::DrawPointLightFields(EntityID entity, Scene& scene)
+	{
+		PointLightComponent* plc = scene.GetPointLightComponent(entity);
+		if (!plc) return;
+
+		ImGui::ColorEdit3("Light Color", &plc->color.x);
+		ImGui::DragFloat("Intensity", &plc->intensity, 0.05f, 0.0f, 100.0f, "%.2f");
+		ImGui::DragFloat("Constant", &plc->constant, 0.01f, 0.001f, 10.0f, "%.3f");
+		ImGui::DragFloat("Linear", &plc->linear, 0.005f, 0.0f, 2.0f, "%.4f");
+		ImGui::DragFloat("Quadratic", &plc->quadratic, 0.005f, 0.0f, 2.0f, "%.4f");
+	}
+
 	// ---------- Draw one component entry ----------
 
 	// Helper: draw a button that appears grayed-out and does nothing when disabled.
@@ -868,7 +883,8 @@ namespace Orion {
 				case ComponentType::Camera:     DrawCameraFields(entity, scene);      break;
 				case ComponentType::Script:     DrawScriptFields(entity, scene);      break;
 				case ComponentType::Rigidbody:  DrawRigidbodyFields(entity, scene);   break;
-				case ComponentType::Collider:   DrawColliderFields(entity, scene);    break;
+				case ComponentType::Collider:    DrawColliderFields(entity, scene);    break;
+				case ComponentType::PointLight: DrawPointLightFields(entity, scene);  break;
 			}
 			ImGui::TreePop();
 		}
@@ -883,7 +899,8 @@ namespace Orion {
 				case ComponentType::Camera:    scene.RemoveCameraComponent(entity);    break;
 				case ComponentType::Script:    scene.RemoveScriptComponent(entity);    break;
 				case ComponentType::Rigidbody: scene.RemoveRigidbodyComponent(entity); break;
-				case ComponentType::Collider:  scene.RemoveColliderComponent(entity);  break;
+				case ComponentType::Collider:   scene.RemoveColliderComponent(entity);   break;
+				case ComponentType::PointLight: scene.RemovePointLightComponent(entity); break;
 				default: break;
 			}
 			order.erase(order.begin() + index);
@@ -959,6 +976,15 @@ namespace Orion {
 				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Collider", "AddColliderComp"))) {
 					scene.AddColliderComponent(entity, ColliderComponent{});
 					order.push_back(ComponentType::Collider);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::PointLight)) {
+				addableCount++;
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Point Light", "AddPointLightComp"))) {
+					scene.AddPointLightComponent(entity, PointLightComponent{});
+					order.push_back(ComponentType::PointLight);
 					ImGui::CloseCurrentPopup();
 				}
 			}

@@ -79,6 +79,15 @@ namespace Orion {
         glm::vec3 offset = { 0.0f, 0.0f, 0.0f };            // local offset from entity transform
     };
 
+    // Emits light from the entity's position in all directions.
+    struct PointLightComponent {
+        glm::vec3 color     = glm::vec3(1.0f, 1.0f, 1.0f);
+        float intensity     = 1.0f;
+        float constant      = 1.0f;
+        float linear        = 0.09f;
+        float quadratic     = 0.032f;
+    };
+
 
 
 
@@ -148,6 +157,12 @@ namespace Orion {
         bool HasColliderComponent(EntityID entityID) const;
         void RemoveColliderComponent(EntityID entityID);
 
+        // Point Light
+        void AddPointLightComponent(EntityID entityID, const PointLightComponent& component);
+        PointLightComponent* GetPointLightComponent(EntityID entityID);
+        bool HasPointLightComponent(EntityID entityID) const;
+        void RemovePointLightComponent(EntityID entityID);
+
         // Relationships (parent-child hierarchy)
         void SetParent(EntityID child, EntityID parent);
         void RemoveParent(EntityID child);
@@ -179,6 +194,7 @@ namespace Orion {
         std::unordered_map<EntityID, ScriptComponent> m_ScriptComponents;
         std::unordered_map<EntityID, RigidbodyComponent> m_RigidbodyComponents;
         std::unordered_map<EntityID, ColliderComponent> m_ColliderComponents;
+        std::unordered_map<EntityID, PointLightComponent> m_PointLightComponents;
         std::unordered_map<EntityID, RelationshipComponent> m_Relationships;
 
         // Empty children vector returned by GetChildren when entity has no relationships.

@@ -69,6 +69,7 @@ namespace Orion {
         m_ScriptComponents.erase(entityID);
         m_RigidbodyComponents.erase(entityID);
         m_ColliderComponents.erase(entityID);
+        m_PointLightComponents.erase(entityID);
     }
 
     bool Scene::IsValidEntity(EntityID entityID) const
@@ -92,6 +93,7 @@ namespace Orion {
         m_ScriptComponents.clear();
         m_RigidbodyComponents.clear();
         m_ColliderComponents.clear();
+        m_PointLightComponents.clear();
         m_Relationships.clear();
     }
 
@@ -108,6 +110,7 @@ namespace Orion {
         newScene->m_ScriptComponents = m_ScriptComponents;
         newScene->m_RigidbodyComponents = m_RigidbodyComponents;
         newScene->m_ColliderComponents = m_ColliderComponents;
+        newScene->m_PointLightComponents = m_PointLightComponents;
         newScene->m_Relationships = m_Relationships;
         return newScene;
     }
@@ -307,6 +310,31 @@ namespace Orion {
     void Scene::RemoveColliderComponent(EntityID entityID)
     {
         m_ColliderComponents.erase(entityID);
+    }
+
+
+    // --- Point Light ---
+    void Scene::AddPointLightComponent(EntityID entityID, const PointLightComponent& component)
+    {
+        m_PointLightComponents[entityID] = component;
+    }
+
+    PointLightComponent* Scene::GetPointLightComponent(EntityID entityID)
+    {
+        auto it = m_PointLightComponents.find(entityID);
+        if (it != m_PointLightComponents.end())
+            return &it->second;
+        return nullptr;
+    }
+
+    bool Scene::HasPointLightComponent(EntityID entityID) const
+    {
+        return m_PointLightComponents.find(entityID) != m_PointLightComponents.end();
+    }
+
+    void Scene::RemovePointLightComponent(EntityID entityID)
+    {
+        m_PointLightComponents.erase(entityID);
     }
 
 

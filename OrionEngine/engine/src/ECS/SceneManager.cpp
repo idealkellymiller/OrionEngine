@@ -208,6 +208,28 @@ namespace Orion {
 				newScene->AddRigidbodyComponent(entity, comp);
 			}
 
+			// --- Point Light ---
+			if (entityJson.contains("pointLight")) {
+				const auto& pl = entityJson["pointLight"];
+				PointLightComponent plComp;
+
+				if (pl.contains("color") && pl["color"].is_array() && pl["color"].size() == 3) {
+					plComp.color.r = pl["color"][0].get<float>();
+					plComp.color.g = pl["color"][1].get<float>();
+					plComp.color.b = pl["color"][2].get<float>();
+				}
+				if (pl.contains("intensity"))
+					plComp.intensity = pl["intensity"].get<float>();
+				if (pl.contains("constant"))
+					plComp.constant = pl["constant"].get<float>();
+				if (pl.contains("linear"))
+					plComp.linear = pl["linear"].get<float>();
+				if (pl.contains("quadratic"))
+					plComp.quadratic = pl["quadratic"].get<float>();
+
+				newScene->AddPointLightComponent(entity, plComp);
+			}
+
 			// --- Collider ---
 			if (entityJson.contains("collider")) {
 				const auto& col = entityJson["collider"];
@@ -347,6 +369,16 @@ namespace Orion {
 				entityJson["rigidbody"]["freezeRotX"]     = rb->freezeRotationX;
 				entityJson["rigidbody"]["freezeRotY"]     = rb->freezeRotationY;
 				entityJson["rigidbody"]["freezeRotZ"]     = rb->freezeRotationZ;
+			}
+
+			// --- Point Light ---
+			PointLightComponent* plc = s_ActiveScene->GetPointLightComponent(entity);
+			if (plc) {
+				entityJson["pointLight"]["color"]     = { plc->color.r, plc->color.g, plc->color.b };
+				entityJson["pointLight"]["intensity"] = plc->intensity;
+				entityJson["pointLight"]["constant"]  = plc->constant;
+				entityJson["pointLight"]["linear"]    = plc->linear;
+				entityJson["pointLight"]["quadratic"] = plc->quadratic;
 			}
 
 			// --- Collider ---

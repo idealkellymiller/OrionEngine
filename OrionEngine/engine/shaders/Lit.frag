@@ -1,10 +1,22 @@
 #version 460 core
 
+#define MAX_POINT_LIGHTS 16
+
 struct DirectionalLight
 {
     vec3 direction;
     vec3 color;
     float intensity;
+};
+
+struct PointLightData
+{
+    vec3 position;
+    vec3 color;
+    float intensity;
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 struct MaterialData
@@ -29,6 +41,9 @@ uniform vec3 u_CameraPos;
 uniform int u_HasDirectionalLight;
 uniform DirectionalLight u_DirectionalLight;
 uniform MaterialData u_Material;
+
+uniform int u_NumPointLights;
+uniform PointLightData u_PointLights[MAX_POINT_LIGHTS];
 
 float ComputeShadow(vec4 lightSpacePos, vec3 normal, vec3 lightDir)
 {
@@ -65,6 +80,7 @@ void main()
     }
 
     vec3 normal = normalize(v_WorldNormal);
+    vec3 viewDir = normalize(u_CameraPos - v_WorldPos);
 
     // Small ambient term.
     vec3 ambient = 0.15 * baseColor.rgb;
@@ -83,7 +99,6 @@ void main()
             baseColor.rgb;
 
         // Blinn-Phong specular.
-        vec3 viewDir = normalize(u_CameraPos - v_WorldPos);
         vec3 halfDir = normalize(lightDir + viewDir);
 
         float spec = pow(max(dot(normal, halfDir), 0.0), u_Material.Shininess);
@@ -97,6 +112,40 @@ void main()
 
         // Ambient remains; direct light is shadowed.
         lighting += (1.0 - shadow) * (diffuse + specular);
+    }
+
+    // Point lights
+    for (int i = 0; i < u_NumPointLights; i++)
+    {
+        vec3 lightVec = u_PointLights[i].position - v_WorldPos;
+        float distance = length(lightVec);
+        vec3 lightDir = normalize(lightVec);
+
+        // Attenuation
+        float attenuation = 1.0 / (
+            u_PointLights[i].constant +
+            u_PointLights[i].linear * distance +
+            u_PointLights[i].quadratic * distance * distance
+        );
+
+        // Diffuse
+        float NdotL = max(dot(normal, lightDir), 0.0);
+        vec3 diffuse =
+            NdotL *
+            u_PointLights[i].color *
+            u_PointLights[i].intensity *
+            baseColor.rgb;
+
+        // Blinn-Phong specular
+        vec3 halfDir = normalize(lightDir + viewDir);
+        float spec = pow(max(dot(normal, halfDir), 0.0), u_Material.Shininess);
+        vec3 specular =
+            spec *
+            u_Material.SpecularColor *
+            u_PointLights[i].color *
+            u_PointLights[i].intensity;
+
+        lighting += attenuation * (diffuse + specular);
     }
 
     FragColor = vec4(lighting, baseColor.a);

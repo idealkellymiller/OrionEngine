@@ -21,7 +21,8 @@ namespace Orion {
 		Camera,       // Camera settings (FOV, near/far, active flag)
 		Script,       // Lua script path
 		Rigidbody,    // Physics body (dynamic/kinematic/static, mass, damping)
-		Collider      // Physics collider (box/sphere, trigger, offset)
+		Collider,     // Physics collider (box/sphere, trigger, offset)
+		PointLight    // Point light source
 	};
 
 	class ORION_API ImGuiLayer : public Layer {
@@ -81,6 +82,7 @@ namespace Orion {
 		void DrawScriptFields(EntityID entity, Scene& scene);
 		void DrawRigidbodyFields(EntityID entity, Scene& scene);
 		void DrawColliderFields(EntityID entity, Scene& scene);
+		void DrawPointLightFields(EntityID entity, Scene& scene);
 
 		// "Add Component" popup
 		void DrawAddComponentPopup(EntityID entity, Scene& scene);

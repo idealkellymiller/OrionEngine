@@ -40,8 +40,8 @@ VIAddVersionKey "LegalCopyright" "CS496 Academic Project"
 ; Modern UI Settings
 ; ---------------------------------------------------------------------------
 !define MUI_ABORTWARNING
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_ICON "..\engine\engineAssets\icons\OrionEngine.ico"
+!define MUI_UNICON "..\engine\engineAssets\icons\OrionEngine.ico"
 
 ; Welcome page text
 !define MUI_WELCOMEPAGE_TITLE "Welcome to OrionEngine Setup"

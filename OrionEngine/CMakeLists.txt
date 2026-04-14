@@ -136,8 +136,11 @@ project(OrionEngine LANGUAGES CXX C)
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)
         message(STATUS "Engine Definitions: ${OUT_DEFS}")
 
+    # App icon resource (embedded into .exe files)
+    set(APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/engine/engineAssets/icons/app.rc")
+
     # Editor .exe
-    add_executable(Editor "editor/src/main.cpp")
+    add_executable(Editor "editor/src/main.cpp" ${APP_ICON_RC})
         
         target_include_directories(Editor PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/editor/src
@@ -155,7 +158,7 @@ add_custom_command(TARGET Editor POST_BUILD
 )
 
     # Runtime .exe (standalone game, no editor UI)
-    add_executable(Runtime "runtime/src/main.cpp")
+    add_executable(Runtime "runtime/src/main.cpp" ${APP_ICON_RC})
 
         target_include_directories(Runtime PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src

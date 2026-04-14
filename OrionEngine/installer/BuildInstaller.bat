@@ -11,7 +11,7 @@ echo.
 :: --------------------------------------------------
 echo [1/3] Building OrionEngine in Release mode...
 cd /d "%~dp0.."
-cmake --build build --config Release --target Engine Editor
+cmake --build build --config Release --target Engine Editor Runtime
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ERROR: Build failed. Fix build errors and try again.

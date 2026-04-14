@@ -82,6 +82,7 @@ Section "OrionEngine Editor (required)" SecCore
     ; --- Binaries ---
     SetOutPath "$INSTDIR\bin"
     File "${BIN_DIR}\Editor.exe"
+    File "${BIN_DIR}\Runtime.exe"
     File "${BIN_DIR}\Engine.dll"
     File "..\engine\external\Gettext\lib\GNU.Gettext.dll"
 
@@ -244,6 +245,7 @@ SectionEnd
 Section "Uninstall"
     ; --- Remove files ---
     Delete "$INSTDIR\bin\Editor.exe"
+    Delete "$INSTDIR\bin\Runtime.exe"
     Delete "$INSTDIR\bin\Engine.dll"
     Delete "$INSTDIR\bin\GNU.Gettext.dll"
     Delete "$INSTDIR\bin\Editor.pdb"

@@ -18,6 +18,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <nlohmann/json.hpp>
+
 #include <format>
 #include <iostream>
 #include <fstream>
@@ -251,6 +253,7 @@ namespace Orion {
 	static bool showConsoleModule = true;
 	static bool showControlsModule = true;
 	static bool showProjectSettings = false;
+	static bool showBuildGamePopup = false;
 
 #define CHECKED_MENU_ITEM(menuItemName, checkedState) if (ImGui::MenuItem(menuItemName, NULL, checkedState)) { checkedState = !checkedState; }
 
@@ -267,7 +270,10 @@ namespace Orion {
 							SceneManager::SaveScene(path);
 					}
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save as", "Save as"), "CTRL + SHIFT + S")) {}
-				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Import", "Import"))) {}
+				ImGui::Separator();
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Build Game...", "BuildGame"))) {
+					showBuildGamePopup = true;
+				}
 				ImGui::EndMenu();
 			}
 			// settings menu bar option
@@ -297,6 +303,210 @@ namespace Orion {
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
+		}
+
+		// ========================== BUILD GAME POPUP ==========================
+		if (showBuildGamePopup) {
+			ImGui::OpenPopup("BuildGame");
+			showBuildGamePopup = false;
+		}
+
+		if (ImGui::BeginPopupModal("BuildGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			static char gameName[128] = "My Game";
+			static char outputDir[512] = "";
+			static int resolutionIdx = 0;
+			static bool fullscreen = false;
+			static int sceneIdx = 0;
+			static std::string buildStatus;
+
+			// Collect .scene files from assets
+			static std::vector<std::string> sceneFiles;
+			static bool scenesScanned = false;
+			if (!scenesScanned) {
+				sceneFiles.clear();
+				std::string assetsPath = AssetManager::GetAssetsFolderPath();
+				if (!assetsPath.empty()) {
+					for (auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
+						if (entry.is_regular_file() && entry.path().extension() == ".scene") {
+							// Store relative to assets folder
+							std::string rel = entry.path().string().substr(assetsPath.size());
+							std::replace(rel.begin(), rel.end(), '\\', '/');
+							sceneFiles.push_back(rel);
+						}
+					}
+				}
+				scenesScanned = true;
+			}
+
+			ImGui::Text("Build Game");
+			ImGui::Separator();
+
+			ImGui::InputText("Game Name", gameName, sizeof(gameName));
+
+			// Start Scene dropdown
+			if (ImGui::BeginCombo("Start Scene", sceneIdx < (int)sceneFiles.size() ? sceneFiles[sceneIdx].c_str() : "(none)")) {
+				for (int i = 0; i < (int)sceneFiles.size(); i++) {
+					if (ImGui::Selectable(sceneFiles[i].c_str(), i == sceneIdx))
+						sceneIdx = i;
+				}
+				ImGui::EndCombo();
+			}
+
+			// Resolution presets
+			const char* resolutions[] = { "1920 x 1080", "1280 x 720", "2560 x 1440", "800 x 600" };
+			const int resW[] = { 1920, 1280, 2560, 800 };
+			const int resH[] = { 1080, 720, 1440, 600 };
+			ImGui::Combo("Resolution", &resolutionIdx, resolutions, 4);
+
+			ImGui::Checkbox("Fullscreen", &fullscreen);
+
+			ImGui::InputText("Output Folder", outputDir, sizeof(outputDir));
+			ImGui::SameLine();
+			if (ImGui::Button("...")) {
+				// Default to a reasonable location
+				#ifdef _WIN32
+				std::string defaultPath = std::string(getenv("USERPROFILE") ? getenv("USERPROFILE") : "C:\\") + "\\Desktop\\" + gameName;
+				strncpy_s(outputDir, defaultPath.c_str(), sizeof(outputDir) - 1);
+				#endif
+			}
+
+			ImGui::Separator();
+
+			if (!buildStatus.empty()) {
+				ImGui::TextWrapped("%s", buildStatus.c_str());
+				ImGui::Separator();
+			}
+
+			float buttonWidth = 120.0f;
+			if (ImGui::Button("Build", ImVec2(buttonWidth, 0))) {
+				buildStatus.clear();
+
+				if (strlen(outputDir) == 0) {
+					buildStatus = "Error: Please set an output folder.";
+				} else if (sceneFiles.empty()) {
+					buildStatus = "Error: No .scene files found in assets.";
+				} else {
+					namespace fs = std::filesystem;
+					try {
+						fs::path out(outputDir);
+						fs::create_directories(out);
+
+						// 1. Find Runtime.exe next to Editor.exe
+						fs::path exeDir = fs::path(fs::current_path()); // working dir is bin/
+						// Try common locations for Runtime.exe
+						fs::path runtimeExe;
+						if (fs::exists(exeDir / "Runtime.exe"))
+							runtimeExe = exeDir / "Runtime.exe";
+						else if (fs::exists(exeDir / ".." / "Runtime.exe"))
+							runtimeExe = exeDir / ".." / "Runtime.exe";
+						else {
+							// Search the build output directory
+							for (auto& e : fs::recursive_directory_iterator(exeDir / "..")) {
+								if (e.path().filename() == "Runtime.exe") {
+									runtimeExe = e.path();
+									break;
+								}
+							}
+						}
+
+						if (runtimeExe.empty() || !fs::exists(runtimeExe)) {
+							buildStatus = "Error: Runtime.exe not found. Build the Runtime target first.";
+						} else {
+							// Layout mirrors the editor structure:
+							//   out/bin/GameName.exe   (working dir)
+							//   out/engine/shaders/    (accessed as ../engine/shaders/)
+							//   out/editor/assets/     (accessed as ../editor/assets/)
+
+							// 2. Copy Runtime.exe as GameName.exe into bin/
+							fs::path binDir = out / "bin";
+							fs::create_directories(binDir);
+							fs::copy_file(runtimeExe, binDir / (std::string(gameName) + ".exe"), fs::copy_options::overwrite_existing);
+
+							// 3. Copy Engine.dll into bin/
+							fs::path engineDll = runtimeExe.parent_path() / "Engine.dll";
+							if (fs::exists(engineDll))
+								fs::copy_file(engineDll, binDir / "Engine.dll", fs::copy_options::overwrite_existing);
+
+							// 4. Copy GNU.Gettext.dll into bin/
+							fs::path gettextDll = runtimeExe.parent_path() / "GNU.Gettext.dll";
+							if (!fs::exists(gettextDll))
+								gettextDll = exeDir / "GNU.Gettext.dll";
+							if (fs::exists(gettextDll))
+								fs::copy_file(gettextDll, binDir / "GNU.Gettext.dll", fs::copy_options::overwrite_existing);
+
+							// 5. Write game.settings into bin/ (next to the exe)
+							std::string selectedScene = sceneIdx < (int)sceneFiles.size() ? sceneFiles[sceneIdx] : "default.scene";
+							std::replace(selectedScene.begin(), selectedScene.end(), '/', '\\');
+
+							nlohmann::json j;
+							j["title"] = gameName;
+							j["width"] = resW[resolutionIdx];
+							j["height"] = resH[resolutionIdx];
+							j["fullscreen"] = fullscreen;
+							j["startScene"] = selectedScene;
+
+							std::ofstream settingsFile((binDir / "game.settings").string());
+							if (settingsFile.is_open()) {
+								settingsFile << j.dump(4);
+								settingsFile.close();
+							}
+
+							// 6. Copy shaders into engine/shaders/ (accessed as ../engine/shaders/)
+							fs::path shadersDir = exeDir / ".." / "engine" / "shaders";
+							if (fs::exists(shadersDir)) {
+								fs::path destShaders = out / "engine" / "shaders";
+								fs::create_directories(destShaders);
+								for (auto& entry : fs::directory_iterator(shadersDir)) {
+									if (entry.is_regular_file())
+										fs::copy_file(entry.path(), destShaders / entry.path().filename(), fs::copy_options::overwrite_existing);
+								}
+							}
+
+							// 7. Copy engine built-in assets
+							fs::path engineAssetsDir = exeDir / ".." / "engine" / "engineAssets";
+							if (fs::exists(engineAssetsDir)) {
+								fs::path destEA = out / "engine" / "engineAssets";
+								fs::create_directories(destEA);
+								fs::copy(engineAssetsDir, destEA, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+							}
+
+							// 8. Copy locales
+							fs::path localesDir = exeDir / ".." / "engine" / "locales";
+							if (fs::exists(localesDir)) {
+								fs::path destLoc = out / "engine" / "locales";
+								fs::create_directories(destLoc);
+								fs::copy(localesDir, destLoc, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+							}
+
+							// 9. Copy all project assets into editor/assets/
+							// (Runtime falls back to ../editor/assets/ which matches this layout)
+							std::string assetsPath = AssetManager::GetAssetsFolderPath();
+							fs::path destAssets = out / "editor" / "assets";
+							fs::create_directories(destAssets);
+							fs::copy(fs::path(assetsPath), destAssets, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+
+							buildStatus = "Build complete! Output: " + out.string();
+
+							#ifdef _WIN32
+							ShellExecuteA(NULL, "explore", out.string().c_str(), NULL, NULL, SW_SHOWNORMAL);
+							#endif
+						}
+					}
+					catch (const std::exception& e) {
+						buildStatus = std::string("Error: ") + e.what();
+					}
+				}
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Close", ImVec2(buttonWidth, 0))) {
+				buildStatus.clear();
+				scenesScanned = false;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
 		}
 	}
 

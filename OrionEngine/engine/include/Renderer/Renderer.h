@@ -62,6 +62,9 @@ namespace Orion {
 
 		static EntityID PickEntity(int mouseX, int mouseY);
 
+		// Blit the viewport framebuffer directly to the screen (for standalone game mode).
+		static void BlitToScreen();
+
 	private:
 		static void BuildRenderQueue(const RenderScene& scene);
 		static bool ShouldSubmitRenderable(const Renderable& renderable, const Frustum& frustum);

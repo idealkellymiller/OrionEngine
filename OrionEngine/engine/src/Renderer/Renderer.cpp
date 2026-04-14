@@ -229,7 +229,7 @@ namespace Orion {
 	void Renderer::EndFrame()
 	{
 		// Nothing here rn
-		// TODO: add frame stats 
+		// TODO: add frame stats
 
 
 		ClearQueues();
@@ -256,6 +256,29 @@ namespace Orion {
 
 		// Draw all ImGui windows, including the Viewport image
 		//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	}
+
+	void Renderer::BlitToScreen()
+	{
+		Application& app = Application::Get();
+		int displayW, displayH;
+		glfwGetFramebufferSize(static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow()), &displayW, &displayH);
+
+		// Resize the viewport framebuffer to match the window if needed
+		if ((unsigned int)displayW != s_ViewportFramebuffer.GetWidth() ||
+			(unsigned int)displayH != s_ViewportFramebuffer.GetHeight()) {
+			s_ViewportFramebuffer.Resize(displayW, displayH);
+		}
+
+		// Blit the framebuffer's color attachment to the default framebuffer (screen)
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, s_ViewportFramebuffer.GetFBO());
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(
+			0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight(),
+			0, 0, displayW, displayH,
+			GL_COLOR_BUFFER_BIT, GL_LINEAR
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void Renderer::Render()

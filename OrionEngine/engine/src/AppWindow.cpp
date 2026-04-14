@@ -60,7 +60,16 @@ namespace Orion {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+		GLFWmonitor* monitor = nullptr;
+		if (props.Fullscreen) {
+			monitor = glfwGetPrimaryMonitor();
+			const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+			// Use the monitor's native resolution in fullscreen
+			m_Data.Width = mode->width;
+			m_Data.Height = mode->height;
+		}
+
+		m_Window = glfwCreateWindow((int)m_Data.Width, (int)m_Data.Height, m_Data.Title.c_str(), monitor, nullptr);
 		glfwMakeContextCurrent(m_Window);
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{

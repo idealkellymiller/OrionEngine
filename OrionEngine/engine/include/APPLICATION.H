@@ -18,7 +18,7 @@ namespace Orion
     class ORION_API Application
     {
         public:
-            Application();
+            Application(const WindowProperties& props = WindowProperties());
             virtual ~Application();
 
             inline static Application& Get() { return *s_Instance; }
@@ -34,6 +34,9 @@ namespace Orion
             void QueueLayerOp(std::function<void()> op);
 
             void Run(int argc = 0, char** argv = nullptr);
+
+            // Run just the main loop (no asset/scene init). For standalone game runtime.
+            void RunLoop();
 
             // all Event object EventCallbacks are set to THIS
             void OnEvent(Event& e);

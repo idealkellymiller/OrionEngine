@@ -12,11 +12,13 @@ namespace Orion
         std::string Title;
         unsigned int Width;
         unsigned int Height;
+        bool Fullscreen = false;
 
         // constructor (w/ default properties)
         WindowProperties(const std::string& title = "Orion Engine Editor",
             unsigned int width = 1920,
-            unsigned int height = 1080) : Title(title), Width(width), Height(height) {}
+            unsigned int height = 1080,
+            bool fullscreen = false) : Title(title), Width(width), Height(height), Fullscreen(fullscreen) {}
     };
 
     class ORION_API Window

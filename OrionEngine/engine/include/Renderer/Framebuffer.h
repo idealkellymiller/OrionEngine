@@ -33,6 +33,9 @@ namespace Orion {
 		// Get the color texture so ImGui can display it
 		unsigned int GetColorAttachment() const { return m_ColorAttachment; }
 
+		// Get the raw FBO handle (needed for glBlitFramebuffer)
+		unsigned int GetFBO() const { return m_FBO; }
+
 		unsigned int GetWidth() const { return m_Width; }
 		unsigned int GetHeight() const { return m_Height; }
 

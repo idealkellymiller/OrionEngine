@@ -28,6 +28,10 @@ namespace Orion {
 		void BeginPlay(std::shared_ptr<Scene> editorScene);
 		void EndPlay();
 
+		// Standalone game mode: load a scene from file and begin playing immediately.
+		// No editor snapshot — this is a one-way play session.
+		void BeginPlayStandalone(const std::string& scenePath, const std::string& assetsFolderPath);
+
 		// Access the runtime scene (the active copy being simulated)
 		std::shared_ptr<Scene> GetRuntimeScene() const { return m_RuntimeScene; }
 

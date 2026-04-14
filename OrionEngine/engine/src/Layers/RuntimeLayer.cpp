@@ -1,5 +1,7 @@
 #include "EngineCore.h"
 #include "Layers/RuntimeLayer.h"
+#include "Layers/EditorLayer.h"
+#include "Core/ProjectSettings.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
 #include "Renderer/Renderer.h"
@@ -99,6 +101,49 @@ namespace Orion {
 		m_ScriptEngine.OnStart();
 
 		std::cout << "[RuntimeLayer] Play mode started.\n";
+	}
+
+	void RuntimeLayer::BeginPlayStandalone(const std::string& scenePath, const std::string& assetsFolderPath)
+	{
+		// Mark as playing so the Renderer skips editor-only passes (grid, gizmos, picking)
+		EditorLayer::SetPlayState(PlayState::Playing);
+
+		// 1. Load assets
+		AssetManager::SetAssetsFolderPath(assetsFolderPath);
+		AssetManager::LoadAssetsFolder();
+
+		// 2. Load project settings (background, lighting, etc.)
+		ProjectSettings::Get().Load(assetsFolderPath + "project.settings");
+
+		// 3. Load the scene from file
+		SceneManager::LoadScene(scenePath);
+		m_RuntimeScene = SceneManager::GetActiveScene();
+
+		if (!m_RuntimeScene) {
+			std::cout << "[RuntimeLayer] ERROR: Failed to load scene: " << scenePath << "\n";
+			return;
+		}
+
+		m_RuntimeTime = 0.0f;
+
+		// 3. Initialize scripting
+		m_ScriptEngine.Init(m_RuntimeScene, assetsFolderPath, &m_PhysicsWorld);
+
+		// 4. Initialize physics
+		m_PhysicsWorld.Init(m_RuntimeScene);
+
+		// 5. Collision callback
+		m_PhysicsWorld.SetCollisionCallback(
+			[this](EntityID a, EntityID b, bool isTrigger) {
+				if (m_ScriptEngine.IsInitialized())
+					m_ScriptEngine.OnCollision(a, b, isTrigger);
+			}
+		);
+
+		// 6. Call OnStart() on all scripts
+		m_ScriptEngine.OnStart();
+
+		std::cout << "[RuntimeLayer] Standalone game started: " << scenePath << "\n";
 	}
 
 	void RuntimeLayer::EndPlay()

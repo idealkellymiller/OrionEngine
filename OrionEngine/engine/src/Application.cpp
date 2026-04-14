@@ -19,12 +19,12 @@ namespace fs = std::filesystem;
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application()
+	Application::Application(const WindowProperties& props)
 	{
 
 		s_Instance = this;
 		// sets this application's Window reference to Window instance
-		m_Window = std::unique_ptr<Window>(Window::Create());
+		m_Window = std::unique_ptr<Window>(Window::Create(props));
 		// sets this application's window event callback to Application's OnEvent.
 		m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
 	}
@@ -167,6 +167,20 @@ namespace fs = std::filesystem;
 
 		// Save project settings on exit so they persist between runs.
 		ProjectSettings::Get().Save(AssetManager::GetAssetsFolderPath() + "project.settings");
+	}
+
+	void Application::RunLoop()
+	{
+		while (m_Running) {
+			ProcessPendingLayerOps();
+
+			for (Layer* layer : m_LayerStack)
+			{
+				layer->OnUpdate();
+			}
+
+			m_Window->OnUpdate();
+		}
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)

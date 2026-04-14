@@ -70,6 +70,9 @@ namespace Orion {
 	Shader Renderer::s_ToneMapShader;
 	float Renderer::s_Exposure = 1.0f;
 
+	ViewMode Renderer::s_ViewMode = ViewMode::Lit;
+	Shader Renderer::s_WireframeShader;
+
 
 	bool Renderer::Init() {
 		// Create the editor viewport framebuffer
@@ -126,9 +129,18 @@ namespace Orion {
 			std::cout << "Failed to create picking Shader\n";
 		}
 
+		Shader wireframeShader;
+		if (!wireframeShader.CreateFromFiles(
+			"../engine/shaders/Wireframe.vert",
+			"../engine/shaders/Wireframe.frag"))
+		{
+			std::cout << "Failed to create wireframe Shader\n";
+		}
+
 		s_LitShader = litShader;
 		s_ShadowShader = shadowShader;
 		s_PickingShader = pickingShader;
+		s_WireframeShader = wireframeShader;
 
 
 		s_GizmoPass.Init();
@@ -312,51 +324,92 @@ namespace Orion {
 		// Sort once before running passes.
 		SortDrawQueues();
 
-		// Build the light-space matrix once for both shadow and main passes.
-		if (s_HasDirectionalLight)
+		if (s_ViewMode == ViewMode::Wireframe)
 		{
-			s_LightSpaceMatrix = BuildLightSpaceMatrix();
+			// --- Wireframe mode: green lines on dark gray ---
+			glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+
+			s_WireframeShader.Bind();
+			s_WireframeShader.SetMat4("u_View", camera->GetViewMatrix());
+			s_WireframeShader.SetMat4("u_Projection", camera->GetProjectionMatrix());
+			s_WireframeShader.SetVec3("u_WireColor", glm::vec3(0.0f, 0.85f, 0.0f));
+
+			auto drawQueue = [&](const std::vector<DrawCommand>& queue) {
+				for (const DrawCommand& cmd : queue) {
+					if (!cmd.MeshPtr) continue;
+					s_WireframeShader.SetMat4("u_Model", cmd.ModelMatrix);
+					if (cmd.MeshPtr->HasIndices()) {
+						cmd.MeshPtr->GetVertexArray().Bind();
+						glDrawElements(GL_TRIANGLES, cmd.MeshPtr->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+						cmd.MeshPtr->GetVertexArray().Unbind();
+					} else {
+						cmd.MeshPtr->GetVertexArray().Bind();
+						glDrawArrays(GL_TRIANGLES, 0, cmd.MeshPtr->GetVertexCount());
+						cmd.MeshPtr->GetVertexArray().Unbind();
+					}
+				}
+			};
+
+			drawQueue(s_OpaqueQueue);
+			drawQueue(s_TransparentQueue);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
+		else
+		{
+			// --- Lit mode: full lighting pipeline ---
 
-		// Shadow pass first so the main pass can sample the shadow map.
-		RenderPass::ExecuteShadowPass(
-			reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
-			&s_ShadowShader,
-			s_HasDirectionalLight,
-			s_ShadowFBO,
-			s_ShadowMapWidth,
-			s_ShadowMapHeight,
-			s_LightSpaceMatrix
-		);
+			// Build the light-space matrix once for both shadow and main passes.
+			if (s_HasDirectionalLight)
+			{
+				s_LightSpaceMatrix = BuildLightSpaceMatrix();
+			}
 
-		RenderPassDesc opaquePass;
-		opaquePass.Type = RenderPassType::Opaque;
-		RenderPassDesc transparentPass;
-		transparentPass.Type = RenderPassType::Transparent;
+			// Shadow pass first so the main pass can sample the shadow map.
+			RenderPass::ExecuteShadowPass(
+				reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
+				&s_ShadowShader,
+				s_HasDirectionalLight,
+				s_ShadowFBO,
+				s_ShadowMapWidth,
+				s_ShadowMapHeight,
+				s_LightSpaceMatrix
+			);
 
-		const auto& pointLights = s_ActiveRenderScene.GetPointLights();
+			RenderPassDesc opaquePass;
+			opaquePass.Type = RenderPassType::Opaque;
+			RenderPassDesc transparentPass;
+			transparentPass.Type = RenderPassType::Transparent;
 
-		RenderPass::ExecutePass(
-			opaquePass,
-			reinterpret_cast<std::vector<DrawCommand>&>(s_OpaqueQueue),
-			*camera,
-			s_DirectionalLight,
-			s_HasDirectionalLight,
-			s_ShadowDepthTexture,
-			s_LightSpaceMatrix,
-			pointLights
-		);
+			const auto& pointLights = s_ActiveRenderScene.GetPointLights();
 
-		RenderPass::ExecutePass(
-			transparentPass,
-			reinterpret_cast<std::vector<DrawCommand>&>(s_TransparentQueue),
-			*camera,
-			s_DirectionalLight,
-			s_HasDirectionalLight,
-			s_ShadowDepthTexture,
-			s_LightSpaceMatrix,
-			pointLights
-		);
+			RenderPass::ExecutePass(
+				opaquePass,
+				reinterpret_cast<std::vector<DrawCommand>&>(s_OpaqueQueue),
+				*camera,
+				s_DirectionalLight,
+				s_HasDirectionalLight,
+				s_ShadowDepthTexture,
+				s_LightSpaceMatrix,
+				pointLights
+			);
+
+			RenderPass::ExecutePass(
+				transparentPass,
+				reinterpret_cast<std::vector<DrawCommand>&>(s_TransparentQueue),
+				*camera,
+				s_DirectionalLight,
+				s_HasDirectionalLight,
+				s_ShadowDepthTexture,
+				s_LightSpaceMatrix,
+				pointLights
+			);
+		}
 
 		// ---- Debug pass: grid + collider wireframe ----
 		if (!EditorLayer::IsPlaying()) {

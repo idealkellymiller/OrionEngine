@@ -31,6 +31,11 @@
 
 namespace Orion {
 
+	enum class ViewMode {
+		Lit,
+		Wireframe
+	};
+
 	// class IRenderBackend;
 	class Shader;
 	class Mesh;
@@ -67,6 +72,9 @@ namespace Orion {
 
 		static float GetExposure() { return s_Exposure; }
 		static void SetExposure(float exposure) { s_Exposure = exposure; }
+
+		static ViewMode GetViewMode() { return s_ViewMode; }
+		static void SetViewMode(ViewMode mode) { s_ViewMode = mode; }
 
 	private:
 		static void BuildRenderQueue(const RenderScene& scene);
@@ -150,5 +158,9 @@ namespace Orion {
 		static Framebuffer s_HDRFramebuffer;
 		static Shader s_ToneMapShader;
 		static float s_Exposure;
+
+		// View mode
+		static ViewMode s_ViewMode;
+		static Shader s_WireframeShader;
 	};
 }

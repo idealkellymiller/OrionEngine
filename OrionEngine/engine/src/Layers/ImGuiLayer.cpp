@@ -1206,6 +1206,34 @@ namespace Orion {
 					s_ViewportImageMin.y + viewportSize.y
 				);
 
+				// --- View mode buttons (top-left overlay) ---
+				{
+					ImVec2 btnPos = ImVec2(s_ViewportImageMin.x + 8.0f, s_ViewportImageMin.y + 8.0f);
+					ImGui::SetCursorScreenPos(btnPos);
+
+					ViewMode currentMode = Renderer::GetViewMode();
+
+					// Highlight the active button
+					auto modeButton = [&](const char* label, ViewMode mode) {
+						bool active = (currentMode == mode);
+						if (active) {
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.8f));
+							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.0f));
+						} else {
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.7f));
+							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
+						}
+						if (ImGui::Button(label, ImVec2(70, 22))) {
+							Renderer::SetViewMode(mode);
+						}
+						ImGui::PopStyleColor(2);
+					};
+
+					modeButton("Lit", ViewMode::Lit);
+					ImGui::SameLine();
+					modeButton("Wireframe", ViewMode::Wireframe);
+				}
+
 				// display rolling avg. framerate as overlay in top right corner
 				std::string framerateText = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
 				drawlist->AddText(ImVec2(s_ViewportImageMax.x - 80, s_ViewportImageMin.y), IM_COL32(255, 255, 255, 255), framerateText.c_str());

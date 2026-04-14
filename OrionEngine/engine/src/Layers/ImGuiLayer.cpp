@@ -36,9 +36,6 @@
 
 namespace Orion {
 
-	// common UI text that can be reused (so we don't have to translate as much later)
-	std::string noneText = _("(none)");
-
 	// Initialize static members
 	EntityID ImGuiLayer::s_HoveredEntity = INVALID_ENTITY;
 
@@ -138,9 +135,6 @@ namespace Orion {
 
 		// Tell ImGui to finalize all UI draw data
 		ImGui::Render();
-
-
-
 
 		// Object Picking:
 		// TODO: mousePos is being overwritten so this bool will always be false. Get mouse input through event system
@@ -622,7 +616,7 @@ namespace Orion {
 		if (!mc) return;
 
 		// Build the preview label for the dropdown (current selection)
-		std::string previewLabel = noneText;
+		std::string previewLabel = _("(none)");
 		if (mc->mesh != INVALID_ASSET_ID) {
 			MeshAsset* current = AssetManager::GetMeshAsset(mc->mesh);
 			if (current && !current->name.empty())
@@ -672,7 +666,7 @@ namespace Orion {
 		if (!matComp) return;
 
 		// Build the preview label for the dropdown (current selection)
-		std::string previewLabel = noneText;
+		std::string previewLabel = _("(none)");
 		if (matComp->material != INVALID_ASSET_ID) {
 			MaterialAsset* current = AssetManager::GetMaterialAsset(matComp->material);
 			if (current && !current->name.empty())
@@ -1111,12 +1105,12 @@ namespace Orion {
 							// Texture picker
 							{
 								auto currentTex = mat ? mat->GetDiffuseTexture() : nullptr;
-								std::string currentName = currentTex ? std::filesystem::path(currentTex->GetPath()).filename().string() : "None";
+								std::string currentName = currentTex ? std::filesystem::path(currentTex->GetPath()).filename().string() : _("None");
 
 								if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Texture", "MatTexture"), currentName.c_str())) {
 									// "None" option to clear the texture
 									bool isNone = (currentTex == nullptr);
-									if (ImGui::Selectable("None", isNone)) {
+									if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("None", "MatTextureNone"), isNone)) {
 										if (mat) mat->SetDiffuseTexture(nullptr);
 										asset->diffuseTexture = TextureAsset{}; // clear
 									}
@@ -1134,7 +1128,8 @@ namespace Orion {
 								}
 
 								if (currentTex) {
-									ImGui::Text("Size: %dx%d", currentTex->GetWidth(), currentTex->GetHeight());
+									std::string texSize = _("Size") + std::format(":{}{}", currentTex->GetWidth(), currentTex->GetHeight());
+									ImGui::Text(texSize.c_str());
 								}
 							}
 

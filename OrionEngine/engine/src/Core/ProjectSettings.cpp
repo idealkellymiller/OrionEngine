@@ -33,7 +33,7 @@ namespace Orion {
 
     static Language LocaleToLanguage(std::string_view locale)
     {
-        if (locale == "en") { return Language::English; }
+        if (locale == "en-US") { return Language::English; }
         else if (locale == "es-ES") { return Language::Spanish; }
 
         // default langauge
@@ -46,11 +46,11 @@ namespace Orion {
         switch (lang)
         {
         case Language::English:
-            return "en";
+            return "en-US";
         case Language::Spanish:
             return "es-ES";
         default:
-            return "en";
+            return "en-US";
         }
     }
 

@@ -6,14 +6,14 @@ project(OrionEngine LANGUAGES CXX C)
 
     # include all external dependency libraries' CMake files to build them
 
-    add_library(Glad STATIC "engine/external/Glad/src/glad.c")
+    add_library(Glad STATIC "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/Glad/src/glad.c")
         target_include_directories(Glad PUBLIC 
             "engine/external/Glad/include"
             "engine/external/Glad/include/glad"
             "engine/external/Glad/include/KHR"
         )
 
-   set(IMGUI_PATH "engine/external/ImGUI")
+   set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/ImGUI")
     file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp)
     add_library(ImGUI STATIC ${IMGUI_SOURCES})
         target_include_directories(ImGUI PUBLIC ${IMGUI_PATH})
@@ -35,9 +35,9 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory("engine/external/JoltPhysics/Build")
 
     # Lua 5.4 — built as a static C library
-    file(GLOB LUA_SOURCES "engine/external/lua/*.c")
+    file(GLOB LUA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/lua/*.c")
     add_library(Lua STATIC ${LUA_SOURCES})
-        target_include_directories(Lua PUBLIC "engine/external/lua")
+        target_include_directories(Lua PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/lua")
         # Lua is C, avoid C++ name mangling issues
         set_target_properties(Lua PROPERTIES LINKER_LANGUAGE C)
 
@@ -65,6 +65,7 @@ project(OrionEngine LANGUAGES CXX C)
         target_sources(Engine PRIVATE
             "engine/src/Application.cpp"
             "engine/src/AppWindow.cpp"
+            "engine/src/ActionStack.cpp"
 
             "engine/src/Core/Console.cpp"
             "engine/src/Core/ProjectSettings.cpp"
@@ -108,7 +109,7 @@ project(OrionEngine LANGUAGES CXX C)
         )
 
         set(GETTEXT_DOMAIN "orion-engine")
-        set(GETTEXT_OUTPUT_DIR "../engine/locales")
+        set(GETTEXT_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/engine/locales")
 
         target_compile_definitions(Engine 
         PRIVATE 
@@ -134,7 +135,6 @@ project(OrionEngine LANGUAGES CXX C)
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)
-        message(STATUS "Engine Definitions: ${OUT_DEFS}")
 
     # App icon resource (embedded into .exe files)
     set(APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/engine/engineAssets/icons/app.rc")

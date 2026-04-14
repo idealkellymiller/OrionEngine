@@ -41,7 +41,7 @@ namespace Orion {
 
 	void ActionStack::PushUndoAction(std::shared_ptr<Action> action)
 	{
-		// Insert new action undo into undo stack
+		// insert new action into undo stack
 		m_UndoActions.push_back(action);
 		// clear redo stack because of new action
 		m_RedoActions.clear();

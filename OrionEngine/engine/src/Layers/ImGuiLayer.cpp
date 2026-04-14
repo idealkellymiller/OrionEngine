@@ -301,11 +301,11 @@ namespace Orion {
 
 		// ========================== BUILD GAME POPUP ==========================
 		if (showBuildGamePopup) {
-			ImGui::OpenPopup("BuildGame");
+			ImGui::OpenPopup(IMGUI_ELEMENT_TITLE("Build Game", "BuildGamePopup"));
 			showBuildGamePopup = false;
 		}
 
-		if (ImGui::BeginPopupModal("BuildGame", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(IMGUI_ELEMENT_TITLE("Build Game", "BuildGamePopup"), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			static char gameName[128] = "My Game";
 			static char outputDir[512] = "";
@@ -333,13 +333,13 @@ namespace Orion {
 				scenesScanned = true;
 			}
 
-			ImGui::Text("Build Game");
+			ImGui::Text(_("Build Game"));
 			ImGui::Separator();
 
-			ImGui::InputText("Game Name", gameName, sizeof(gameName));
+			ImGui::InputText(IMGUI_ELEMENT_TITLE("Game Name", "Game Name"), gameName, sizeof(gameName));
 
 			// Start Scene dropdown
-			if (ImGui::BeginCombo("Start Scene", sceneIdx < (int)sceneFiles.size() ? sceneFiles[sceneIdx].c_str() : "(none)")) {
+			if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Start Scene", "Start Scene"), sceneIdx < (int)sceneFiles.size() ? sceneFiles[sceneIdx].c_str() : "(none)")) {
 				for (int i = 0; i < (int)sceneFiles.size(); i++) {
 					if (ImGui::Selectable(sceneFiles[i].c_str(), i == sceneIdx))
 						sceneIdx = i;
@@ -351,11 +351,11 @@ namespace Orion {
 			const char* resolutions[] = { "1920 x 1080", "1280 x 720", "2560 x 1440", "800 x 600" };
 			const int resW[] = { 1920, 1280, 2560, 800 };
 			const int resH[] = { 1080, 720, 1440, 600 };
-			ImGui::Combo("Resolution", &resolutionIdx, resolutions, 4);
+			ImGui::Combo(IMGUI_ELEMENT_TITLE("Resolution", "GameResolution"), &resolutionIdx, resolutions, 4);
 
-			ImGui::Checkbox("Fullscreen", &fullscreen);
+			ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Fullscreen", "FullscreenCheck"), &fullscreen);
 
-			ImGui::InputText("Output Folder", outputDir, sizeof(outputDir));
+			ImGui::InputText(IMGUI_ELEMENT_TITLE("Output Folder", "Output Folder"), outputDir, sizeof(outputDir));
 			ImGui::SameLine();
 			if (ImGui::Button("...")) {
 				// Default to a reasonable location
@@ -373,13 +373,13 @@ namespace Orion {
 			}
 
 			float buttonWidth = 120.0f;
-			if (ImGui::Button("Build", ImVec2(buttonWidth, 0))) {
+			if (ImGui::Button(IMGUI_ELEMENT_TITLE("Build", "BuildGame"), ImVec2(buttonWidth, 0))) {
 				buildStatus.clear();
 
 				if (strlen(outputDir) == 0) {
-					buildStatus = "Error: Please set an output folder.";
+					buildStatus = _("Error: Please set an output folder.");
 				} else if (sceneFiles.empty()) {
-					buildStatus = "Error: No .scene files found in assets.";
+					buildStatus = _("Error: No .scene files found in assets.");
 				} else {
 					namespace fs = std::filesystem;
 					try {
@@ -405,7 +405,7 @@ namespace Orion {
 						}
 
 						if (runtimeExe.empty() || !fs::exists(runtimeExe)) {
-							buildStatus = "Error: Runtime.exe not found. Build the Runtime target first.";
+							buildStatus = _("Error: Runtime.exe not found. Build the Runtime target first.");
 						} else {
 							// Layout mirrors the editor structure:
 							//   out/bin/GameName.exe   (working dir)
@@ -494,7 +494,7 @@ namespace Orion {
 			}
 
 			ImGui::SameLine();
-			if (ImGui::Button("Close", ImVec2(buttonWidth, 0))) {
+			if (ImGui::Button(IMGUI_ELEMENT_TITLE("Close", "CloseBuildGamePopup"), ImVec2(buttonWidth, 0))) {
 				buildStatus.clear();
 				scenesScanned = false;
 				ImGui::CloseCurrentPopup();

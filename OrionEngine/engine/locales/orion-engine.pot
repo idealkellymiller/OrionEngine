@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-13 22:51-0500\n"
+"POT-Creation-Date: 2026-04-14 14:30-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,7 +37,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:276 src/Layers/ImGuiLayer.cpp:1973
+#: src/Layers/ImGuiLayer.cpp:276 src/Layers/ImGuiLayer.cpp:2027
 msgid "Project Settings"
 msgstr ""
 
@@ -45,15 +45,15 @@ msgstr ""
 msgid "View Module"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:284 src/Layers/ImGuiLayer.cpp:980
+#: src/Layers/ImGuiLayer.cpp:284 src/Layers/ImGuiLayer.cpp:1006
 msgid "Inspector"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:285 src/Layers/ImGuiLayer.cpp:1140
+#: src/Layers/ImGuiLayer.cpp:285 src/Layers/ImGuiLayer.cpp:1166
 msgid "Viewport"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:286 src/Layers/ImGuiLayer.cpp:1202
+#: src/Layers/ImGuiLayer.cpp:286 src/Layers/ImGuiLayer.cpp:1256
 msgid "Hierarchy"
 msgstr ""
 
@@ -61,11 +61,11 @@ msgstr ""
 msgid "File Directory"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:288 src/Layers/ImGuiLayer.cpp:1863
+#: src/Layers/ImGuiLayer.cpp:288 src/Layers/ImGuiLayer.cpp:1917
 msgid "Console"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:289 src/Layers/ImGuiLayer.cpp:1930
+#: src/Layers/ImGuiLayer.cpp:289 src/Layers/ImGuiLayer.cpp:1984
 msgid "Controls"
 msgstr ""
 
@@ -73,418 +73,475 @@ msgstr ""
 msgid "Reset Layout"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:567
+#: src/Layers/ImGuiLayer.cpp:304 src/Layers/ImGuiLayer.cpp:308
+#: src/Layers/ImGuiLayer.cpp:336
+msgid "Build Game"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:339
+msgid "Game Name"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:342
+msgid "Start Scene"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:354
+msgid "Resolution"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:356
+msgid "Fullscreen"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:358
+msgid "Output Folder"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:376
+msgid "Build"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:380
+msgid "Error: Please set an output folder."
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:382
+msgid "Error: No .scene files found in assets."
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:408
+msgid "Error: Runtime.exe not found. Build the Runtime target first."
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:497
+msgid "Close"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:570
 msgid "Name"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:571
+#: src/Layers/ImGuiLayer.cpp:574
 msgid "Enabled"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:579
+#: src/Layers/ImGuiLayer.cpp:582
 msgid "Position"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:582
+#: src/Layers/ImGuiLayer.cpp:585
 msgid "Rotation"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:589 src/Layers/ImGuiLayer.cpp:1923
+#: src/Layers/ImGuiLayer.cpp:592 src/Layers/ImGuiLayer.cpp:1977
 msgid "Scale"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:607
+#: src/Layers/ImGuiLayer.cpp:610
 msgid "Scale Uniform"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:616 src/Layers/ImGuiLayer.cpp:629
-#: src/Layers/ImGuiLayer.cpp:666 src/Layers/ImGuiLayer.cpp:679
+#: src/Layers/ImGuiLayer.cpp:619 src/Layers/ImGuiLayer.cpp:632
+#: src/Layers/ImGuiLayer.cpp:669 src/Layers/ImGuiLayer.cpp:682
 msgid "(none)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:626 src/Layers/ImGuiLayer.cpp:914
+#: src/Layers/ImGuiLayer.cpp:629 src/Layers/ImGuiLayer.cpp:931
 msgid "Mesh"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:654 src/Layers/ImGuiLayer.cpp:1701
+#: src/Layers/ImGuiLayer.cpp:657 src/Layers/ImGuiLayer.cpp:1755
 msgid "Path"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:676 src/Layers/ImGuiLayer.cpp:923
+#: src/Layers/ImGuiLayer.cpp:679 src/Layers/ImGuiLayer.cpp:940
 msgid "Material"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:712
+#: src/Layers/ImGuiLayer.cpp:715
 msgid "FOV (degrees)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:713
+#: src/Layers/ImGuiLayer.cpp:716
 msgid "Near Plane"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:714
+#: src/Layers/ImGuiLayer.cpp:717
 msgid "Far Plane"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:715
+#: src/Layers/ImGuiLayer.cpp:718
 msgid "Active"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:727
+#: src/Layers/ImGuiLayer.cpp:730
 msgid "Script Path"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:732
+#: src/Layers/ImGuiLayer.cpp:735
 msgid "(no script assigned)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:742
+#: src/Layers/ImGuiLayer.cpp:745
 msgid "Static"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:742
+#: src/Layers/ImGuiLayer.cpp:745
 msgid "Kinematic"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:742
+#: src/Layers/ImGuiLayer.cpp:745
 msgid "Dynamic"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:744
+#: src/Layers/ImGuiLayer.cpp:747
 msgid "Body Type"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:750
+#: src/Layers/ImGuiLayer.cpp:753
 msgid "Mass"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:753
+#: src/Layers/ImGuiLayer.cpp:756
 msgid "Linear Damping"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:754
+#: src/Layers/ImGuiLayer.cpp:757
 msgid "Angular Damping"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:755
+#: src/Layers/ImGuiLayer.cpp:758
 msgid "Gravity Scale"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:758
+#: src/Layers/ImGuiLayer.cpp:761
 msgid "Freeze Rotation"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:772
+#: src/Layers/ImGuiLayer.cpp:775
 msgid "Box"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:772
+#: src/Layers/ImGuiLayer.cpp:775
 msgid "Sphere"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:774
+#: src/Layers/ImGuiLayer.cpp:777
 msgid "Shape"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:780
+#: src/Layers/ImGuiLayer.cpp:783
 msgid "Half Extents"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:783
+#: src/Layers/ImGuiLayer.cpp:786
 msgid "Radius"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:786
+#: src/Layers/ImGuiLayer.cpp:789
 msgid "Is Trigger"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:787
+#: src/Layers/ImGuiLayer.cpp:790
 msgid "Offset"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:900 src/Layers/ImGuiLayer.cpp:1019
+#: src/Layers/ImGuiLayer.cpp:917 src/Layers/ImGuiLayer.cpp:1045
 msgid "Add Component"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:932
+#: src/Layers/ImGuiLayer.cpp:949
 msgid "Camera"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:941
+#: src/Layers/ImGuiLayer.cpp:958
 msgid "Script"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:950
+#: src/Layers/ImGuiLayer.cpp:967
 msgid "Rigidbody"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:959
+#: src/Layers/ImGuiLayer.cpp:976
 msgid "Collider"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:967
+#: src/Layers/ImGuiLayer.cpp:985
+msgid "Point Light"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:993
 msgid "All components added"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:997
+#: src/Layers/ImGuiLayer.cpp:1023
 msgid "Entity ID: "
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1057 src/Layers/ImGuiLayer.cpp:2012
+#: src/Layers/ImGuiLayer.cpp:1083 src/Layers/ImGuiLayer.cpp:2066
 msgid "Color"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1064
+#: src/Layers/ImGuiLayer.cpp:1090
 msgid "Specular"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1070
+#: src/Layers/ImGuiLayer.cpp:1096
 msgid "Shininess"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1075
+#: src/Layers/ImGuiLayer.cpp:1101
 msgid "Transparent"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1082 src/Layers/ImGuiLayer.cpp:1087
+#: src/Layers/ImGuiLayer.cpp:1108 src/Layers/ImGuiLayer.cpp:1113
 msgid "None"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1084
+#: src/Layers/ImGuiLayer.cpp:1110
 msgid "Texture"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1105 src/Layers/ImGuiLayer.cpp:1702
+#: src/Layers/ImGuiLayer.cpp:1131 src/Layers/ImGuiLayer.cpp:1756
 msgid "Size"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1115 src/Layers/ImGuiLayer.cpp:1120
+#: src/Layers/ImGuiLayer.cpp:1141 src/Layers/ImGuiLayer.cpp:1146
 msgid "No entity selected"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1218
+#: src/Layers/ImGuiLayer.cpp:1272
 msgid "Create Empty Entity"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1303
+#: src/Layers/ImGuiLayer.cpp:1357
 msgid "Create Child Entity"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1312
+#: src/Layers/ImGuiLayer.cpp:1366
 msgid "Delete Entity"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1329
+#: src/Layers/ImGuiLayer.cpp:1383
 msgid "Unparent"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1383
+#: src/Layers/ImGuiLayer.cpp:1437
 msgid "Assets"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1387
+#: src/Layers/ImGuiLayer.cpp:1441
 msgid "Assets folder path not set."
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1605 src/Layers/ImGuiLayer.cpp:1654
+#: src/Layers/ImGuiLayer.cpp:1659 src/Layers/ImGuiLayer.cpp:1708
 msgid "Open"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1608 src/Layers/ImGuiLayer.cpp:1662
-#: src/Layers/ImGuiLayer.cpp:1749 src/Layers/ImGuiLayer.cpp:1753
+#: src/Layers/ImGuiLayer.cpp:1662 src/Layers/ImGuiLayer.cpp:1716
+#: src/Layers/ImGuiLayer.cpp:1803 src/Layers/ImGuiLayer.cpp:1807
 msgid "Rename"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1614 src/Layers/ImGuiLayer.cpp:1668
-#: src/Layers/ImGuiLayer.cpp:1740
+#: src/Layers/ImGuiLayer.cpp:1668 src/Layers/ImGuiLayer.cpp:1722
+#: src/Layers/ImGuiLayer.cpp:1794
 msgid "Show in Explorer"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1620 src/Layers/ImGuiLayer.cpp:1674
-#: src/Layers/ImGuiLayer.cpp:1925
+#: src/Layers/ImGuiLayer.cpp:1674 src/Layers/ImGuiLayer.cpp:1728
+#: src/Layers/ImGuiLayer.cpp:1979
 msgid "Delete"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1723
+#: src/Layers/ImGuiLayer.cpp:1777
 msgid "New"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1724
+#: src/Layers/ImGuiLayer.cpp:1778
 msgid "Folder"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1728
+#: src/Layers/ImGuiLayer.cpp:1782
 msgid "Scene (.scene)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1731
+#: src/Layers/ImGuiLayer.cpp:1785
 msgid "Material (.mtl)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1734
+#: src/Layers/ImGuiLayer.cpp:1788
 msgid "Lua Script (.lua)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1754
+#: src/Layers/ImGuiLayer.cpp:1808
 msgid "Enter new name:"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1828
+#: src/Layers/ImGuiLayer.cpp:1882
 msgid "Cancel"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1915
+#: src/Layers/ImGuiLayer.cpp:1969
 msgid "Undo"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1916
+#: src/Layers/ImGuiLayer.cpp:1970
 msgid "Redo"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1917
+#: src/Layers/ImGuiLayer.cpp:1971
 msgid "Rotate Viewport Angle"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1918
+#: src/Layers/ImGuiLayer.cpp:1972
 msgid "Zoom In"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1918
+#: src/Layers/ImGuiLayer.cpp:1972
 msgid "Mouse Scroll Down"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1919
+#: src/Layers/ImGuiLayer.cpp:1973
 msgid "Zoom Out"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1919
+#: src/Layers/ImGuiLayer.cpp:1973
 msgid "Mouse Scroll Up"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1920
+#: src/Layers/ImGuiLayer.cpp:1974
 msgid "Create Camera From View"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1921
+#: src/Layers/ImGuiLayer.cpp:1975
 msgid "Move"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1922
+#: src/Layers/ImGuiLayer.cpp:1976
 msgid "Rotate"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1924
+#: src/Layers/ImGuiLayer.cpp:1978
 msgid "Duplicate"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1940
+#: src/Layers/ImGuiLayer.cpp:1994
 msgid "Control"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1941
+#: src/Layers/ImGuiLayer.cpp:1995
 msgid "Keybind"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1976
+#: src/Layers/ImGuiLayer.cpp:2030
 msgid "Project Info"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1981
+#: src/Layers/ImGuiLayer.cpp:2035
 msgid "Project Name"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1987
+#: src/Layers/ImGuiLayer.cpp:2041
 msgid "Starting Scene"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1994
+#: src/Layers/ImGuiLayer.cpp:2048
 msgid "Background"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1997
+#: src/Layers/ImGuiLayer.cpp:2051
 msgid "Solid Color"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1997
+#: src/Layers/ImGuiLayer.cpp:2051
 msgid "Gradient"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1997
+#: src/Layers/ImGuiLayer.cpp:2051
 msgid "Cubemap (coming soon)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:1999
+#: src/Layers/ImGuiLayer.cpp:2053
 msgid "Mode"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2017
+#: src/Layers/ImGuiLayer.cpp:2071
 msgid "Top Color"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2018
+#: src/Layers/ImGuiLayer.cpp:2072
 msgid "Bottom Color"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2023
+#: src/Layers/ImGuiLayer.cpp:2077
 msgid "Cubemap skyboxes are not yet implemented."
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2024
+#: src/Layers/ImGuiLayer.cpp:2078
 msgid "This will support 6-face cubemap textures."
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2031
+#: src/Layers/ImGuiLayer.cpp:2085
 msgid "Cubemap Path"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2041
+#: src/Layers/ImGuiLayer.cpp:2095
 msgid "Lighting"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2043
+#: src/Layers/ImGuiLayer.cpp:2097
 msgid "Directional Light (Sun)"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2044
+#: src/Layers/ImGuiLayer.cpp:2098
 msgid "Direction"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2045
+#: src/Layers/ImGuiLayer.cpp:2099
 msgid "Sun Color"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2046
+#: src/Layers/ImGuiLayer.cpp:2100
 msgid "Sun Intensity"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2057
+#: src/Layers/ImGuiLayer.cpp:2103
+msgid "Post-Processing"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:2104
+msgid "Exposure"
+msgstr ""
+
+#: src/Layers/ImGuiLayer.cpp:2110
 msgid "Language"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2059
+#: src/Layers/ImGuiLayer.cpp:2112
 msgid "English"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2059
+#: src/Layers/ImGuiLayer.cpp:2112
 msgid "Spanish"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2063
+#: src/Layers/ImGuiLayer.cpp:2116
 msgid "Choose Editor Language"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2090
+#: src/Layers/ImGuiLayer.cpp:2143
 msgid "Debug Rendering"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2092
+#: src/Layers/ImGuiLayer.cpp:2145
 msgid "Show World Grid"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2094
+#: src/Layers/ImGuiLayer.cpp:2147
 msgid "Grid Spacing"
 msgstr ""
 
-#: src/Layers/ImGuiLayer.cpp:2095
+#: src/Layers/ImGuiLayer.cpp:2148
 msgid "Grid Extent"
 msgstr ""

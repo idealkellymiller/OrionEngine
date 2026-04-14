@@ -31,7 +31,8 @@ class EditorClient : public Orion::Application
 		EditorClient()
 		{ 
 			PushLayer(new ExampleLayer());
-			PushLayer(new Orion::EditorLayer());
+			s_EditorLayer = new Orion::EditorLayer();
+			PushLayer(s_EditorLayer);
 			PushOverlay(new Orion::ImGuiLayer());
 		}
 
@@ -60,8 +61,3 @@ int main(int argc, char** argv)
 	app->Run(argc, argv); // starts main loop
 	delete app;
 }
-
-// Luke:
-// - Add namespace Orion {} to all .cpp/.h
-// - Add #include "EngineCore.h" and the Orion_API to each class declaration
-//

@@ -5,6 +5,7 @@
 #include "Events/Event.h"
 #include "Window.h"
 #include "Layers/LayerStack.h"
+#include "Layers/EditorLayer.h"
 #include "Events/ApplicationEvent.h"
 #include "Core/ProjectSettings.h"
 
@@ -22,6 +23,7 @@ namespace Orion
             virtual ~Application();
 
             inline static Application& Get() { return *s_Instance; }
+            inline static EditorLayer& GetEditorLayer() { return *s_EditorLayer; }
             inline Window& GetWindow() { return *m_Window; }
 
             void PushLayer(Layer* layer);
@@ -42,6 +44,9 @@ namespace Orion
             void OnEvent(Event& e);
 
             void SetLocalization(Language lang);
+
+        protected:
+            static EditorLayer* s_EditorLayer; // instance of EditorLayer
 
         private:
             static Application* s_Instance; // static singleton instance of Application

@@ -66,15 +66,22 @@ namespace Orion {
 	Shader Renderer::s_GradientShader;
 	unsigned int Renderer::s_EmptyVAO = 0;
 
+	Framebuffer Renderer::s_HDRFramebuffer;
+	Shader Renderer::s_ToneMapShader;
+	float Renderer::s_Exposure = 1.0f;
+
 
 	bool Renderer::Init() {
 		// Create the editor viewport framebuffer
 		s_ViewportFramebuffer.Create(1280, 720);
 
 
+		s_HDRFramebuffer.Create(1280, 720, true);
+
 		InitShadowResources();
 		InitPickingResources();
 		InitGradientResources();
+		InitToneMappingResources();
 
 		// Enables depth testing.
 		// This tells OpenGL to compate fragment depth values so that.
@@ -138,6 +145,7 @@ namespace Orion {
 		ShutdownShadowResources();
 		ShutdownPickingResources();
 		ShutdownGradientResources();
+		ShutdownToneMappingResources();
 
 		s_GizmoPass.Shutdown();
 		s_DebugPass.Shutdown();
@@ -169,10 +177,14 @@ namespace Orion {
 
 	void Renderer::BeginFrame()
 	{
-		s_ViewportFramebuffer.Bind();
+		// Keep HDR framebuffer in sync with the viewport size.
+		s_HDRFramebuffer.Resize(s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
+
+		// Render the scene into the HDR framebuffer.
+		s_HDRFramebuffer.Bind();
 
 		// Set viewport to framebuffer size
-		SetViewport(0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
+		SetViewport(0, 0, s_HDRFramebuffer.GetWidth(), s_HDRFramebuffer.GetHeight());
 
 		glEnable(GL_DEPTH_TEST);
 
@@ -228,12 +240,7 @@ namespace Orion {
 
 	void Renderer::EndFrame()
 	{
-		// Nothing here rn
-		// TODO: add frame stats
-
-
 		ClearQueues();
-
 
 		s_ViewportFramebuffer.Unbind();
 
@@ -397,7 +404,9 @@ namespace Orion {
 
 		RenderPickingPass();
 
-		
+		// Tone-map the HDR buffer into the LDR viewport framebuffer.
+		RunToneMappingPass();
+
 		EndFrame();
 	}
 
@@ -843,6 +852,51 @@ namespace Orion {
 		glBindVertexArray(0);
 
 		// Re-enable depth testing for the rest of the frame.
+		glEnable(GL_DEPTH_TEST);
+	}
+
+
+	// ---------- HDR Tone Mapping ----------
+
+	void Renderer::InitToneMappingResources()
+	{
+		Shader toneMapShader;
+		if (!toneMapShader.CreateFromFiles(
+			"../engine/shaders/ToneMap.vert",
+			"../engine/shaders/ToneMap.frag"))
+		{
+			std::cout << "Failed to create tone mapping Shader\n";
+		}
+		s_ToneMapShader = toneMapShader;
+	}
+
+	void Renderer::ShutdownToneMappingResources()
+	{
+		s_ToneMapShader.Destroy();
+		s_HDRFramebuffer.Destroy();
+	}
+
+	void Renderer::RunToneMappingPass()
+	{
+		// Switch from HDR framebuffer to the LDR viewport framebuffer.
+		s_HDRFramebuffer.Unbind();
+		s_ViewportFramebuffer.Bind();
+
+		glDisable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		s_ToneMapShader.Bind();
+		s_ToneMapShader.SetFloat("u_Exposure", s_Exposure);
+
+		// Bind the HDR color texture to unit 0.
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, s_HDRFramebuffer.GetColorAttachment());
+		s_ToneMapShader.SetInt("u_HDRBuffer", 0);
+
+		glBindVertexArray(s_EmptyVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+
 		glEnable(GL_DEPTH_TEST);
 	}
 }

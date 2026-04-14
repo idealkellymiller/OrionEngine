@@ -51,12 +51,6 @@ vec3 SRGBToLinear(vec3 srgb)
     return pow(srgb, vec3(2.2));
 }
 
-// Convert linear color back to sRGB for display.
-vec3 LinearToSRGB(vec3 linear)
-{
-    return pow(linear, vec3(1.0 / 2.2));
-}
-
 // PCF (Percentage-Closer Filtering) soft shadows.
 // Samples a 5x5 grid around the projected position and averages the results.
 float ComputeShadow(vec4 lightSpacePos, vec3 normal, vec3 lightDir)
@@ -177,8 +171,6 @@ void main()
         lighting += attenuation * (diffuse + specular);
     }
 
-    // Gamma correction: convert from linear back to sRGB for display.
-    lighting = LinearToSRGB(lighting);
-
+    // Output linear HDR color — tone mapping pass handles gamma + exposure.
     FragColor = vec4(lighting, baseColor.a);
 }

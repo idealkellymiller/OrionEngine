@@ -107,5 +107,8 @@ namespace Orion {
         sun.Intensity = settings.sunIntensity;
 
         SetDirectionalLight(sun);
+
+        // Push exposure setting to the renderer for the tone mapping pass.
+        Renderer::SetExposure(settings.exposure);
     }
 }

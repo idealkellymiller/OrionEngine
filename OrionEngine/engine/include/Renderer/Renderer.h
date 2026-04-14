@@ -65,6 +65,9 @@ namespace Orion {
 		// Blit the viewport framebuffer directly to the screen (for standalone game mode).
 		static void BlitToScreen();
 
+		static float GetExposure() { return s_Exposure; }
+		static void SetExposure(float exposure) { s_Exposure = exposure; }
+
 	private:
 		static void BuildRenderQueue(const RenderScene& scene);
 		static bool ShouldSubmitRenderable(const Renderable& renderable, const Frustum& frustum);
@@ -91,6 +94,11 @@ namespace Orion {
 		static void InitGradientResources();
 		static void ShutdownGradientResources();
 		static void RenderGradientBackground();
+
+		// HDR tone mapping post-process
+		static void InitToneMappingResources();
+		static void ShutdownToneMappingResources();
+		static void RunToneMappingPass();
 
 	private:
 		// Store the clear color so the backend has a consistent state.
@@ -137,5 +145,10 @@ namespace Orion {
 		// Gradient background resources
 		static Shader s_GradientShader;
 		static unsigned int s_EmptyVAO;   // empty VAO for fullscreen triangle trick
+
+		// HDR rendering: scene renders into this, then tone-mapped into s_ViewportFramebuffer
+		static Framebuffer s_HDRFramebuffer;
+		static Shader s_ToneMapShader;
+		static float s_Exposure;
 	};
 }

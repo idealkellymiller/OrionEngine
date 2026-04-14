@@ -76,6 +76,7 @@ namespace Orion {
         root["lighting"]["sunColor"]         = Vec3ToJson(sunColor);
         root["lighting"]["sunIntensity"]     = sunIntensity;
         root["lighting"]["ambientIntensity"] = ambientIntensity;
+        root["lighting"]["exposure"]         = exposure;
 
         // Language
         root["language"]["locale"] = LanguageToLocale(editorLanguage);
@@ -157,6 +158,8 @@ namespace Orion {
                 sunIntensity = lt["sunIntensity"].get<float>();
             if (lt.contains("ambientIntensity"))
                 ambientIntensity = lt["ambientIntensity"].get<float>();
+            if (lt.contains("exposure"))
+                exposure = lt["exposure"].get<float>();
         }
 
         // Language

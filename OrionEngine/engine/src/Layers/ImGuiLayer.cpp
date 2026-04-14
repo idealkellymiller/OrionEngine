@@ -2071,10 +2071,9 @@ namespace Orion {
 				ImGui::ColorEdit3(IMGUI_ELEMENT_TITLE("Sun Color", "SunColor"), &settings.sunColor.x);
 				ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Sun Intensity", "SunIntensity"), &settings.sunIntensity, 0.01f, 0.0f, 10.0f);
 
-				//ImGui::Separator();
-				//ImGui::Text("Ambient");
-				//ImGui::DragFloat("Ambient Intensity", &settings.ambientIntensity, 0.005f, 0.0f, 1.0f);
-				//ImGui::TextDisabled("(Ambient uniform not yet wired to shader)");
+				ImGui::Separator();
+				ImGui::Text(_("Post-Processing"));
+				ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Exposure", "Exposure"), &settings.exposure, 0.01f, 0.1f, 10.0f, "%.2f");
 			}
 
 			ImGui::Separator();

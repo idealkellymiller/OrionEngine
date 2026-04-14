@@ -41,6 +41,7 @@ namespace Orion {
         float     sunIntensity  = 1.2f;
 
         float     ambientIntensity = 0.15f;
+        float     exposure = 1.0f;             // HDR exposure for tone mapping
 
         // ---------- Language ----------
         Language editorLanguage = Language::English;

@@ -27,7 +27,7 @@
         "showGrid": true
     },
     "language": {
-        "locale": "en"
+        "locale": "en-US"
     },
     "lighting": {
         "ambientIntensity": 0.15000000596046448,

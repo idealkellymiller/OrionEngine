@@ -2,6 +2,7 @@
 #include "Layers/EditorLayer.h"
 #include "Layers/ImGuiLayer.h"
 #include "Application.h"
+#include "Actions/ActionStack.h"
 
 #include "Renderer/Renderer.h"
 #include "imgui.h"
@@ -34,6 +35,10 @@ namespace Orion {
 	GizmoMode EditorLayer::s_GizmoMode = GizmoMode::Translate;
 	PlayState EditorLayer::s_PlayState = PlayState::Stopped;
 	EditorCamera EditorLayer::s_EditorCamera;
+
+	ActionStack* m_ActionStack = new ActionStack();
+	glm::vec3 m_InitialTransformPos, m_InitialTransformRot, m_InitialTransformScale;
+
 
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
@@ -145,19 +150,40 @@ namespace Orion {
 			}
 			// Editor-only keybinds (disabled during play mode)
 			else if (s_PlayState == PlayState::Stopped) {
-				// Ctrl+S: save scene
 				GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 				bool ctrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
 				            glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 
-				if (ctrl && key == GLFW_KEY_S) {
-					const std::string& path = SceneManager::GetActiveScenePath();
-					if (!path.empty()) {
-						SceneManager::SaveScene(path);
-					} else {
-						std::cout << "[EditorLayer] No scene path to save to.\n";
+				if (ctrl) {
+					if (key == GLFW_KEY_S)
+					{
+						// Ctrl+S: save scene
+						const std::string& path = SceneManager::GetActiveScenePath();
+						if (!path.empty()) {
+							SceneManager::SaveScene(path);
+						}
+						else {
+							std::cout << "[EditorLayer] No scene path to save to.\n";
+						}
+						event.Handled = true;
 					}
-					event.Handled = true;
+					if (key == GLFW_KEY_Z)
+					{
+						// Ctrl+Z: undo last action
+						m_ActionStack->Undo();
+						std::cout << "[EditorLayer] Undo last action." << std::endl;
+					}
+					if (key == GLFW_KEY_Y)
+					{
+						// Ctrl+Y: redo last action
+						m_ActionStack->Redo();
+						std::cout << "[EditorLayer] Redo action." << std::endl;
+					}
+					if (key == GLFW_KEY_D)
+					{
+						// Ctrl+D: duplicate selected object
+						std::cout << "[EditorLayer] Duplicate selected SceneObject." << std::endl;
+					}
 				}
 				else if (key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) {
 					if (s_SelectedEntity != INVALID_ENTITY) {
@@ -227,7 +253,6 @@ namespace Orion {
 		});
 	}
 
-
 	// --- Gizmo interaction ---
 
 	bool EditorLayer::TryBeginGizmoDrag(float screenMouseX, float screenMouseY)
@@ -266,14 +291,22 @@ namespace Orion {
 			gizmo, localX, localY, vpWidth, vpHeight
 		);
 
-		if (hit == GizmoAxis::None)
-			return false;
+		if (hit != GizmoAxis::None) {
+			m_DraggingGizmo = true;
+			m_DragAxis = hit;
+			m_LastDragMouseX = screenMouseX;
+			m_LastDragMouseY = screenMouseY;
 
-		m_DraggingGizmo = true;
-		m_DragAxis = hit;
-		m_LastDragMouseX = screenMouseX;
-		m_LastDragMouseY = screenMouseY;
-		return true;
+			// update init transforms for action stack (undo/redo)
+			auto* tc = scene->GetTransformComponent(s_SelectedEntity);
+			m_InitialTransformPos = tc->position;
+			m_InitialTransformRot = tc->rotation;
+			m_InitialTransformScale = tc->scale;
+
+			return true;
+		}
+
+		return false;
 	}
 
 	void EditorLayer::UpdateGizmoDrag(float screenMouseX, float screenMouseY)
@@ -404,6 +437,28 @@ namespace Orion {
 
 	void EditorLayer::EndGizmoDrag()
 	{
+		if (m_DraggingGizmo)
+		{
+			auto scene = SceneManager::GetActiveScene();
+			auto* tc = scene->GetTransformComponent(s_SelectedEntity);
+
+			if (tc->position != m_InitialTransformPos ||
+				tc->rotation != m_InitialTransformRot ||
+				tc->scale != m_InitialTransformScale)
+			{
+				// create TransformAction to store in action stacks for future undo/redoing
+				auto action = std::make_shared<TransformAction>(
+					s_SelectedEntity,
+					m_InitialTransformPos, tc->position,
+					m_InitialTransformRot, tc->rotation,
+					m_InitialTransformScale, tc->scale
+				);
+				
+				// push on to top of undo stack
+				m_ActionStack->PushUndoAction(action);
+			}
+		}
+
 		m_DraggingGizmo = false;
 		m_DragAxis = GizmoAxis::None;
 	}

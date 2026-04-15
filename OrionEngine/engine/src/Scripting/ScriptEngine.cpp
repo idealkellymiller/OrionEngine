@@ -704,6 +704,52 @@ namespace Orion {
             glm::vec3 vel = m_PhysicsWorld->GetLinearVelocity(m_CurrentEntity);
             return { vel.x, vel.y, vel.z };
         };
+
+        // Physics.Raycast(ox, oy, oz, dx, dy, dz, maxDistance) -> table or nil
+        //
+        // On hit, returns a table:
+        //   hit.entity       (number)  — EntityID of the body hit
+        //   hit.distance     (number)  — distance from origin along the ray
+        //   hit.point.x/y/z  (numbers) — world-space hit position
+        //   hit.normal.x/y/z (numbers) — surface normal at the hit point
+        //
+        // On miss (or if physics isn't initialized / direction is zero), returns nil.
+        // Direction need not be unit-length; it's normalized internally.
+        //
+        // Lua usage:
+        //   local hit = Physics.Raycast(ox, oy, oz, dx, dy, dz, 100)
+        //   if hit then print("Hit " .. hit.entity .. " at dist " .. hit.distance) end
+        physics["Raycast"] = [this](float ox, float oy, float oz,
+                                     float dx, float dy, float dz,
+                                     float maxDist) -> sol::optional<sol::table>
+        {
+            if (!m_PhysicsWorld || !m_Lua)
+                return sol::nullopt;
+
+            RaycastHit hit;
+            if (!m_PhysicsWorld->Raycast({ ox, oy, oz }, { dx, dy, dz }, maxDist, hit))
+                return sol::nullopt;
+
+            // Build the result table. Using nested tables for point/normal so Lua
+            // callers get familiar `hit.point.x` syntax instead of flat numerics.
+            sol::table result = m_Lua->create_table();
+            result["entity"]   = hit.entity;
+            result["distance"] = hit.distance;
+
+            sol::table point = m_Lua->create_table();
+            point["x"] = hit.point.x;
+            point["y"] = hit.point.y;
+            point["z"] = hit.point.z;
+            result["point"] = point;
+
+            sol::table normal = m_Lua->create_table();
+            normal["x"] = hit.normal.x;
+            normal["y"] = hit.normal.y;
+            normal["z"] = hit.normal.z;
+            result["normal"] = normal;
+
+            return result;
+        };
     }
 
     // ================================================================

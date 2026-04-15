@@ -68,6 +68,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/ActionStack.cpp"
 
             "engine/src/Core/Console.cpp"
+            "engine/src/Core/Input.cpp"
             "engine/src/Core/ProjectSettings.cpp"
 
             "engine/src/Layers/Layer.cpp"

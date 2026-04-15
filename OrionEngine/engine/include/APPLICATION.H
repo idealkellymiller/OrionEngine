@@ -45,11 +45,21 @@ namespace Orion
 
             void SetLocalization(Language lang);
 
+            // Request a graceful shutdown at the end of the current frame.
+            // Callable from any layer or script binding.
+            void Close() { m_Running = false; }
+
+            // Uniform time scaling. Read by runtime simulation layers to scale their dt.
+            // 1.0 = normal, 0.0 = paused, 0.5 = slow-mo, 2.0 = fast-forward.
+            static float GetTimeScale() { return s_TimeScale; }
+            static void SetTimeScale(float scale) { s_TimeScale = (scale < 0.0f) ? 0.0f : scale; }
+
         protected:
             static EditorLayer* s_EditorLayer; // instance of EditorLayer
 
         private:
             static Application* s_Instance; // static singleton instance of Application
+            static float s_TimeScale;       // uniform time-scale multiplier for simulation dt
             bool OnWindowClose(WindowCloseEvent& e);
             void ProcessPendingLayerOps();
 

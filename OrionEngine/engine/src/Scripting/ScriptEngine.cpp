@@ -8,6 +8,10 @@
 #include "Physics/PhysicsWorld.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
+#include "Application.h"
+#include "Core/Input.h"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 // Full sol2 header — pulls in Lua and all sol2 machinery.
 // SOL_ALL_SAFETIES_ON enables runtime type-checking in debug builds.
@@ -66,6 +70,8 @@ namespace Orion {
         RegisterEntityBindings();
         RegisterTimeBindings();
         RegisterPhysicsBindings();
+        RegisterLogBindings();
+        RegisterSceneBindings();
 
         // Walk every entity that has a ScriptComponent and load its script file.
         for (EntityID entity : scene->GetEntities()) {
@@ -397,6 +403,70 @@ namespace Orion {
 
             tc->scale = { x, y, z };
         };
+
+        // Helper: compose the rotation matrix using the same X->Y->Z order
+        // that the renderer (Scene::BuildLocalTransform, ApplyRuntimeCamera) uses.
+        // Capturing `this` isn't useful here — make it a plain local lambda.
+        auto buildRot = [](const glm::vec3& euler) -> glm::mat4 {
+            glm::mat4 rot(1.0f);
+            if (euler.x != 0.0f) rot = glm::rotate(rot, euler.x, glm::vec3(1, 0, 0));
+            if (euler.y != 0.0f) rot = glm::rotate(rot, euler.y, glm::vec3(0, 1, 0));
+            if (euler.z != 0.0f) rot = glm::rotate(rot, euler.z, glm::vec3(0, 0, 1));
+            return rot;
+        };
+
+        // Transform.Translate(x, y, z) — additive offset in local space (same axes as position).
+        transform["Translate"] = [this](float x, float y, float z) {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return;
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (tc) tc->position += glm::vec3(x, y, z);
+        };
+
+        // Transform.Rotate(x, y, z) — additive Euler rotation (radians).
+        transform["Rotate"] = [this](float x, float y, float z) {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return;
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (tc) tc->rotation += glm::vec3(x, y, z);
+        };
+
+        // Transform.GetForward() -> x, y, z
+        // The "look direction" of the entity: (0,0,-1) rotated by the entity's Euler angles.
+        // This matches the camera convention used by ApplyRuntimeCamera.
+        transform["GetForward"] = [this, buildRot]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 0, 0, -1 };
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (!tc) return { 0, 0, -1 };
+            glm::vec3 fwd = glm::vec3(buildRot(tc->rotation) * glm::vec4(0, 0, -1, 0));
+            return { fwd.x, fwd.y, fwd.z };
+        };
+
+        // Transform.GetRight() -> x, y, z
+        transform["GetRight"] = [this, buildRot]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 1, 0, 0 };
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (!tc) return { 1, 0, 0 };
+            glm::vec3 right = glm::vec3(buildRot(tc->rotation) * glm::vec4(1, 0, 0, 0));
+            return { right.x, right.y, right.z };
+        };
+
+        // Transform.GetUp() -> x, y, z
+        transform["GetUp"] = [this, buildRot]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 0, 1, 0 };
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (!tc) return { 0, 1, 0 };
+            glm::vec3 up = glm::vec3(buildRot(tc->rotation) * glm::vec4(0, 1, 0, 0));
+            return { up.x, up.y, up.z };
+        };
+
+        // Transform.GetWorldPosition() -> x, y, z
+        // Walks the parent chain (Scene already implements this). For entities without
+        // a parent this returns the same thing as GetPosition.
+        transform["GetWorldPosition"] = [this]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 0, 0, 0 };
+            glm::mat4 world = m_Scene->GetWorldTransform(m_CurrentEntity);
+            glm::vec3 pos = glm::vec3(world[3]);  // translation column
+            return { pos.x, pos.y, pos.z };
+        };
     }
 
     // ================================================================
@@ -411,61 +481,55 @@ namespace Orion {
 
         sol::table input = lua.create_named_table("Input");
 
-        // Input.IsKeyDown(keyName) -> bool
-        // Accepts GLFW key names as strings: "W", "A", "S", "D", "Space", etc.
-        // Also accepts raw GLFW key codes as integers.
-        input["IsKeyDown"] = [](const std::string& keyName) -> bool {
-            GLFWwindow* window = static_cast<GLFWwindow*>(
-                Application::Get().GetWindow().GetNativeWindow());
-            if (!window) return false;
+        // All key-based queries route through Input::KeyNameToCode for a single
+        // canonical set of accepted names: "A"-"Z", "0"-"9", Space, Enter, Escape,
+        // Tab, LeftShift/RightShift, LeftCtrl/RightCtrl, Up/Down/Left/Right.
+        //
+        // Each of the three below uses the edge-detection state maintained by
+        // Input::NewFrame(), so "pressed"/"released" fire for exactly one frame.
 
-            // Map common key names to GLFW key codes.
-            int keyCode = -1;
-
-            if (keyName.length() == 1) {
-                // Single character: A-Z, 0-9
-                char c = keyName[0];
-                if (c >= 'A' && c <= 'Z')       keyCode = GLFW_KEY_A + (c - 'A');
-                else if (c >= 'a' && c <= 'z')   keyCode = GLFW_KEY_A + (c - 'a');
-                else if (c >= '0' && c <= '9')   keyCode = GLFW_KEY_0 + (c - '0');
-            }
-            else {
-                // Named keys
-                if (keyName == "Space")          keyCode = GLFW_KEY_SPACE;
-                else if (keyName == "Enter")     keyCode = GLFW_KEY_ENTER;
-                else if (keyName == "Escape")    keyCode = GLFW_KEY_ESCAPE;
-                else if (keyName == "Tab")       keyCode = GLFW_KEY_TAB;
-                else if (keyName == "LeftShift")   keyCode = GLFW_KEY_LEFT_SHIFT;
-                else if (keyName == "RightShift")  keyCode = GLFW_KEY_RIGHT_SHIFT;
-                else if (keyName == "LeftCtrl")    keyCode = GLFW_KEY_LEFT_CONTROL;
-                else if (keyName == "RightCtrl")   keyCode = GLFW_KEY_RIGHT_CONTROL;
-                else if (keyName == "Up")        keyCode = GLFW_KEY_UP;
-                else if (keyName == "Down")      keyCode = GLFW_KEY_DOWN;
-                else if (keyName == "Left")      keyCode = GLFW_KEY_LEFT;
-                else if (keyName == "Right")     keyCode = GLFW_KEY_RIGHT;
-            }
-
-            if (keyCode < 0) return false;
-            return glfwGetKey(window, keyCode) == GLFW_PRESS;
+        // Input.IsKeyDown("W") -> true while the key is held
+        input["IsKeyDown"] = [](const std::string& name) -> bool {
+            int code = Input::KeyNameToCode(name);
+            return code >= 0 && Input::IsKeyDown(code);
         };
 
-        // Input.IsMouseButtonDown(button) -> bool
-        // button: 0 = left, 1 = right, 2 = middle
-        input["IsMouseButtonDown"] = [](int button) -> bool {
-            GLFWwindow* window = static_cast<GLFWwindow*>(
-                Application::Get().GetWindow().GetNativeWindow());
-            if (!window) return false;
-            return glfwGetMouseButton(window, button) == GLFW_PRESS;
+        // Input.IsKeyPressed("E") -> true only on the frame the key goes down
+        input["IsKeyPressed"] = [](const std::string& name) -> bool {
+            int code = Input::KeyNameToCode(name);
+            return code >= 0 && Input::IsKeyPressed(code);
         };
 
-        // Input.GetMousePosition() -> x, y
+        // Input.IsKeyReleased("E") -> true only on the frame the key goes up
+        input["IsKeyReleased"] = [](const std::string& name) -> bool {
+            int code = Input::KeyNameToCode(name);
+            return code >= 0 && Input::IsKeyReleased(code);
+        };
+
+        // Mouse button queries. button: 0 = left, 1 = right, 2 = middle.
+        input["IsMouseButtonDown"]     = [](int b) -> bool { return Input::IsMouseButtonDown(b); };
+        input["IsMouseButtonPressed"]  = [](int b) -> bool { return Input::IsMouseButtonPressed(b); };
+        input["IsMouseButtonReleased"] = [](int b) -> bool { return Input::IsMouseButtonReleased(b); };
+
+        // Input.GetMousePosition() -> x, y (in window pixels)
         input["GetMousePosition"] = []() -> std::tuple<float, float> {
-            GLFWwindow* window = static_cast<GLFWwindow*>(
-                Application::Get().GetWindow().GetNativeWindow());
-            if (!window) return { 0, 0 };
-            double x, y;
-            glfwGetCursorPos(window, &x, &y);
-            return { (float)x, (float)y };
+            glm::vec2 p = Input::GetMousePosition();
+            return { p.x, p.y };
+        };
+
+        // Input.GetMouseDelta() -> dx, dy (pixels moved since last frame)
+        input["GetMouseDelta"] = []() -> std::tuple<float, float> {
+            glm::vec2 d = Input::GetMouseDelta();
+            return { d.x, d.y };
+        };
+
+        // Input.GetScrollDelta() -> scalar vertical scroll amount this frame.
+        input["GetScrollDelta"] = []() -> float { return Input::GetScrollDelta(); };
+
+        // Input.GetAxis("Horizontal") -> -1..1 from A/D or arrow keys.
+        // Input.GetAxis("Vertical")   -> -1..1 from W/S or arrow keys.
+        input["GetAxis"] = [](const std::string& axisName) -> float {
+            return Input::GetAxis(axisName);
         };
     }
 
@@ -639,6 +703,78 @@ namespace Orion {
                 return { 0, 0, 0 };
             glm::vec3 vel = m_PhysicsWorld->GetLinearVelocity(m_CurrentEntity);
             return { vel.x, vel.y, vel.z };
+        };
+    }
+
+    // ================================================================
+    // Bindings: Log
+    // ================================================================
+    // Wraps std::cout / std::cerr with a [Script] prefix and severity label.
+    // Lua's built-in print() still works; these exist so scripts can distinguish
+    // info/warn/error output and so we have a central place to later hook into
+    // the engine's Console panel (Core/Console) for in-editor log viewing.
+
+    void ScriptEngine::RegisterLogBindings()
+    {
+        sol::state& lua = *m_Lua;
+
+        sol::table log = lua.create_named_table("Log");
+
+        log["Info"] = [this](const std::string& msg) {
+            std::cout << "[Script] " << msg << "\n";
+        };
+
+        log["Warn"] = [this](const std::string& msg) {
+            std::cout << "[Script WARN] " << msg << "\n";
+        };
+
+        log["Error"] = [this](const std::string& msg) {
+            std::cerr << "[Script ERROR] " << msg << "\n";
+        };
+    }
+
+    // ================================================================
+    // Bindings: Scene / Application
+    // ================================================================
+    // Scene.Load("levels/next.scene")  -- queued; RuntimeLayer performs the swap
+    // Scene.Reload()                   -- re-load the currently active scene
+    // Application.Quit()               -- graceful shutdown at end of frame
+    // Application.SetTimeScale(f)      -- 0 = pause, 0.5 = slow-mo, 2.0 = fast-forward
+    // Application.GetTimeScale()       -- current scale
+
+    void ScriptEngine::RegisterSceneBindings()
+    {
+        sol::state& lua = *m_Lua;
+
+        sol::table scene = lua.create_named_table("Scene");
+
+        // Scene.Load(path). The swap itself is deferred — we can't tear down the
+        // scene from inside a script that's currently executing against it.
+        // RuntimeLayer drains m_PendingSceneLoad at the end of OnUpdate().
+        scene["Load"] = [this](const std::string& path) {
+            m_PendingSceneLoad = path;
+        };
+
+        // Scene.Reload() — sentinel value, handled by RuntimeLayer.
+        scene["Reload"] = [this]() {
+            m_PendingSceneLoad = "__RELOAD__";
+        };
+
+        sol::table app = lua.create_named_table("Application");
+
+        // Application.Quit() — closes the window at the end of the current frame.
+        app["Quit"] = []() {
+            Application::Get().Close();
+        };
+
+        // Uniform time-scale multiplier. RuntimeLayer applies this to dt before
+        // invoking scripts and physics, so both stay in sync.
+        app["SetTimeScale"] = [](float scale) {
+            Application::SetTimeScale(scale);
+        };
+
+        app["GetTimeScale"] = []() -> float {
+            return Application::GetTimeScale();
         };
     }
 

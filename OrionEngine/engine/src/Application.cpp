@@ -4,6 +4,7 @@
 #include "Renderer/Renderer.h"
 #include "Assets/AssetManager.h"
 #include "ECS/SceneManager.h"
+#include "Core/Input.h"
 
 #include <filesystem>
 
@@ -19,6 +20,7 @@ namespace fs = std::filesystem;
 
 	Application* Application::s_Instance = nullptr;
 	EditorLayer* Application::s_EditorLayer = nullptr;
+	float        Application::s_TimeScale = 1.0f;
 
 	Application::Application(const WindowProperties& props)
 	{
@@ -71,6 +73,10 @@ namespace fs = std::filesystem;
 	// after receiving an event, dispatch to the layers of the app
 	void Application::OnEvent(Event& e)
 	{
+		// Feed input-relevant events (scroll) into the Input cache before layers
+		// see the event, so Input.GetScrollDelta() is accurate whenever queried.
+		Input::OnEvent(e);
+
 		EventDispatcher dispatcher(e);
 
 		// bind WindowCloseEvent's function to be Application's OnWindowClose
@@ -156,6 +162,10 @@ namespace fs = std::filesystem;
 			// before iterating the layer stack.
 			ProcessPendingLayerOps();
 
+			// Snapshot keyboard/mouse state and publish per-frame scroll delta
+			// so all layers this frame see consistent Input values.
+			Input::NewFrame();
+
 			// update every layer in the stack in order
 			for (Layer* layer : m_LayerStack)
 			{
@@ -174,6 +184,8 @@ namespace fs = std::filesystem;
 	{
 		while (m_Running) {
 			ProcessPendingLayerOps();
+
+			Input::NewFrame();
 
 			for (Layer* layer : m_LayerStack)
 			{

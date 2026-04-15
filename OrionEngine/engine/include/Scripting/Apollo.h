@@ -90,6 +90,13 @@ namespace Orion {
 
         bool IsInitialized() const { return m_Lua != nullptr; }
 
+        // Scene-switch request written by Lua bindings (Scene.Load / Scene.Reload).
+        // RuntimeLayer drains this at the end of its frame to perform the switch
+        // safely outside of script execution. Empty string = no pending load.
+        // Special sentinel: "__RELOAD__" means "reload the currently active scene".
+        const std::string& GetPendingSceneLoad() const { return m_PendingSceneLoad; }
+        void ClearPendingSceneLoad() { m_PendingSceneLoad.clear(); }
+
     private:
         // ----- Binding registration -----
         // Each of these registers a Lua "module" table with functions.
@@ -99,6 +106,8 @@ namespace Orion {
         void RegisterEntityBindings();      // Entity.FindByName(), .GetID(), etc.
         void RegisterTimeBindings();        // Time.deltaTime, Time.elapsed
         void RegisterPhysicsBindings();     // Physics.AddForce(), .AddImpulse(), .GetVelocity(), etc.
+        void RegisterLogBindings();         // Log.Info(), .Warn(), .Error()
+        void RegisterSceneBindings();       // Scene.Load(), .Reload(); Application.Quit(), .SetTimeScale(), etc.
 
         // ----- Script loading -----
 
@@ -139,6 +148,10 @@ namespace Orion {
         // Pointer to the PhysicsWorld (owned by RuntimeLayer, not us).
         // May be nullptr if physics is not active.
         PhysicsWorld* m_PhysicsWorld = nullptr;
+
+        // Set by Scene.Load / Scene.Reload bindings. Drained by RuntimeLayer.
+        // Absolute or assets-relative path, or "__RELOAD__" for current scene.
+        std::string m_PendingSceneLoad;
     };
 
 }

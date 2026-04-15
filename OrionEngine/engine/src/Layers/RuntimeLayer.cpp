@@ -50,8 +50,12 @@ namespace Orion {
 		m_RuntimeTime += dt;
 
 		// --- Apollo scripting: tick all entity scripts ---
-		if (m_ScriptEngine.IsInitialized())
+		if (m_ScriptEngine.IsInitialized()) {
+			// Pick up any .lua files edited on disk since the last frame.
+			// Reloaded scripts re-run OnStart() internally, then OnUpdate ticks them normally.
+			m_ScriptEngine.CheckHotReload();
 			m_ScriptEngine.OnUpdate(dt);
+		}
 
 		// --- Step physics simulation ---
 		if (m_PhysicsWorld.IsInitialized())

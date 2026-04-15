@@ -157,18 +157,18 @@ add_custom_command(TARGET Editor POST_BUILD
     $<TARGET_FILE_DIR:Editor>
 )
 
-    # Runtime .exe (standalone game, no editor UI)
-    add_executable(Runtime "runtime/src/main.cpp" ${APP_ICON_RC})
+# Runtime .exe (standalone game, no editor UI)
+add_executable(Runtime "runtime/src/main.cpp" ${APP_ICON_RC})
 
-        target_include_directories(Runtime PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src
-        )
+target_include_directories(Runtime PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/runtime/src
+)
 
-        target_link_libraries(Runtime PRIVATE Engine)
+target_link_libraries(Runtime PRIVATE Engine)
 
-    # Copy Engine.dll next to Runtime.exe
-    add_custom_command(TARGET Runtime POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+# Copy Engine.dll next to Runtime.exe
+add_custom_command(TARGET Runtime POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:Engine>
         $<TARGET_FILE_DIR:Runtime>
-    )
+)

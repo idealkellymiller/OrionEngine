@@ -111,6 +111,13 @@ namespace Orion {
         // Deep-copy this scene into a new Scene (for play-mode snapshot/restore)
         std::shared_ptr<Scene> Copy() const;
 
+        // Create a new entity that copies every component from `source`.
+        // If duplicateChildren is true, the source's children are also duplicated
+        // and attached under the new entity. The new entity inherits the source's
+        // parent (so duplicates sit next to the original in the hierarchy).
+        // Returns INVALID_ENTITY if source is not valid.
+        EntityID DuplicateEntity(EntityID source, bool duplicateChildren = true);
+
         // Entity data
         void AddEntityDataComponent(EntityID entityID, const EntityDataComponent& component);
         EntityDataComponent* GetEntityDataComponent(EntityID entityID);

@@ -45,6 +45,7 @@ namespace Orion {
 
 	private:
 		static EntityID s_SelectedEntity;
+		static EntityID s_ClipboardEntity;  // Last entity copied via Ctrl+C; source for Ctrl+V paste.
 		static GizmoMode s_GizmoMode;
 		static PlayState s_PlayState;
 

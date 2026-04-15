@@ -32,6 +32,7 @@ namespace Orion {
 
 	// Initialize static members
 	EntityID EditorLayer::s_SelectedEntity = INVALID_ENTITY;
+	EntityID EditorLayer::s_ClipboardEntity = INVALID_ENTITY;
 	GizmoMode EditorLayer::s_GizmoMode = GizmoMode::Translate;
 	PlayState EditorLayer::s_PlayState = PlayState::Stopped;
 	EditorCamera EditorLayer::s_EditorCamera;
@@ -179,10 +180,40 @@ namespace Orion {
 						m_ActionStack->Redo();
 						std::cout << "[EditorLayer] Redo action." << std::endl;
 					}
+					if (key == GLFW_KEY_C)
+					{
+						// Ctrl+C: remember the selected entity as the paste source.
+						if (s_SelectedEntity != INVALID_ENTITY) {
+							s_ClipboardEntity = s_SelectedEntity;
+							std::cout << "[EditorLayer] Copied entity " << s_ClipboardEntity << "." << std::endl;
+						}
+						event.Handled = true;
+					}
+					if (key == GLFW_KEY_V)
+					{
+						// Ctrl+V: duplicate the clipboard entity (if still valid) and select the copy.
+						auto scene = SceneManager::GetActiveScene();
+						if (scene && scene->IsValidEntity(s_ClipboardEntity)) {
+							EntityID newEntity = scene->DuplicateEntity(s_ClipboardEntity);
+							if (newEntity != INVALID_ENTITY) {
+								s_SelectedEntity = newEntity;
+								std::cout << "[EditorLayer] Pasted entity " << newEntity << "." << std::endl;
+							}
+						}
+						event.Handled = true;
+					}
 					if (key == GLFW_KEY_D)
 					{
-						// Ctrl+D: duplicate selected object
-						std::cout << "[EditorLayer] Duplicate selected SceneObject." << std::endl;
+						// Ctrl+D: duplicate the selected entity in place and select the copy.
+						auto scene = SceneManager::GetActiveScene();
+						if (scene && s_SelectedEntity != INVALID_ENTITY) {
+							EntityID newEntity = scene->DuplicateEntity(s_SelectedEntity);
+							if (newEntity != INVALID_ENTITY) {
+								s_SelectedEntity = newEntity;
+								std::cout << "[EditorLayer] Duplicated entity " << newEntity << "." << std::endl;
+							}
+						}
+						event.Handled = true;
 					}
 				}
 				else if (key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) {

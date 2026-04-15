@@ -30,6 +30,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <filesystem>
 
 // Forward declarations
 namespace Orion { class PhysicsWorld; }
@@ -48,6 +49,11 @@ namespace Orion {
         // The Lua environment index is stored internally by ScriptEngine.
         // This struct is here so we can track which entities have been initialized.
         bool started = false;
+
+        // Source file path and last-known mtime — used by CheckHotReload()
+        // to detect when a script on disk has changed and needs re-loading.
+        std::string filePath;
+        std::filesystem::file_time_type lastWriteTime{};
     };
 
 
@@ -68,6 +74,12 @@ namespace Orion {
 
         // Call OnUpdate(dt) on all loaded scripts.
         void OnUpdate(float deltaTime);
+
+        // Poll every loaded script's source file on disk; if the mtime has changed,
+        // reload the script into a fresh environment. Reloaded scripts get their
+        // `started` flag cleared so OnStart() fires again on the next OnStart() call.
+        // Safe to call every frame — stat-ing a file is cheap.
+        void CheckHotReload();
 
         // Destroy the Lua VM and all script instances.
         void Shutdown();
@@ -92,6 +104,11 @@ namespace Orion {
 
         // Load a single .lua file into a sandboxed environment for the given entity.
         bool LoadScript(EntityID entity, const std::string& filePath);
+
+        // Discard the existing environment for `entity` and re-execute its source file.
+        // Resets the instance's `started` flag so OnStart() runs again. Returns false
+        // if the file can't be read or the script has a syntax/runtime error on load.
+        bool ReloadScript(EntityID entity);
 
     private:
         // The single Lua VM shared by all scripts.

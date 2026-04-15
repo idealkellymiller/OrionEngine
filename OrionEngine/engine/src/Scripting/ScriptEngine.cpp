@@ -17,6 +17,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <filesystem>
+#include <system_error>
 #include <GLFW/glfw3.h>
 #include "Application.h"
 
@@ -213,13 +215,108 @@ namespace Orion {
         int refIdx = luaL_ref(m_Lua->lua_state(), LUA_REGISTRYINDEX);
         m_ScriptEnvs[entity] = refIdx;
 
-        // Create a ScriptInstance to track OnStart state.
+        // Create a ScriptInstance to track OnStart state and hot-reload info.
         ScriptInstance inst;
         inst.entity = entity;
         inst.started = false;
+        inst.filePath = filePath;
+        std::error_code ec;
+        inst.lastWriteTime = std::filesystem::last_write_time(filePath, ec);
+        // If stat fails (shouldn't — we just read the file), leave default-constructed.
+        // A mismatch on first CheckHotReload() will harmlessly trigger one reload.
         m_Instances[entity] = inst;
 
         return true;
+    }
+
+    bool ScriptEngine::ReloadScript(EntityID entity)
+    {
+        auto instIt = m_Instances.find(entity);
+        if (instIt == m_Instances.end())
+            return false;
+
+        const std::string filePath = instIt->second.filePath;
+        if (filePath.empty())
+            return false;
+
+        // Read the updated source from disk.
+        std::ifstream file(filePath);
+        if (!file.is_open())
+            return false;
+        std::stringstream ss;
+        ss << file.rdbuf();
+        std::string source = ss.str();
+
+        // Drop the old sandbox environment so its OnStart/OnUpdate closures
+        // (and any globals they defined) are garbage-collected.
+        auto envIt = m_ScriptEnvs.find(entity);
+        if (envIt != m_ScriptEnvs.end()) {
+            luaL_unref(m_Lua->lua_state(), LUA_REGISTRYINDEX, envIt->second);
+            m_ScriptEnvs.erase(envIt);
+        }
+
+        // Build a fresh sandbox and run the new source inside it.
+        sol::environment env(*m_Lua, sol::create, m_Lua->globals());
+        auto result = m_Lua->safe_script(source, env, sol::script_pass_on_error);
+        if (!result.valid()) {
+            sol::error err = result;
+            std::cout << "[Apollo] Hot-reload error (" << filePath << "): "
+                      << err.what() << "\n";
+            // The script is now in a broken state: no environment is registered, so
+            // OnUpdate calls for this entity will silently no-op until a subsequent
+            // edit parses successfully and we retry the reload.
+            return false;
+        }
+
+        env.push();
+        int refIdx = luaL_ref(m_Lua->lua_state(), LUA_REGISTRYINDEX);
+        m_ScriptEnvs[entity] = refIdx;
+
+        // Update mtime and reset started so OnStart() fires again on the next tick.
+        std::error_code ec;
+        instIt->second.lastWriteTime = std::filesystem::last_write_time(filePath, ec);
+        instIt->second.started = false;
+
+        return true;
+    }
+
+    void ScriptEngine::CheckHotReload()
+    {
+        if (!m_Lua)
+            return;
+
+        bool anyReloaded = false;
+
+        // Snapshot entity IDs first — ReloadScript mutates m_Instances values
+        // (not keys), but iterating during reload is fine regardless.
+        for (auto& [entity, instance] : m_Instances) {
+            if (instance.filePath.empty())
+                continue;
+
+            std::error_code ec;
+            auto mtime = std::filesystem::last_write_time(instance.filePath, ec);
+            if (ec)
+                continue;  // file missing / unreadable — skip, try again next frame
+
+            if (mtime != instance.lastWriteTime) {
+                std::cout << "[Apollo] Hot-reloading script for entity " << entity
+                          << ": " << instance.filePath << "\n";
+                if (ReloadScript(entity))
+                    anyReloaded = true;
+                else {
+                    // Prevent retrying every frame on a broken file by advancing the
+                    // stored mtime even though the reload failed. The user's next save
+                    // will bump mtime again and we'll try again.
+                    instance.lastWriteTime = mtime;
+                }
+            }
+        }
+
+        if (anyReloaded) {
+            // Re-run OnStart for any scripts whose started flag was just reset.
+            // OnStart() already iterates only entities with started == false.
+            OnStart();
+        }
     }
 
     // ================================================================

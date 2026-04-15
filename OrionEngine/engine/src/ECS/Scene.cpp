@@ -1,5 +1,7 @@
 #include "ECS/Scene.h"
 #include <algorithm>
+#include <cctype>
+#include <unordered_set>
 #include <glm/gtc/matrix_transform.hpp>
 
 
@@ -95,6 +97,95 @@ namespace Orion {
         m_ColliderComponents.clear();
         m_PointLightComponents.clear();
         m_Relationships.clear();
+    }
+
+    // Strip a trailing " (N)" suffix from `name` (where N is one or more digits),
+    // returning just the base portion. If no such suffix is present, returns `name` unchanged.
+    // Example: "Cube (3)" -> "Cube", "Cube" -> "Cube", "Cube (abc)" -> "Cube (abc)".
+    static std::string StripCopySuffix(const std::string& name)
+    {
+        if (name.size() < 4 || name.back() != ')')
+            return name;
+
+        // Walk back from the closing ')' over digits.
+        size_t i = name.size() - 2;
+        size_t digitEnd = i;
+        while (i != std::string::npos && std::isdigit(static_cast<unsigned char>(name[i])))
+            --i;
+
+        // Need at least one digit, and the char before the digits must be " (".
+        if (i == std::string::npos || i == digitEnd) return name;  // no digits
+        if (i < 1 || name[i] != '(' || name[i - 1] != ' ') return name;
+
+        return name.substr(0, i - 1);
+    }
+
+    EntityID Scene::DuplicateEntity(EntityID source, bool duplicateChildren)
+    {
+        if (!IsValidEntity(source))
+            return INVALID_ENTITY;
+
+        EntityID newEntity = CreateEntity();
+
+        // Copy every component the source has.
+        if (HasEntityDataComponent(source)) {
+            EntityDataComponent data = *GetEntityDataComponent(source);
+
+            // Name the duplicate "base (N)", where base strips any existing " (N)" suffix
+            // and N is the lowest positive integer not already in use by another entity.
+            // This keeps "Cube" -> "Cube (1)" -> "Cube (2)" instead of stacking " (Copy) (Copy)".
+            std::string base = StripCopySuffix(data.name);
+            std::unordered_set<std::string> takenNames;
+            for (const auto& [id, d] : m_EntityDataComponents)
+                takenNames.insert(d.name);
+
+            int n = 1;
+            std::string candidate;
+            do {
+                candidate = base + " (" + std::to_string(n) + ")";
+                ++n;
+            } while (takenNames.count(candidate) > 0);
+
+            data.name = candidate;
+            AddEntityDataComponent(newEntity, data);
+        }
+        if (HasTransformComponent(source))
+            AddTransformComponent(newEntity, *GetTransformComponent(source));
+        if (HasMeshComponent(source))
+            AddMeshComponent(newEntity, *GetMeshComponent(source));
+        if (HasMaterialComponent(source))
+            AddMaterialComponent(newEntity, *GetMaterialComponent(source));
+        if (HasCameraComponent(source))
+            AddCameraComponent(newEntity, *GetCameraComponent(source));
+        if (HasScriptComponent(source))
+            AddScriptComponent(newEntity, *GetScriptComponent(source));
+        if (HasRigidbodyComponent(source))
+            AddRigidbodyComponent(newEntity, *GetRigidbodyComponent(source));
+        if (HasColliderComponent(source))
+            AddColliderComponent(newEntity, *GetColliderComponent(source));
+        if (HasPointLightComponent(source))
+            AddPointLightComponent(newEntity, *GetPointLightComponent(source));
+
+        // Inherit the source's parent so the duplicate appears as a sibling.
+        EntityID parent = GetParent(source);
+        if (parent != INVALID_ENTITY)
+            SetParent(newEntity, parent);
+
+        // Recursively duplicate the source's children under the new entity.
+        if (duplicateChildren) {
+            std::vector<EntityID> sourceChildren = GetChildren(source);  // copy
+            for (EntityID child : sourceChildren) {
+                EntityID newChild = DuplicateEntity(child, true);
+                if (newChild != INVALID_ENTITY) {
+                    // Recursive call attached newChild to the original child's parent (source).
+                    // Reparent it under newEntity instead.
+                    RemoveParent(newChild);
+                    SetParent(newChild, newEntity);
+                }
+            }
+        }
+
+        return newEntity;
     }
 
     std::shared_ptr<Scene> Scene::Copy() const

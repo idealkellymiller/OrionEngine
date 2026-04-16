@@ -887,6 +887,42 @@ namespace Orion {
 						scene->AddTransformComponent(newEntity, TransformComponent{});
 						EditorLayer::SetSelectedEntity(newEntity);
 					}
+
+					if (ImGui::MenuItem("Create Monkey"))
+					{
+						EntityID monkey = scene->CreateEntity();
+
+						scene->AddEntityDataComponent(monkey, { "Monkey" });
+						scene->AddTransformComponent(monkey, {});
+
+						scene->AddMeshComponent(monkey, MeshComponent{ "engine/engineAssets/primitives/monkey.obj" }); 
+
+						EditorLayer::SetSelectedEntity(monkey);
+					}
+
+					if (ImGui::MenuItem("Create Cube"))
+					{
+						EntityID cube = scene->CreateEntity();
+
+						scene->AddEntityDataComponent(cube, { "Cube" });
+						scene->AddTransformComponent(cube, {});
+
+						scene->AddMeshComponent(cube, MeshComponent{ "engine/engineAssets/primitives/cube.obj" });
+
+						EditorLayer::SetSelectedEntity(cube);
+					}
+
+					if (ImGui::MenuItem("Create Square"))
+					{
+						EntityID square = scene->CreateEntity();
+
+						scene->AddEntityDataComponent(square, { "Square" });
+						scene->AddTransformComponent(square, {});
+
+						scene->AddMeshComponent(square, MeshComponent{ "engine/engineAssets/primitives/square.obj" });
+
+						EditorLayer::SetSelectedEntity(square);
+					}
 					ImGui::EndPopup();
 				}
 
@@ -966,6 +1002,7 @@ namespace Orion {
 		// --- Right-click context menu on this entity ---
 		if (ImGui::BeginPopupContextItem())
 		{
+
 			if (ImGui::MenuItem("Create Child Entity"))
 			{
 				EntityID child = scene.CreateEntity();

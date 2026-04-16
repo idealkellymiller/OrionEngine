@@ -8,6 +8,10 @@
 #include "Physics/PhysicsWorld.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
+#include "Application.h"
+#include "Core/Input.h"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 // Full sol2 header — pulls in Lua and all sol2 machinery.
 // SOL_ALL_SAFETIES_ON enables runtime type-checking in debug builds.
@@ -17,6 +21,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <filesystem>
+#include <system_error>
 #include <GLFW/glfw3.h>
 #include "Application.h"
 
@@ -64,6 +70,8 @@ namespace Orion {
         RegisterEntityBindings();
         RegisterTimeBindings();
         RegisterPhysicsBindings();
+        RegisterLogBindings();
+        RegisterSceneBindings();
 
         // Walk every entity that has a ScriptComponent and load its script file.
         for (EntityID entity : scene->GetEntities()) {
@@ -213,13 +221,108 @@ namespace Orion {
         int refIdx = luaL_ref(m_Lua->lua_state(), LUA_REGISTRYINDEX);
         m_ScriptEnvs[entity] = refIdx;
 
-        // Create a ScriptInstance to track OnStart state.
+        // Create a ScriptInstance to track OnStart state and hot-reload info.
         ScriptInstance inst;
         inst.entity = entity;
         inst.started = false;
+        inst.filePath = filePath;
+        std::error_code ec;
+        inst.lastWriteTime = std::filesystem::last_write_time(filePath, ec);
+        // If stat fails (shouldn't — we just read the file), leave default-constructed.
+        // A mismatch on first CheckHotReload() will harmlessly trigger one reload.
         m_Instances[entity] = inst;
 
         return true;
+    }
+
+    bool ScriptEngine::ReloadScript(EntityID entity)
+    {
+        auto instIt = m_Instances.find(entity);
+        if (instIt == m_Instances.end())
+            return false;
+
+        const std::string filePath = instIt->second.filePath;
+        if (filePath.empty())
+            return false;
+
+        // Read the updated source from disk.
+        std::ifstream file(filePath);
+        if (!file.is_open())
+            return false;
+        std::stringstream ss;
+        ss << file.rdbuf();
+        std::string source = ss.str();
+
+        // Drop the old sandbox environment so its OnStart/OnUpdate closures
+        // (and any globals they defined) are garbage-collected.
+        auto envIt = m_ScriptEnvs.find(entity);
+        if (envIt != m_ScriptEnvs.end()) {
+            luaL_unref(m_Lua->lua_state(), LUA_REGISTRYINDEX, envIt->second);
+            m_ScriptEnvs.erase(envIt);
+        }
+
+        // Build a fresh sandbox and run the new source inside it.
+        sol::environment env(*m_Lua, sol::create, m_Lua->globals());
+        auto result = m_Lua->safe_script(source, env, sol::script_pass_on_error);
+        if (!result.valid()) {
+            sol::error err = result;
+            std::cout << "[Apollo] Hot-reload error (" << filePath << "): "
+                      << err.what() << "\n";
+            // The script is now in a broken state: no environment is registered, so
+            // OnUpdate calls for this entity will silently no-op until a subsequent
+            // edit parses successfully and we retry the reload.
+            return false;
+        }
+
+        env.push();
+        int refIdx = luaL_ref(m_Lua->lua_state(), LUA_REGISTRYINDEX);
+        m_ScriptEnvs[entity] = refIdx;
+
+        // Update mtime and reset started so OnStart() fires again on the next tick.
+        std::error_code ec;
+        instIt->second.lastWriteTime = std::filesystem::last_write_time(filePath, ec);
+        instIt->second.started = false;
+
+        return true;
+    }
+
+    void ScriptEngine::CheckHotReload()
+    {
+        if (!m_Lua)
+            return;
+
+        bool anyReloaded = false;
+
+        // Snapshot entity IDs first — ReloadScript mutates m_Instances values
+        // (not keys), but iterating during reload is fine regardless.
+        for (auto& [entity, instance] : m_Instances) {
+            if (instance.filePath.empty())
+                continue;
+
+            std::error_code ec;
+            auto mtime = std::filesystem::last_write_time(instance.filePath, ec);
+            if (ec)
+                continue;  // file missing / unreadable — skip, try again next frame
+
+            if (mtime != instance.lastWriteTime) {
+                std::cout << "[Apollo] Hot-reloading script for entity " << entity
+                          << ": " << instance.filePath << "\n";
+                if (ReloadScript(entity))
+                    anyReloaded = true;
+                else {
+                    // Prevent retrying every frame on a broken file by advancing the
+                    // stored mtime even though the reload failed. The user's next save
+                    // will bump mtime again and we'll try again.
+                    instance.lastWriteTime = mtime;
+                }
+            }
+        }
+
+        if (anyReloaded) {
+            // Re-run OnStart for any scripts whose started flag was just reset.
+            // OnStart() already iterates only entities with started == false.
+            OnStart();
+        }
     }
 
     // ================================================================
@@ -300,6 +403,70 @@ namespace Orion {
 
             tc->scale = { x, y, z };
         };
+
+        // Helper: compose the rotation matrix using the same X->Y->Z order
+        // that the renderer (Scene::BuildLocalTransform, ApplyRuntimeCamera) uses.
+        // Capturing `this` isn't useful here — make it a plain local lambda.
+        auto buildRot = [](const glm::vec3& euler) -> glm::mat4 {
+            glm::mat4 rot(1.0f);
+            if (euler.x != 0.0f) rot = glm::rotate(rot, euler.x, glm::vec3(1, 0, 0));
+            if (euler.y != 0.0f) rot = glm::rotate(rot, euler.y, glm::vec3(0, 1, 0));
+            if (euler.z != 0.0f) rot = glm::rotate(rot, euler.z, glm::vec3(0, 0, 1));
+            return rot;
+        };
+
+        // Transform.Translate(x, y, z) — additive offset in local space (same axes as position).
+        transform["Translate"] = [this](float x, float y, float z) {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return;
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (tc) tc->position += glm::vec3(x, y, z);
+        };
+
+        // Transform.Rotate(x, y, z) — additive Euler rotation (radians).
+        transform["Rotate"] = [this](float x, float y, float z) {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return;
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (tc) tc->rotation += glm::vec3(x, y, z);
+        };
+
+        // Transform.GetForward() -> x, y, z
+        // The "look direction" of the entity: (0,0,-1) rotated by the entity's Euler angles.
+        // This matches the camera convention used by ApplyRuntimeCamera.
+        transform["GetForward"] = [this, buildRot]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 0, 0, -1 };
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (!tc) return { 0, 0, -1 };
+            glm::vec3 fwd = glm::vec3(buildRot(tc->rotation) * glm::vec4(0, 0, -1, 0));
+            return { fwd.x, fwd.y, fwd.z };
+        };
+
+        // Transform.GetRight() -> x, y, z
+        transform["GetRight"] = [this, buildRot]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 1, 0, 0 };
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (!tc) return { 1, 0, 0 };
+            glm::vec3 right = glm::vec3(buildRot(tc->rotation) * glm::vec4(1, 0, 0, 0));
+            return { right.x, right.y, right.z };
+        };
+
+        // Transform.GetUp() -> x, y, z
+        transform["GetUp"] = [this, buildRot]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 0, 1, 0 };
+            TransformComponent* tc = m_Scene->GetTransformComponent(m_CurrentEntity);
+            if (!tc) return { 0, 1, 0 };
+            glm::vec3 up = glm::vec3(buildRot(tc->rotation) * glm::vec4(0, 1, 0, 0));
+            return { up.x, up.y, up.z };
+        };
+
+        // Transform.GetWorldPosition() -> x, y, z
+        // Walks the parent chain (Scene already implements this). For entities without
+        // a parent this returns the same thing as GetPosition.
+        transform["GetWorldPosition"] = [this]() -> std::tuple<float, float, float> {
+            if (!m_Scene || m_CurrentEntity == INVALID_ENTITY) return { 0, 0, 0 };
+            glm::mat4 world = m_Scene->GetWorldTransform(m_CurrentEntity);
+            glm::vec3 pos = glm::vec3(world[3]);  // translation column
+            return { pos.x, pos.y, pos.z };
+        };
     }
 
     // ================================================================
@@ -314,61 +481,55 @@ namespace Orion {
 
         sol::table input = lua.create_named_table("Input");
 
-        // Input.IsKeyDown(keyName) -> bool
-        // Accepts GLFW key names as strings: "W", "A", "S", "D", "Space", etc.
-        // Also accepts raw GLFW key codes as integers.
-        input["IsKeyDown"] = [](const std::string& keyName) -> bool {
-            GLFWwindow* window = static_cast<GLFWwindow*>(
-                Application::Get().GetWindow().GetNativeWindow());
-            if (!window) return false;
+        // All key-based queries route through Input::KeyNameToCode for a single
+        // canonical set of accepted names: "A"-"Z", "0"-"9", Space, Enter, Escape,
+        // Tab, LeftShift/RightShift, LeftCtrl/RightCtrl, Up/Down/Left/Right.
+        //
+        // Each of the three below uses the edge-detection state maintained by
+        // Input::NewFrame(), so "pressed"/"released" fire for exactly one frame.
 
-            // Map common key names to GLFW key codes.
-            int keyCode = -1;
-
-            if (keyName.length() == 1) {
-                // Single character: A-Z, 0-9
-                char c = keyName[0];
-                if (c >= 'A' && c <= 'Z')       keyCode = GLFW_KEY_A + (c - 'A');
-                else if (c >= 'a' && c <= 'z')   keyCode = GLFW_KEY_A + (c - 'a');
-                else if (c >= '0' && c <= '9')   keyCode = GLFW_KEY_0 + (c - '0');
-            }
-            else {
-                // Named keys
-                if (keyName == "Space")          keyCode = GLFW_KEY_SPACE;
-                else if (keyName == "Enter")     keyCode = GLFW_KEY_ENTER;
-                else if (keyName == "Escape")    keyCode = GLFW_KEY_ESCAPE;
-                else if (keyName == "Tab")       keyCode = GLFW_KEY_TAB;
-                else if (keyName == "LeftShift")   keyCode = GLFW_KEY_LEFT_SHIFT;
-                else if (keyName == "RightShift")  keyCode = GLFW_KEY_RIGHT_SHIFT;
-                else if (keyName == "LeftCtrl")    keyCode = GLFW_KEY_LEFT_CONTROL;
-                else if (keyName == "RightCtrl")   keyCode = GLFW_KEY_RIGHT_CONTROL;
-                else if (keyName == "Up")        keyCode = GLFW_KEY_UP;
-                else if (keyName == "Down")      keyCode = GLFW_KEY_DOWN;
-                else if (keyName == "Left")      keyCode = GLFW_KEY_LEFT;
-                else if (keyName == "Right")     keyCode = GLFW_KEY_RIGHT;
-            }
-
-            if (keyCode < 0) return false;
-            return glfwGetKey(window, keyCode) == GLFW_PRESS;
+        // Input.IsKeyDown("W") -> true while the key is held
+        input["IsKeyDown"] = [](const std::string& name) -> bool {
+            int code = Input::KeyNameToCode(name);
+            return code >= 0 && Input::IsKeyDown(code);
         };
 
-        // Input.IsMouseButtonDown(button) -> bool
-        // button: 0 = left, 1 = right, 2 = middle
-        input["IsMouseButtonDown"] = [](int button) -> bool {
-            GLFWwindow* window = static_cast<GLFWwindow*>(
-                Application::Get().GetWindow().GetNativeWindow());
-            if (!window) return false;
-            return glfwGetMouseButton(window, button) == GLFW_PRESS;
+        // Input.IsKeyPressed("E") -> true only on the frame the key goes down
+        input["IsKeyPressed"] = [](const std::string& name) -> bool {
+            int code = Input::KeyNameToCode(name);
+            return code >= 0 && Input::IsKeyPressed(code);
         };
 
-        // Input.GetMousePosition() -> x, y
+        // Input.IsKeyReleased("E") -> true only on the frame the key goes up
+        input["IsKeyReleased"] = [](const std::string& name) -> bool {
+            int code = Input::KeyNameToCode(name);
+            return code >= 0 && Input::IsKeyReleased(code);
+        };
+
+        // Mouse button queries. button: 0 = left, 1 = right, 2 = middle.
+        input["IsMouseButtonDown"]     = [](int b) -> bool { return Input::IsMouseButtonDown(b); };
+        input["IsMouseButtonPressed"]  = [](int b) -> bool { return Input::IsMouseButtonPressed(b); };
+        input["IsMouseButtonReleased"] = [](int b) -> bool { return Input::IsMouseButtonReleased(b); };
+
+        // Input.GetMousePosition() -> x, y (in window pixels)
         input["GetMousePosition"] = []() -> std::tuple<float, float> {
-            GLFWwindow* window = static_cast<GLFWwindow*>(
-                Application::Get().GetWindow().GetNativeWindow());
-            if (!window) return { 0, 0 };
-            double x, y;
-            glfwGetCursorPos(window, &x, &y);
-            return { (float)x, (float)y };
+            glm::vec2 p = Input::GetMousePosition();
+            return { p.x, p.y };
+        };
+
+        // Input.GetMouseDelta() -> dx, dy (pixels moved since last frame)
+        input["GetMouseDelta"] = []() -> std::tuple<float, float> {
+            glm::vec2 d = Input::GetMouseDelta();
+            return { d.x, d.y };
+        };
+
+        // Input.GetScrollDelta() -> scalar vertical scroll amount this frame.
+        input["GetScrollDelta"] = []() -> float { return Input::GetScrollDelta(); };
+
+        // Input.GetAxis("Horizontal") -> -1..1 from A/D or arrow keys.
+        // Input.GetAxis("Vertical")   -> -1..1 from W/S or arrow keys.
+        input["GetAxis"] = [](const std::string& axisName) -> float {
+            return Input::GetAxis(axisName);
         };
     }
 
@@ -542,6 +703,124 @@ namespace Orion {
                 return { 0, 0, 0 };
             glm::vec3 vel = m_PhysicsWorld->GetLinearVelocity(m_CurrentEntity);
             return { vel.x, vel.y, vel.z };
+        };
+
+        // Physics.Raycast(ox, oy, oz, dx, dy, dz, maxDistance) -> table or nil
+        //
+        // On hit, returns a table:
+        //   hit.entity       (number)  — EntityID of the body hit
+        //   hit.distance     (number)  — distance from origin along the ray
+        //   hit.point.x/y/z  (numbers) — world-space hit position
+        //   hit.normal.x/y/z (numbers) — surface normal at the hit point
+        //
+        // On miss (or if physics isn't initialized / direction is zero), returns nil.
+        // Direction need not be unit-length; it's normalized internally.
+        //
+        // Lua usage:
+        //   local hit = Physics.Raycast(ox, oy, oz, dx, dy, dz, 100)
+        //   if hit then print("Hit " .. hit.entity .. " at dist " .. hit.distance) end
+        physics["Raycast"] = [this](float ox, float oy, float oz,
+                                     float dx, float dy, float dz,
+                                     float maxDist) -> sol::optional<sol::table>
+        {
+            if (!m_PhysicsWorld || !m_Lua)
+                return sol::nullopt;
+
+            RaycastHit hit;
+            if (!m_PhysicsWorld->Raycast({ ox, oy, oz }, { dx, dy, dz }, maxDist, hit))
+                return sol::nullopt;
+
+            // Build the result table. Using nested tables for point/normal so Lua
+            // callers get familiar `hit.point.x` syntax instead of flat numerics.
+            sol::table result = m_Lua->create_table();
+            result["entity"]   = hit.entity;
+            result["distance"] = hit.distance;
+
+            sol::table point = m_Lua->create_table();
+            point["x"] = hit.point.x;
+            point["y"] = hit.point.y;
+            point["z"] = hit.point.z;
+            result["point"] = point;
+
+            sol::table normal = m_Lua->create_table();
+            normal["x"] = hit.normal.x;
+            normal["y"] = hit.normal.y;
+            normal["z"] = hit.normal.z;
+            result["normal"] = normal;
+
+            return result;
+        };
+    }
+
+    // ================================================================
+    // Bindings: Log
+    // ================================================================
+    // Wraps std::cout / std::cerr with a [Script] prefix and severity label.
+    // Lua's built-in print() still works; these exist so scripts can distinguish
+    // info/warn/error output and so we have a central place to later hook into
+    // the engine's Console panel (Core/Console) for in-editor log viewing.
+
+    void ScriptEngine::RegisterLogBindings()
+    {
+        sol::state& lua = *m_Lua;
+
+        sol::table log = lua.create_named_table("Log");
+
+        log["Info"] = [this](const std::string& msg) {
+            std::cout << "[Script] " << msg << "\n";
+        };
+
+        log["Warn"] = [this](const std::string& msg) {
+            std::cout << "[Script WARN] " << msg << "\n";
+        };
+
+        log["Error"] = [this](const std::string& msg) {
+            std::cerr << "[Script ERROR] " << msg << "\n";
+        };
+    }
+
+    // ================================================================
+    // Bindings: Scene / Application
+    // ================================================================
+    // Scene.Load("levels/next.scene")  -- queued; RuntimeLayer performs the swap
+    // Scene.Reload()                   -- re-load the currently active scene
+    // Application.Quit()               -- graceful shutdown at end of frame
+    // Application.SetTimeScale(f)      -- 0 = pause, 0.5 = slow-mo, 2.0 = fast-forward
+    // Application.GetTimeScale()       -- current scale
+
+    void ScriptEngine::RegisterSceneBindings()
+    {
+        sol::state& lua = *m_Lua;
+
+        sol::table scene = lua.create_named_table("Scene");
+
+        // Scene.Load(path). The swap itself is deferred — we can't tear down the
+        // scene from inside a script that's currently executing against it.
+        // RuntimeLayer drains m_PendingSceneLoad at the end of OnUpdate().
+        scene["Load"] = [this](const std::string& path) {
+            m_PendingSceneLoad = path;
+        };
+
+        // Scene.Reload() — sentinel value, handled by RuntimeLayer.
+        scene["Reload"] = [this]() {
+            m_PendingSceneLoad = "__RELOAD__";
+        };
+
+        sol::table app = lua.create_named_table("Application");
+
+        // Application.Quit() — closes the window at the end of the current frame.
+        app["Quit"] = []() {
+            Application::Get().Close();
+        };
+
+        // Uniform time-scale multiplier. RuntimeLayer applies this to dt before
+        // invoking scripts and physics, so both stay in sync.
+        app["SetTimeScale"] = [](float scale) {
+            Application::SetTimeScale(scale);
+        };
+
+        app["GetTimeScale"] = []() -> float {
+            return Application::GetTimeScale();
         };
     }
 

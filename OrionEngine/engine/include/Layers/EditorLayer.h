@@ -28,6 +28,7 @@ namespace Orion {
 		static void SetSelectedEntity(EntityID entity) { s_SelectedEntity = entity; }
 		static GizmoMode GetGizmoMode() { return s_GizmoMode; }
 		static PlayState GetPlayState() { return s_PlayState; }
+		static void SetPlayState(PlayState state) { s_PlayState = state; }
 		static bool IsPlaying() { return s_PlayState == PlayState::Playing; }
 
 		void AddPrimitive(std::string primitiveFileName);
@@ -44,6 +45,7 @@ namespace Orion {
 
 	private:
 		static EntityID s_SelectedEntity;
+		static EntityID s_ClipboardEntity;  // Last entity copied via Ctrl+C; source for Ctrl+V paste.
 		static GizmoMode s_GizmoMode;
 		static PlayState s_PlayState;
 

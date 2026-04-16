@@ -8,6 +8,7 @@
 // #include "MaterialRenderState.hpp"
 
 #include <glad/glad.h>
+#include <string>
 
 
 
@@ -66,7 +67,8 @@ namespace Orion {
 		const DirectionalLight& directionalLight,
 		bool hasDirectionalLight,
 		unsigned int shadowDepthTexture,
-		const glm::mat4& lightSpaceMatrix
+		const glm::mat4& lightSpaceMatrix,
+		const std::vector<PointLight>& pointLights
 	)
 	{
 		if (hasDirectionalLight) {
@@ -90,7 +92,23 @@ namespace Orion {
 		else {
 			// Shader can fall back to ambient-only behavior
 			shader.SetInt("u_HasDirectionalLight", 0);
-			// printf("There is no light in this scene.");
+		}
+
+		// Upload point lights
+		int numPointLights = (int)pointLights.size();
+		if (numPointLights > MAX_POINT_LIGHTS)
+			numPointLights = MAX_POINT_LIGHTS;
+
+		shader.SetInt("u_NumPointLights", numPointLights);
+
+		for (int i = 0; i < numPointLights; i++) {
+			std::string prefix = "u_PointLights[" + std::to_string(i) + "].";
+			shader.SetVec3((prefix + "position").c_str(),  pointLights[i].Position);
+			shader.SetVec3((prefix + "color").c_str(),     pointLights[i].Color);
+			shader.SetFloat((prefix + "intensity").c_str(), pointLights[i].Intensity);
+			shader.SetFloat((prefix + "constant").c_str(),  pointLights[i].Constant);
+			shader.SetFloat((prefix + "linear").c_str(),    pointLights[i].Linear);
+			shader.SetFloat((prefix + "quadratic").c_str(), pointLights[i].Quadratic);
 		}
 	}
 
@@ -106,7 +124,8 @@ namespace Orion {
 		const DirectionalLight& directionalLight,
 		bool hasDirectionalLight,
 		unsigned int shadowDepthTexture,
-		const glm::mat4& lightSpaceMatrix)
+		const glm::mat4& lightSpaceMatrix,
+		const std::vector<PointLight>& pointLights)
 	{
 		UploadFrameUniforms(shader, camera);
 		UploadLightingUniforms(
@@ -114,7 +133,8 @@ namespace Orion {
 			directionalLight,
 			hasDirectionalLight,
 			shadowDepthTexture,
-			lightSpaceMatrix
+			lightSpaceMatrix,
+			pointLights
 		);
 	}
 
@@ -201,7 +221,8 @@ namespace Orion {
 		const DirectionalLight& directionalLight,
 		bool hasDirectionalLight,
 		unsigned int shadowDepthTexture,
-		const glm::mat4& lightSpaceMatrix)
+		const glm::mat4& lightSpaceMatrix,
+		const std::vector<PointLight>& pointLights)
 	{
 		SetupPass(pass);
 
@@ -227,7 +248,8 @@ namespace Orion {
 					directionalLight,
 					hasDirectionalLight,
 					shadowDepthTexture,
-					lightSpaceMatrix);
+					lightSpaceMatrix,
+					pointLights);
 
 				currentShader = shader;
 			}

@@ -23,6 +23,7 @@ namespace Orion {
 
         // Start fresh every frame;
         m_Renderables.clear();
+        m_PointLights.clear();
 
         // Optional: avoid reallocations if scene size is stable.
         m_Renderables.reserve(scene->GetEntities().size());
@@ -72,6 +73,29 @@ namespace Orion {
 
 
 
+        // Collect point lights from entities with PointLightComponent
+        for (const auto& entity : scene->GetEntities()) {
+            if (!scene->HasPointLightComponent(entity) || !scene->HasTransformComponent(entity))
+                continue;
+
+            PointLightComponent* plc = scene->GetPointLightComponent(entity);
+            TransformComponent* tc = scene->GetTransformComponent(entity);
+
+            // Use world position (accounts for parenting)
+            glm::mat4 worldMat = scene->GetWorldTransform(entity);
+            glm::vec3 worldPos = glm::vec3(worldMat[3]);
+
+            PointLight light;
+            light.Position  = worldPos;
+            light.Color     = plc->color;
+            light.Intensity = plc->intensity;
+            light.Constant  = plc->constant;
+            light.Linear    = plc->linear;
+            light.Quadratic = plc->quadratic;
+
+            AddPointLight(light);
+        }
+
         // Camera is managed by EditorCamera and written into
         // Renderer::GetActiveCamera() each frame — no override here.
 
@@ -83,5 +107,8 @@ namespace Orion {
         sun.Intensity = settings.sunIntensity;
 
         SetDirectionalLight(sun);
+
+        // Push exposure setting to the renderer for the tone mapping pass.
+        Renderer::SetExposure(settings.exposure);
     }
 }

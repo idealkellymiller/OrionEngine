@@ -13,10 +13,11 @@ namespace Orion {
         Destroy();
     }
 
-    void Framebuffer::Create(unsigned int width, unsigned int height)
+    void Framebuffer::Create(unsigned int width, unsigned int height, bool hdr)
     {
         m_Width = width;
         m_Height = height;
+        m_HDR = hdr;
 
         // Generate and bind the framebuffer object
         glGenFramebuffers(1, &m_FBO);
@@ -26,17 +27,20 @@ namespace Orion {
         glGenTextures(1, &m_ColorAttachment);
         glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
 
-        // Allocate empty texture storage
-        // GL_RGB is enough for a simple viewport color buffer
+        // HDR uses GL_RGBA16F (float) for values beyond [0,1].
+        // LDR uses GL_RGBA8 (unsigned byte) for standard display.
+        GLenum internalFormat = hdr ? GL_RGBA16F : GL_RGBA8;
+        GLenum dataType       = hdr ? GL_FLOAT   : GL_UNSIGNED_BYTE;
+
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
-            GL_RGB,
+            internalFormat,
             static_cast<GLsizei>(width),
             static_cast<GLsizei>(height),
             0,
-            GL_RGB,
-            GL_UNSIGNED_BYTE,
+            GL_RGBA,
+            dataType,
             nullptr);
 
         // Set texture filtering
@@ -119,7 +123,7 @@ namespace Orion {
             return;
 
         Destroy();
-        Create(width, height);
+        Create(width, height, m_HDR);
     }
 
     void Framebuffer::Bind() const

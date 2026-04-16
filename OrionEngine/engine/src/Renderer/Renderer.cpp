@@ -66,15 +66,25 @@ namespace Orion {
 	Shader Renderer::s_GradientShader;
 	unsigned int Renderer::s_EmptyVAO = 0;
 
+	Framebuffer Renderer::s_HDRFramebuffer;
+	Shader Renderer::s_ToneMapShader;
+	float Renderer::s_Exposure = 1.0f;
+
+	ViewMode Renderer::s_ViewMode = ViewMode::Lit;
+	Shader Renderer::s_WireframeShader;
+
 
 	bool Renderer::Init() {
 		// Create the editor viewport framebuffer
 		s_ViewportFramebuffer.Create(1280, 720);
 
 
+		s_HDRFramebuffer.Create(1280, 720, true);
+
 		InitShadowResources();
 		InitPickingResources();
 		InitGradientResources();
+		InitToneMappingResources();
 
 		// Enables depth testing.
 		// This tells OpenGL to compate fragment depth values so that.
@@ -119,9 +129,18 @@ namespace Orion {
 			std::cout << "Failed to create picking Shader\n";
 		}
 
+		Shader wireframeShader;
+		if (!wireframeShader.CreateFromFiles(
+			"../engine/shaders/Wireframe.vert",
+			"../engine/shaders/Wireframe.frag"))
+		{
+			std::cout << "Failed to create wireframe Shader\n";
+		}
+
 		s_LitShader = litShader;
 		s_ShadowShader = shadowShader;
 		s_PickingShader = pickingShader;
+		s_WireframeShader = wireframeShader;
 
 
 		s_GizmoPass.Init();
@@ -138,6 +157,7 @@ namespace Orion {
 		ShutdownShadowResources();
 		ShutdownPickingResources();
 		ShutdownGradientResources();
+		ShutdownToneMappingResources();
 
 		s_GizmoPass.Shutdown();
 		s_DebugPass.Shutdown();
@@ -169,10 +189,14 @@ namespace Orion {
 
 	void Renderer::BeginFrame()
 	{
-		s_ViewportFramebuffer.Bind();
+		// Keep HDR framebuffer in sync with the viewport size.
+		s_HDRFramebuffer.Resize(s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
+
+		// Render the scene into the HDR framebuffer.
+		s_HDRFramebuffer.Bind();
 
 		// Set viewport to framebuffer size
-		SetViewport(0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight());
+		SetViewport(0, 0, s_HDRFramebuffer.GetWidth(), s_HDRFramebuffer.GetHeight());
 
 		glEnable(GL_DEPTH_TEST);
 
@@ -228,12 +252,7 @@ namespace Orion {
 
 	void Renderer::EndFrame()
 	{
-		// Nothing here rn
-		// TODO: add frame stats 
-
-
 		ClearQueues();
-
 
 		s_ViewportFramebuffer.Unbind();
 
@@ -258,6 +277,29 @@ namespace Orion {
 		//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
+	void Renderer::BlitToScreen()
+	{
+		Application& app = Application::Get();
+		int displayW, displayH;
+		glfwGetFramebufferSize(static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow()), &displayW, &displayH);
+
+		// Resize the viewport framebuffer to match the window if needed
+		if ((unsigned int)displayW != s_ViewportFramebuffer.GetWidth() ||
+			(unsigned int)displayH != s_ViewportFramebuffer.GetHeight()) {
+			s_ViewportFramebuffer.Resize(displayW, displayH);
+		}
+
+		// Blit the framebuffer's color attachment to the default framebuffer (screen)
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, s_ViewportFramebuffer.GetFBO());
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(
+			0, 0, s_ViewportFramebuffer.GetWidth(), s_ViewportFramebuffer.GetHeight(),
+			0, 0, displayW, displayH,
+			GL_COLOR_BUFFER_BIT, GL_LINEAR
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
 	void Renderer::Render()
 	{
 		BeginFrame();
@@ -277,52 +319,97 @@ namespace Orion {
 		ClearQueues();
 
 		// Build internal draw commands from the submitted scene.
-		BuildRenderQueue(s_ActiveRenderScene);	// dereference the pointer
+		BuildRenderQueue(s_ActiveRenderScene);
 
 		// Sort once before running passes.
 		SortDrawQueues();
 
-		// Build the light-space matrix once for both shadow and main passes.
-		if (s_HasDirectionalLight)
+		if (s_ViewMode == ViewMode::Wireframe)
 		{
-			s_LightSpaceMatrix = BuildLightSpaceMatrix();
+			// --- Wireframe mode: green lines on dark gray ---
+			glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+
+			s_WireframeShader.Bind();
+			s_WireframeShader.SetMat4("u_View", camera->GetViewMatrix());
+			s_WireframeShader.SetMat4("u_Projection", camera->GetProjectionMatrix());
+			s_WireframeShader.SetVec3("u_WireColor", glm::vec3(0.0f, 0.85f, 0.0f));
+
+			auto drawQueue = [&](const std::vector<DrawCommand>& queue) {
+				for (const DrawCommand& cmd : queue) {
+					if (!cmd.MeshPtr) continue;
+					s_WireframeShader.SetMat4("u_Model", cmd.ModelMatrix);
+					if (cmd.MeshPtr->HasIndices()) {
+						cmd.MeshPtr->GetVertexArray().Bind();
+						glDrawElements(GL_TRIANGLES, cmd.MeshPtr->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+						cmd.MeshPtr->GetVertexArray().Unbind();
+					} else {
+						cmd.MeshPtr->GetVertexArray().Bind();
+						glDrawArrays(GL_TRIANGLES, 0, cmd.MeshPtr->GetVertexCount());
+						cmd.MeshPtr->GetVertexArray().Unbind();
+					}
+				}
+			};
+
+			drawQueue(s_OpaqueQueue);
+			drawQueue(s_TransparentQueue);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
+		else
+		{
+			// --- Lit mode: full lighting pipeline ---
 
-		// Shadow pass first so the main pass can sample the shadow map.
-		RenderPass::ExecuteShadowPass(
-			reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
-			&s_ShadowShader,
-			s_HasDirectionalLight,
-			s_ShadowFBO,
-			s_ShadowMapWidth,
-			s_ShadowMapHeight,
-			s_LightSpaceMatrix
-		);
+			// Build the light-space matrix once for both shadow and main passes.
+			if (s_HasDirectionalLight)
+			{
+				s_LightSpaceMatrix = BuildLightSpaceMatrix();
+			}
 
-		RenderPassDesc opaquePass;
-		opaquePass.Type = RenderPassType::Opaque;
-		RenderPassDesc transparentPass;
-		transparentPass.Type = RenderPassType::Transparent;
+			// Shadow pass first so the main pass can sample the shadow map.
+			RenderPass::ExecuteShadowPass(
+				reinterpret_cast<const std::vector<DrawCommand>&>(s_OpaqueQueue),
+				&s_ShadowShader,
+				s_HasDirectionalLight,
+				s_ShadowFBO,
+				s_ShadowMapWidth,
+				s_ShadowMapHeight,
+				s_LightSpaceMatrix
+			);
 
-		RenderPass::ExecutePass(
-			opaquePass,
-			reinterpret_cast<std::vector<DrawCommand>&>(s_OpaqueQueue),
-			*camera,
-			s_DirectionalLight,
-			s_HasDirectionalLight,
-			s_ShadowDepthTexture,
-			s_LightSpaceMatrix
-		);
+			RenderPassDesc opaquePass;
+			opaquePass.Type = RenderPassType::Opaque;
+			RenderPassDesc transparentPass;
+			transparentPass.Type = RenderPassType::Transparent;
 
-		RenderPass::ExecutePass(
-			transparentPass,
-			reinterpret_cast<std::vector<DrawCommand>&>(s_TransparentQueue),
-			*camera,
-			s_DirectionalLight,
-			s_HasDirectionalLight,
-			s_ShadowDepthTexture,
-			s_LightSpaceMatrix
-		);
+			const auto& pointLights = s_ActiveRenderScene.GetPointLights();
+
+			RenderPass::ExecutePass(
+				opaquePass,
+				reinterpret_cast<std::vector<DrawCommand>&>(s_OpaqueQueue),
+				*camera,
+				s_DirectionalLight,
+				s_HasDirectionalLight,
+				s_ShadowDepthTexture,
+				s_LightSpaceMatrix,
+				pointLights
+			);
+
+			RenderPass::ExecutePass(
+				transparentPass,
+				reinterpret_cast<std::vector<DrawCommand>&>(s_TransparentQueue),
+				*camera,
+				s_DirectionalLight,
+				s_HasDirectionalLight,
+				s_ShadowDepthTexture,
+				s_LightSpaceMatrix,
+				pointLights
+			);
+		}
 
 		// ---- Debug pass: grid + collider wireframe ----
 		if (!EditorLayer::IsPlaying()) {
@@ -370,7 +457,9 @@ namespace Orion {
 
 		RenderPickingPass();
 
-		
+		// Tone-map the HDR buffer into the LDR viewport framebuffer.
+		RunToneMappingPass();
+
 		EndFrame();
 	}
 
@@ -395,9 +484,10 @@ namespace Orion {
 
 		for (const Renderable& renderable : renderables) {
 
+			// !!!!! --- SKIP CULLING FOR NOW UNTIL DISAPPEARING SHADOWS BUG IS FIXED --- !!!!!
 			// Skip invalid entries or culled objects before creating draw commands.
-			if (!ShouldSubmitRenderable(renderable, frustum))
-				continue;
+			// if (!ShouldSubmitRenderable(renderable, frustum))
+			// 	continue;
 
 			// Convert scene submission into renderer-owned frame data
 			DrawCommand cmd = BuildDrawCommand(renderable, s_ActiveCamera);
@@ -815,6 +905,51 @@ namespace Orion {
 		glBindVertexArray(0);
 
 		// Re-enable depth testing for the rest of the frame.
+		glEnable(GL_DEPTH_TEST);
+	}
+
+
+	// ---------- HDR Tone Mapping ----------
+
+	void Renderer::InitToneMappingResources()
+	{
+		Shader toneMapShader;
+		if (!toneMapShader.CreateFromFiles(
+			"../engine/shaders/ToneMap.vert",
+			"../engine/shaders/ToneMap.frag"))
+		{
+			std::cout << "Failed to create tone mapping Shader\n";
+		}
+		s_ToneMapShader = toneMapShader;
+	}
+
+	void Renderer::ShutdownToneMappingResources()
+	{
+		s_ToneMapShader.Destroy();
+		s_HDRFramebuffer.Destroy();
+	}
+
+	void Renderer::RunToneMappingPass()
+	{
+		// Switch from HDR framebuffer to the LDR viewport framebuffer.
+		s_HDRFramebuffer.Unbind();
+		s_ViewportFramebuffer.Bind();
+
+		glDisable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		s_ToneMapShader.Bind();
+		s_ToneMapShader.SetFloat("u_Exposure", s_Exposure);
+
+		// Bind the HDR color texture to unit 0.
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, s_HDRFramebuffer.GetColorAttachment());
+		s_ToneMapShader.SetInt("u_HDRBuffer", 0);
+
+		glBindVertexArray(s_EmptyVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+
 		glEnable(GL_DEPTH_TEST);
 	}
 }

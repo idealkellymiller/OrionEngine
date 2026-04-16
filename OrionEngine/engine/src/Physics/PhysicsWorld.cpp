@@ -18,6 +18,10 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayerInterfaceTable.h>
 #include <Jolt/Physics/Collision/BroadPhase/ObjectVsBroadPhaseLayerFilterTable.h>
 #include <Jolt/Physics/Collision/ObjectLayerPairFilterTable.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
+#include <Jolt/Physics/Body/BodyLock.h>
 
 #include <iostream>
 #include <cstdarg>
@@ -401,6 +405,62 @@ namespace Orion {
 		const JPH::BodyInterface& bi = m_PhysicsSystem->GetBodyInterface();
 		JPH::Vec3 vel = bi.GetLinearVelocity(it->second);
 		return glm::vec3(vel.GetX(), vel.GetY(), vel.GetZ());
+	}
+
+	bool PhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3& direction,
+	                            float maxDistance, RaycastHit& outHit) const
+	{
+		if (!m_Initialized || maxDistance <= 0.0f)
+			return false;
+
+		// Jolt's RRayCast takes (origin, ray-vector) where the ray-vector is
+		// direction * length. Anything beyond `length` is not reported as a hit.
+		// Normalize the input first so the user can pass any vector.
+		JPH::Vec3 dir(direction.x, direction.y, direction.z);
+		float len = dir.Length();
+		if (len < 1e-6f)
+			return false;
+		dir = dir / len;
+
+		const JPH::RVec3 originVec(origin.x, origin.y, origin.z);
+		const JPH::RRayCast ray(originVec, dir * maxDistance);
+
+		// Closest-hit query — Jolt walks the broad/narrow phase and fills mFraction
+		// with the smallest fraction along the ray that intersects a body.
+		JPH::RayCastResult result;
+		if (!m_PhysicsSystem->GetNarrowPhaseQuery().CastRay(ray, result))
+			return false;
+
+		// Convert hit fraction to a world-space point and a distance.
+		// Distance = fraction * (ray length) since dir is unit-length.
+		const JPH::RVec3 hitPoint = ray.GetPointOnRay(result.mFraction);
+		const float distance = result.mFraction * maxDistance;
+
+		// Map BodyID back to the owning ECS entity. Same lookup the contact
+		// listener uses for collision dispatch.
+		EntityID hitEntity = INVALID_ENTITY;
+		auto it = m_BodyIndexToEntity.find(result.mBodyID.GetIndex());
+		if (it != m_BodyIndexToEntity.end())
+			hitEntity = it->second;
+
+		// Surface normal at the hit point. Requires reading the body's shape,
+		// which means locking the body for thread-safe access. We're on the
+		// main thread between physics steps, so the lock will succeed instantly.
+		glm::vec3 normal(0.0f);
+		{
+			JPH::BodyLockRead lock(m_PhysicsSystem->GetBodyLockInterface(), result.mBodyID);
+			if (lock.Succeeded()) {
+				const JPH::Body& body = lock.GetBody();
+				JPH::Vec3 n = body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint);
+				normal = glm::vec3(n.GetX(), n.GetY(), n.GetZ());
+			}
+		}
+
+		outHit.entity   = hitEntity;
+		outHit.point    = glm::vec3((float)hitPoint.GetX(), (float)hitPoint.GetY(), (float)hitPoint.GetZ());
+		outHit.normal   = normal;
+		outHit.distance = distance;
+		return true;
 	}
 
 } // namespace Orion

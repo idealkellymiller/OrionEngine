@@ -8,6 +8,7 @@
 #include "Renderer/Mesh.h"
 #include "Renderer/Texture.h"
 #include "Renderer/Material.h"
+#include "Renderer/MTLLoader.h"
 
 namespace Orion {
 
@@ -82,6 +83,15 @@ namespace Orion {
         static std::string GetAssetsFolderPath() { return m_AssetsFolderPath; }
 
         static void PrintMatsPathToID();
+
+        // Write all in-memory material properties back to their .mtl files on disk
+        static void SaveAllMaterials();
+
+        // Update a material's path key (used when renaming .mtl files)
+        static void RekeyMaterial(const std::string& oldKey, const std::string& newKey);
+
+        // Parse a .mtl file and auto-create Material + Texture assets from it
+        static void LoadMTLFile(const std::string& mtlPath);
 
     private:
         static std::string m_AssetsFolderPath;

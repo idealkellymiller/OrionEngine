@@ -15,8 +15,9 @@ namespace Orion {
 		Framebuffer();
 		~Framebuffer();
 
-		// Create the framebuffer and attachments
-		void Create(unsigned int width, unsigned int height);
+		// Create the framebuffer and attachments.
+		// If hdr is true, the color attachment uses GL_RGBA16F (float) instead of GL_RGBA8.
+		void Create(unsigned int width, unsigned int height, bool hdr = false);
 
 		// Free all OpenGL objects
 		void Destroy();
@@ -33,6 +34,9 @@ namespace Orion {
 		// Get the color texture so ImGui can display it
 		unsigned int GetColorAttachment() const { return m_ColorAttachment; }
 
+		// Get the raw FBO handle (needed for glBlitFramebuffer)
+		unsigned int GetFBO() const { return m_FBO; }
+
 		unsigned int GetWidth() const { return m_Width; }
 		unsigned int GetHeight() const { return m_Height; }
 
@@ -43,6 +47,7 @@ namespace Orion {
 
 		unsigned int m_Width;
 		unsigned int m_Height;
+		bool m_HDR = false;
 	};
 
 }

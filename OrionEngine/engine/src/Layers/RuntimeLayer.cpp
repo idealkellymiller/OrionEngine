@@ -1,5 +1,8 @@
 #include "EngineCore.h"
 #include "Layers/RuntimeLayer.h"
+#include "Layers/EditorLayer.h"
+#include "Application.h"
+#include "Core/ProjectSettings.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
 #include "Renderer/Renderer.h"
@@ -39,17 +42,25 @@ namespace Orion {
 		if (!m_RuntimeScene)
 			return;
 
-		// Compute delta time for this frame.
+		// Compute delta time for this frame, then apply the global time-scale
+		// (set via Application.SetTimeScale from Lua or engine code). Using an
+		// unscaled-then-scaled split means scripts and physics agree on dt.
 		static float lastTime = (float)glfwGetTime();
 		float now = (float)glfwGetTime();
-		float dt = now - lastTime;
+		float rawDt = now - lastTime;
 		lastTime = now;
+
+		float dt = rawDt * Application::GetTimeScale();
 
 		m_RuntimeTime += dt;
 
 		// --- Apollo scripting: tick all entity scripts ---
-		if (m_ScriptEngine.IsInitialized())
+		if (m_ScriptEngine.IsInitialized()) {
+			// Pick up any .lua files edited on disk since the last frame.
+			// Reloaded scripts re-run OnStart() internally, then OnUpdate ticks them normally.
+			m_ScriptEngine.CheckHotReload();
 			m_ScriptEngine.OnUpdate(dt);
+		}
 
 		// --- Step physics simulation ---
 		if (m_PhysicsWorld.IsInitialized())
@@ -57,6 +68,75 @@ namespace Orion {
 
 		// --- Drive the renderer camera from the active CameraComponent ---
 		ApplyRuntimeCamera();
+
+		// --- Handle Scene.Load / Scene.Reload requests from scripts ---
+		// A script may have called Scene.Load("next.scene") during OnUpdate above.
+		// We can't swap scenes mid-update, so defer to the next frame via the
+		// Application's layer-op queue (same mechanism EnterPlayMode uses).
+		if (m_ScriptEngine.IsInitialized()) {
+			const std::string& pending = m_ScriptEngine.GetPendingSceneLoad();
+			if (!pending.empty()) {
+				std::string path = pending;  // copy; ClearPending invalidates the ref
+				m_ScriptEngine.ClearPendingSceneLoad();
+
+				// Resolve "__RELOAD__" to the currently active scene's path.
+				bool reload = (path == "__RELOAD__");
+				if (reload)
+					path = SceneManager::GetActiveScenePath();
+
+				// If path is still empty we have nothing sensible to load — skip.
+				if (!path.empty()) {
+					Application::Get().QueueLayerOp([this, path]() {
+						// Resolve path: if it looks relative (no drive letter, no leading
+						// slash) prefix it with the assets folder for convenience.
+						const std::string assetsPath = AssetManager::GetAssetsFolderPath();
+						std::string fullPath = path;
+						if (fullPath.find(':') == std::string::npos &&
+						    (fullPath.empty() || (fullPath[0] != '/' && fullPath[0] != '\\')))
+						{
+							fullPath = assetsPath + fullPath;
+						}
+
+						// Tear down physics + scripting against the old runtime scene.
+						// We deliberately do NOT call EndPlay() — that would discard the
+						// original editor snapshot, so exiting play mode would restore
+						// into the newly-loaded scene instead of the user's edit target.
+						if (m_PhysicsWorld.IsInitialized())
+							m_PhysicsWorld.Shutdown();
+						if (m_ScriptEngine.IsInitialized())
+							m_ScriptEngine.Shutdown();
+
+						// Load the requested scene into SceneManager.
+						SceneManager::LoadScene(fullPath);
+						auto loaded = SceneManager::GetActiveScene();
+						if (!loaded) {
+							std::cout << "[RuntimeLayer] Scene.Load failed: " << fullPath << "\n";
+							return;
+						}
+
+						// Swap in a fresh runtime copy of the loaded scene.
+						m_RuntimeScene = loaded->Copy();
+						SceneManager::SetActiveScene(m_RuntimeScene);
+						m_RuntimeTime = 0.0f;
+
+						// Re-init scripts and physics against the new runtime scene.
+						// Note: m_EditorSceneSnapshot is untouched, so ExitPlayMode later
+						// still restores the original pre-play editor scene.
+						m_ScriptEngine.Init(m_RuntimeScene, assetsPath, &m_PhysicsWorld);
+						m_PhysicsWorld.Init(m_RuntimeScene);
+						m_PhysicsWorld.SetCollisionCallback(
+							[this](EntityID a, EntityID b, bool isTrigger) {
+								if (m_ScriptEngine.IsInitialized())
+									m_ScriptEngine.OnCollision(a, b, isTrigger);
+							}
+						);
+						m_ScriptEngine.OnStart();
+
+						std::cout << "[RuntimeLayer] Loaded scene during play: " << fullPath << "\n";
+					});
+				}
+			}
+		}
 	}
 
 	void RuntimeLayer::OnEvent(Event& event)
@@ -99,6 +179,49 @@ namespace Orion {
 		m_ScriptEngine.OnStart();
 
 		std::cout << "[RuntimeLayer] Play mode started.\n";
+	}
+
+	void RuntimeLayer::BeginPlayStandalone(const std::string& scenePath, const std::string& assetsFolderPath)
+	{
+		// Mark as playing so the Renderer skips editor-only passes (grid, gizmos, picking)
+		EditorLayer::SetPlayState(PlayState::Playing);
+
+		// 1. Load assets
+		AssetManager::SetAssetsFolderPath(assetsFolderPath);
+		AssetManager::LoadAssetsFolder();
+
+		// 2. Load project settings (background, lighting, etc.)
+		ProjectSettings::Get().Load(assetsFolderPath + "project.settings");
+
+		// 3. Load the scene from file
+		SceneManager::LoadScene(scenePath);
+		m_RuntimeScene = SceneManager::GetActiveScene();
+
+		if (!m_RuntimeScene) {
+			std::cout << "[RuntimeLayer] ERROR: Failed to load scene: " << scenePath << "\n";
+			return;
+		}
+
+		m_RuntimeTime = 0.0f;
+
+		// 3. Initialize scripting
+		m_ScriptEngine.Init(m_RuntimeScene, assetsFolderPath, &m_PhysicsWorld);
+
+		// 4. Initialize physics
+		m_PhysicsWorld.Init(m_RuntimeScene);
+
+		// 5. Collision callback
+		m_PhysicsWorld.SetCollisionCallback(
+			[this](EntityID a, EntityID b, bool isTrigger) {
+				if (m_ScriptEngine.IsInitialized())
+					m_ScriptEngine.OnCollision(a, b, isTrigger);
+			}
+		);
+
+		// 6. Call OnStart() on all scripts
+		m_ScriptEngine.OnStart();
+
+		std::cout << "[RuntimeLayer] Standalone game started: " << scenePath << "\n";
 	}
 
 	void RuntimeLayer::EndPlay()

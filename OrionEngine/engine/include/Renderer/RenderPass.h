@@ -13,6 +13,7 @@ class Shader;
 class Mesh;
 class Material;
 struct DirectionalLight;
+struct PointLight;
 
 
 
@@ -40,7 +41,8 @@ struct DirectionalLight;
             const DirectionalLight& directionalLight,
             bool hasDirectionalLight,
             unsigned int shadowDepthTexture,
-            const glm::mat4& lightSpaceMatrix
+            const glm::mat4& lightSpaceMatrix,
+            const std::vector<PointLight>& pointLights = {}
         );
 
         // Runs the directional-light shadow pass.
@@ -71,7 +73,8 @@ struct DirectionalLight;
             const DirectionalLight& directionalLight,
             bool hasDirectionalLight,
             unsigned int shadowDepthTexture,
-            const glm::mat4& lightSpaceMatrix
+            const glm::mat4& lightSpaceMatrix,
+            const std::vector<PointLight>& pointLights
         );
 
         static void UploadFrameUniforms(Shader& shader, const Camera& camera);
@@ -81,7 +84,8 @@ struct DirectionalLight;
             const DirectionalLight& directionalLight,
             bool hasDirectionalLight,
             unsigned int shadowDepthTexture,
-            const glm::mat4& lightSpaceMatrix
+            const glm::mat4& lightSpaceMatrix,
+            const std::vector<PointLight>& pointLights
         );
 
         static void UploadObjectUniforms(Shader& shader, const glm::mat4& modelMatrix);

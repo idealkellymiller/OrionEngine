@@ -3,7 +3,8 @@
     {
       "id": 1,
       "material": {
-        "path": "materials/stone.mtrl"
+        "mtl": "materials/stone.mtl",
+        "name": "stone"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -14,8 +15,8 @@
       },
       "transform": {
         "position": [
-          -6.240522861480713,
-          4.887803554534912,
+          -5.001379489898682,
+          3.413325071334839,
           4.1681976318359375
         ],
         "rotation": [
@@ -48,7 +49,8 @@
       },
       "id": 2,
       "material": {
-        "path": "materials/stone.mtrl"
+        "mtl": "materials/default.mtl",
+        "name": "default"
       },
       "mesh": {
         "path": "models/cube.obj"
@@ -85,7 +87,8 @@
     {
       "id": 3,
       "material": {
-        "path": "materials/glass.mtrl"
+        "mtl": "materials/glass.mtl",
+        "name": "glass"
       },
       "mesh": {
         "path": "models/monkey.obj"
@@ -94,7 +97,7 @@
       "parent": 1,
       "transform": {
         "position": [
-          3.492776870727539,
+          2.4418206214904785,
           1.0,
           -2.0
         ],
@@ -119,6 +122,9 @@
       },
       "id": 4,
       "name": "Main Camera",
+      "script": {
+        "path": "scripts/RayCastTest.lua"
+      },
       "transform": {
         "position": [
           0.0,
@@ -140,55 +146,28 @@
     {
       "id": 7,
       "material": {
-        "path": "materials/default.mtrl"
+        "mtl": "materials/12140_Skull_v3_L2.mtl",
+        "name": "12140_Skull_v3"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "models/12140_Skull_v3_L2.obj"
       },
       "name": "Cubert",
       "transform": {
         "position": [
           3.9306249618530273,
           3.7170767784118652,
-          -0.22247612476348877
+          -0.23397912085056305
         ],
         "rotation": [
-          0.0,
+          -1.5707963705062866,
           0.0,
           0.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "id": 8,
-      "material": {
-        "path": "materials/default.mtrl"
-      },
-      "mesh": {
-        "path": "models/cube.obj"
-      },
-      "name": "Cubert_jr",
-      "parent": 7,
-      "transform": {
-        "position": [
-          1.5970418453216553,
-          -0.9242123961448669,
-          0.6045892238616943
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          0.3050000071525574,
-          0.3050000071525574,
-          0.3050000071525574
+          0.05000000074505806,
+          0.05000000074505806,
+          0.05000000074505806
         ]
       }
     },
@@ -203,14 +182,15 @@
         "offset": [
           0.0,
           0.0,
-          0.0
+          1.0
         ],
         "shape": 1,
-        "sphereRadius": 1.0
+        "sphereRadius": 1.2999999523162842
       },
       "id": 9,
       "material": {
-        "path": "materials/stone.mtrl"
+        "mtl": "materials/stone.mtl",
+        "name": "stone"
       },
       "mesh": {
         "path": "models/monkey.obj"
@@ -231,8 +211,8 @@
       },
       "transform": {
         "position": [
-          0.0,
-          1.848191738128662,
+          6.601412296295166,
+          3.3530054092407227,
           0.0
         ],
         "rotation": [
@@ -248,20 +228,198 @@
       }
     },
     {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
       "id": 10,
       "material": {
-        "path": "materials/red.mtrl"
+        "mtl": "materials/green.mtl",
+        "name": "green"
       },
       "mesh": {
         "path": "models/cube.obj"
       },
       "name": "SCUBA",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -0.018580295145511627,
+          12.265233993530273,
+          0.21268464624881744
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "name": "greenLight",
+      "pointLight": {
+        "color": [
+          0.08823537826538086,
+          1.0,
+          0.0
+        ],
+        "constant": 1.0,
+        "intensity": 4.300000190734863,
+        "linear": 0.09000000357627869,
+        "quadratic": 0.03200000151991844
+      },
+      "transform": {
+        "position": [
+          8.066082954406738,
+          1.5887929201126099,
+          -9.20009994506836
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "material": {
+        "mtl": "materials/default.mtl",
+        "name": "default"
+      },
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "Roof",
+      "transform": {
+        "position": [
+          0.0,
+          10.179619789123535,
+          -6.1234660148620605
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          10.0,
+          0.10000000149011612,
+          10.0
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "name": "redLight",
+      "pointLight": {
+        "color": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "constant": 1.0,
+        "intensity": 6.449999809265137,
+        "linear": 0.09000000357627869,
+        "quadratic": 0.03200000151991844
+      },
+      "transform": {
+        "position": [
+          -6.419719219207764,
+          2.047795534133911,
+          -6.130831241607666
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "name": "blueLight",
+      "pointLight": {
+        "color": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "constant": 1.0,
+        "intensity": 4.050000190734863,
+        "linear": 0.09000000357627869,
+        "quadratic": 0.03200000151991844
+      },
+      "transform": {
+        "position": [
+          0.0,
+          9.202818870544434,
+          -8.23073959350586
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "material": {
+        "mtl": "materials/red.mtl",
+        "name": "red"
+      },
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "SCUBA (Copy)",
       "script": {
         "path": "scripts/scuba.lua"
       },
       "transform": {
         "position": [
-          4.849027633666992,
+          7.288640975952148,
           2.375941276550293,
           4.816571235656738
         ],

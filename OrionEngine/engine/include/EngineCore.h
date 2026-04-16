@@ -1,4 +1,5 @@
 #pragma once
+#include "libintl.h"
 
 // macro to dllexport or dllimport depending on whether Engine.dll is being built
 #ifdef ORN_PLATFORM_WINDOWS
@@ -20,4 +21,4 @@
 #endif
 
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1) 
-
+#define _(x) gettext(x)

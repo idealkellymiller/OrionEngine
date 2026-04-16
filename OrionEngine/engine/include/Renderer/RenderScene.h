@@ -52,11 +52,21 @@ namespace Orion {
 
         const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
 
+        void AddPointLight(const PointLight& light) {
+            if ((int)m_PointLights.size() < MAX_POINT_LIGHTS)
+                m_PointLights.push_back(light);
+        }
+
+        const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
+        int GetPointLightCount() const { return (int)m_PointLights.size(); }
+
     private:
         std::vector<Renderable> m_Renderables;
         Camera* m_ActiveCamera = nullptr;
 
         DirectionalLight m_DirectionalLight;
         bool m_HasDirectionalLight = false;
+
+        std::vector<PointLight> m_PointLights;
     };
 }

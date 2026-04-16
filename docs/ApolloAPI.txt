@@ -1,15 +1,41 @@
--- Transform (acts on THIS entity)
+-- Transform
 Transform.GetPosition()          --> x, y, z
 Transform.SetPosition(x, y, z)
 Transform.GetRotation()          --> rx, ry, rz  (Euler radians)
 Transform.SetRotation(rx, ry, rz)
 Transform.GetScale()             --> sx, sy, sz
 Transform.SetScale(sx, sy, sz)
+Transform.Translate(x,y,z)
+Transform.Rotate(x,y,z)
+Transform.GetForward()
+Transform.GetRight()
+Transform.GetUp()
+Transform.GetWorldPosition()	-- walks parent chain
+
+-- Log
+Log.Info("...")
+Log.Warn("...")
+Log.Error("...")
+
+-- Scene/Application
+Scene.Load("levels/level2.scene")	-- absolute or assets-relative; deferred
+Scene.Reload()				-- reloads current scene
+Application.Quit()			-- end-of-frame shutdown
+Application.SetTimeScale(0.5)		-- 0 = paused, 1 - normal, 2 = 2x
+Application.GetTimeScale()
 
 -- Input (polls GLFW directly)
 Input.IsKeyDown("W")             --> bool
+Input.IsKeyPressed("E")
+Input.IsKeyReleased(E")
 Input.IsMouseButtonDown(0)       --> bool  (0=left, 1=right, 2=middle)
+Input.IsMouseButtonPressed(0)
+Input.IsMouseButtonReleased(0)
 Input.GetMousePosition()         --> x, y
+Input.GetMouseDelta()
+Input.GetScrollDelta()
+Input.GetAxis("Horizontal")
+Input.GetAxis("Vertical")
 
 -- Entity (cross-entity access)
 Entity.GetID()                   --> this entity's ID

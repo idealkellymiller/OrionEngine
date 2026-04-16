@@ -20,6 +20,16 @@ namespace Orion {
 	// Callback signature: (EntityID self, EntityID other, bool isTrigger)
 	using CollisionCallback = std::function<void(EntityID, EntityID, bool)>;
 
+	// Result of a single raycast against the physics world.
+	// `entity` is INVALID_ENTITY if the hit body has no associated ECS entity
+	// (shouldn't happen in normal use, but guarded for safety).
+	struct RaycastHit {
+		EntityID  entity   = INVALID_ENTITY;
+		glm::vec3 point    = { 0.0f, 0.0f, 0.0f };  // world-space hit position
+		glm::vec3 normal   = { 0.0f, 0.0f, 0.0f };  // surface normal at hit point (world-space)
+		float     distance = 0.0f;                  // distance from origin along the ray
+	};
+
 	class ORION_API PhysicsWorld {
 	public:
 		PhysicsWorld();
@@ -42,6 +52,14 @@ namespace Orion {
 		void AddTorque(EntityID entity, const glm::vec3& torque);
 		void SetLinearVelocity(EntityID entity, const glm::vec3& velocity);
 		glm::vec3 GetLinearVelocity(EntityID entity) const;
+
+		// --- Queries ---
+		// Cast a ray from `origin` in `direction` (need not be unit length — internally
+		// normalized) up to `maxDistance` world units. Returns true on hit, populating
+		// `outHit` with the closest body intersected. Returns false (and doesn't touch
+		// outHit) on miss or if direction is zero-length.
+		bool Raycast(const glm::vec3& origin, const glm::vec3& direction,
+		             float maxDistance, RaycastHit& outHit) const;
 
 		// --- Collision callbacks ---
 		void SetCollisionCallback(CollisionCallback cb) { m_CollisionCallback = cb; }

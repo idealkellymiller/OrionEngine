@@ -6,14 +6,14 @@ project(OrionEngine LANGUAGES CXX C)
 
     # include all external dependency libraries' CMake files to build them
 
-    add_library(Glad STATIC "engine/external/Glad/src/glad.c")
+    add_library(Glad STATIC "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/Glad/src/glad.c")
         target_include_directories(Glad PUBLIC 
             "engine/external/Glad/include"
             "engine/external/Glad/include/glad"
             "engine/external/Glad/include/KHR"
         )
 
-   set(IMGUI_PATH "engine/external/ImGUI")
+   set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/ImGUI")
     file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp)
     add_library(ImGUI STATIC ${IMGUI_SOURCES})
         target_include_directories(ImGUI PUBLIC ${IMGUI_PATH})
@@ -21,7 +21,7 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory("engine/external/GLFW")
     add_subdirectory("engine/external/spdlog")
     add_subdirectory("engine/external/glm")
-    add_subdirectory(engine/external/json-3.12.0)
+    add_subdirectory("engine/external/json-3.12.0")
     add_subdirectory("engine/external/Gettext")
 
     # Jolt Physics — built as a static library
@@ -35,9 +35,9 @@ project(OrionEngine LANGUAGES CXX C)
     add_subdirectory("engine/external/JoltPhysics/Build")
 
     # Lua 5.4 — built as a static C library
-    file(GLOB LUA_SOURCES "engine/external/lua/*.c")
+    file(GLOB LUA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/lua/*.c")
     add_library(Lua STATIC ${LUA_SOURCES})
-        target_include_directories(Lua PUBLIC "engine/external/lua")
+        target_include_directories(Lua PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/engine/external/lua")
         # Lua is C, avoid C++ name mangling issues
         set_target_properties(Lua PROPERTIES LINKER_LANGUAGE C)
 
@@ -65,8 +65,10 @@ project(OrionEngine LANGUAGES CXX C)
         target_sources(Engine PRIVATE
             "engine/src/Application.cpp"
             "engine/src/AppWindow.cpp"
+            "engine/src/ActionStack.cpp"
 
             "engine/src/Core/Console.cpp"
+            "engine/src/Core/Input.cpp"
             "engine/src/Core/ProjectSettings.cpp"
 
             "engine/src/Layers/Layer.cpp"
@@ -86,6 +88,7 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Renderer/Material.cpp"
             "engine/src/Renderer/Mesh.cpp"
             "engine/src/Renderer/OBJLoader.cpp"
+            "engine/src/Renderer/MTLLoader.cpp"
             "engine/src/Renderer/Renderer.cpp"
             "engine/src/Renderer/RenderPass.cpp"
             "engine/src/Renderer/RenderScene.cpp"
@@ -106,12 +109,17 @@ project(OrionEngine LANGUAGES CXX C)
             "engine/src/Physics/PhysicsWorld.cpp"
         )
 
+        set(GETTEXT_DOMAIN "orion-engine")
+        set(GETTEXT_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/engine/locales")
+
         target_compile_definitions(Engine 
         PRIVATE 
             ORN_BUILD_DLL
         PUBLIC
             ORN_PLATFORM_WINDOWS
             ORN_ENABLE_ASSERTS
+            "GETTEXT_DOMAIN=\"${GETTEXT_DOMAIN}\""
+            "GETTEXT_OUTPUT_DIR=\"${GETTEXT_OUTPUT_DIR}\""
         )
 
         target_compile_definitions(Engine INTERFACE ORION_PLATFORM_WINDOWS)
@@ -128,10 +136,12 @@ project(OrionEngine LANGUAGES CXX C)
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)
-        message(STATUS "Engine Definitions: ${OUT_DEFS}")
+
+    # App icon resource (embedded into .exe files)
+    set(APP_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/engine/engineAssets/icons/app.rc")
 
     # Editor .exe
-    add_executable(Editor "editor/src/main.cpp")
+    add_executable(Editor "editor/src/main.cpp" ${APP_ICON_RC})
         
         target_include_directories(Editor PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/editor/src
@@ -146,4 +156,20 @@ add_custom_command(TARGET Editor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:Engine>
     $<TARGET_FILE_DIR:Editor>
+)
+
+# Runtime .exe (standalone game, no editor UI)
+add_executable(Runtime "runtime/src/main.cpp" ${APP_ICON_RC})
+
+target_include_directories(Runtime PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/runtime/src
+)
+
+target_link_libraries(Runtime PRIVATE Engine)
+
+# Copy Engine.dll next to Runtime.exe
+add_custom_command(TARGET Runtime POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:Engine>
+        $<TARGET_FILE_DIR:Runtime>
 )

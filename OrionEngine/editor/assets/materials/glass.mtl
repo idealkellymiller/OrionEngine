@@ -1,0 +1,7 @@
+# Wavefront Material
+
+newmtl glass
+Kd 0.0157 0.9059 1
+Ks 1 1 1
+Ns 128
+d 0.3

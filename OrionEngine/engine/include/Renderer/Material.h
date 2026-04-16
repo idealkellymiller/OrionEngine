@@ -27,13 +27,10 @@ namespace Orion {
 		// Binds shader, textures, and uniforms needed for rendering
 		void Bind() const;
 
-		bool LoadFromFile(std::string filePath);
-
 		// Assign the shader used by this material
 		void SetShader(Shader* shader) { m_Shader = shader; }
 		// Assign the main diffuse texture
 		void SetDiffuseTexture(std::shared_ptr<Texture> texture) { m_DiffuseTexture = texture; }
-		std::string GetDiffusePath() { return m_DiffusePath; }
 		// Set a tint color for the material
 		void SetColor(const glm::vec4& color) { m_Color = color; }
 
@@ -67,7 +64,6 @@ namespace Orion {
 	private:
 		Shader* m_Shader;			// Shader program used by this material
 		std::shared_ptr<Texture> m_DiffuseTexture;	// Main color texture (albedo/diffuse)
-		std::string m_DiffusePath;
 
 		// Diffuse/base surface color
 		glm::vec4 m_Color;

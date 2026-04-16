@@ -4,19 +4,30 @@
 #include "Renderer/Renderer.h"
 #include "Assets/AssetManager.h"
 #include "ECS/SceneManager.h"
-#include "Core/ProjectSettings.h"
+#include "Core/Input.h"
+
+#include <filesystem>
+
+#if ORN_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
 namespace Orion {
+
+namespace fs = std::filesystem;
 
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
 
 	Application* Application::s_Instance = nullptr;
+	EditorLayer* Application::s_EditorLayer = nullptr;
+	float        Application::s_TimeScale = 1.0f;
 
-	Application::Application()
+	Application::Application(const WindowProperties& props)
 	{
+
 		s_Instance = this;
 		// sets this application's Window reference to Window instance
-		m_Window = std::unique_ptr<Window>(Window::Create());
+		m_Window = std::unique_ptr<Window>(Window::Create(props));
 		// sets this application's window event callback to Application's OnEvent.
 		m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
 	}
@@ -28,7 +39,6 @@ namespace Orion {
 	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack.PushLayer(layer);
-		//printf("Attaching %s to stack...\n", layer->GetName().c_str());
 		layer->OnAttach();
 	}
 
@@ -63,6 +73,10 @@ namespace Orion {
 	// after receiving an event, dispatch to the layers of the app
 	void Application::OnEvent(Event& e)
 	{
+		// Feed input-relevant events (scroll) into the Input cache before layers
+		// see the event, so Input.GetScrollDelta() is accurate whenever queried.
+		Input::OnEvent(e);
+
 		EventDispatcher dispatcher(e);
 
 		// bind WindowCloseEvent's function to be Application's OnWindowClose
@@ -83,21 +97,63 @@ namespace Orion {
 
 	}
 
-	void Application::Run()
+	void Application::SetLocalization(Language lang)
+	{
+		std::string_view locale = ProjectSettings::LanguageToLocale(lang);
+		std::cout << "Setting locale to " << locale << std::endl;
+#if ORN_PLATFORM_WINDOWS
+		// convert std::string_view locale to lpcwstr for LocaleNameToLCID
+		const auto wStringSize = MultiByteToWideChar(CP_UTF8, 0, locale.data(), static_cast<int>(locale.length()), nullptr, 0);
+		std::wstring localeName;
+		localeName.reserve(wStringSize);
+		MultiByteToWideChar(CP_UTF8, 0, locale.data(), static_cast<int>(locale.length()), localeName.data(), wStringSize);
+
+		// configure all threads to the project settings locale
+		_configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
+		const auto localeID = LocaleNameToLCID(localeName.c_str(), LOCALE_ALLOW_NEUTRAL_NAMES);
+		SetThreadLocale(localeID);
+#else
+		setlocale(LC_MESSAGES, locale.data());
+#endif
+
+		bindtextdomain(GETTEXT_DOMAIN, GETTEXT_OUTPUT_DIR);
+		bind_textdomain_codeset(GETTEXT_DOMAIN, "UTF-8");
+		textdomain(GETTEXT_DOMAIN);
+	}
+
+	void Application::Run(int argc, char** argv)
 	{
 		// initialize Renderer here, after window creation in main.
 		Orion::Renderer::Init();
 
+		// Determine assets folder and startup scene.
+		// If a .scene file was passed as argument (e.g. double-click from Explorer),
+		// use its parent directory as the assets folder.
+		std::string assetsFolderPath = "..\\editor\\assets\\";
+		std::string startupScene = "default.scene";
+
+		if (argc > 1) {
+			fs::path scenePath = fs::absolute(argv[1]);
+			if (fs::exists(scenePath) && scenePath.extension() == ".scene") {
+				assetsFolderPath = scenePath.parent_path().string() + "\\";
+				startupScene = scenePath.filename().string();
+				std::cout << "[App] Opened scene from command line: " << scenePath.string() << "\n";
+			}
+		}
+
 		// Load Assets
-		AssetManager::SetAssetsFolderPath("..\\editor\\assets\\");
+		AssetManager::SetAssetsFolderPath(assetsFolderPath);
 		AssetManager::LoadAssetsFolder();
 
 		// Load project settings (from the assets folder, next to scene files).
 		// If the file doesn't exist yet, defaults are kept.
 		ProjectSettings::Get().Load(AssetManager::GetAssetsFolderPath() + "project.settings");
 
+		// set localization
+		SetLocalization(ProjectSettings::Get().editorLanguage);
+
 		// Load (startup) Scene
-		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + "default.scene");
+		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + startupScene);
 
 		//--------------------------MAIN APP LOOP--------------------------
 		while (m_Running) {
@@ -105,6 +161,10 @@ namespace Orion {
 			// Process any deferred layer push/pop operations safely
 			// before iterating the layer stack.
 			ProcessPendingLayerOps();
+
+			// Snapshot keyboard/mouse state and publish per-frame scroll delta
+			// so all layers this frame see consistent Input values.
+			Input::NewFrame();
 
 			// update every layer in the stack in order
 			for (Layer* layer : m_LayerStack)
@@ -118,6 +178,22 @@ namespace Orion {
 
 		// Save project settings on exit so they persist between runs.
 		ProjectSettings::Get().Save(AssetManager::GetAssetsFolderPath() + "project.settings");
+	}
+
+	void Application::RunLoop()
+	{
+		while (m_Running) {
+			ProcessPendingLayerOps();
+
+			Input::NewFrame();
+
+			for (Layer* layer : m_LayerStack)
+			{
+				layer->OnUpdate();
+			}
+
+			m_Window->OnUpdate();
+		}
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)

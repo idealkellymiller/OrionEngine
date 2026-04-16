@@ -12,6 +12,12 @@ namespace Orion {
         Cubemap       // (Future) 6-face cubemap skybox
     };
 
+    // language of all editor text - for i18n
+    enum class Language {
+        English,
+        Spanish
+    };
+
     // Central, engine-wide project settings.
     // Accessed anywhere via ProjectSettings::Get().
     struct ORION_API ProjectSettings {
@@ -35,6 +41,10 @@ namespace Orion {
         float     sunIntensity  = 1.2f;
 
         float     ambientIntensity = 0.15f;
+        float     exposure = 1.0f;             // HDR exposure for tone mapping
+
+        // ---------- Language ----------
+        Language editorLanguage = Language::English;
 
         // ---------- Debug / Editor ----------
         bool showGrid = true;                  // XZ world grid in the viewport
@@ -58,6 +68,8 @@ namespace Orion {
             return s_Instance;
         }
 
+    public:
+        static const std::string_view LanguageToLocale(Language lang);
     private:
         ProjectSettings() = default;
     };

@@ -13,7 +13,7 @@ function OnStart()
 
     -- Bob amplitude and speed.
     bobAmplitude = 0.5
-    bobSpeed = 3.0
+    bobSpeed = 30.0
 end
 
 -- Called every frame with delta time (seconds since last frame).

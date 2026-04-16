@@ -223,10 +223,12 @@ namespace Orion {
 					}
 					event.Handled = true;
 				}
+				/*
 				else if (key == GLFW_KEY_I) {
-					AddPrimitive("cube");
+					AddPrimitive("Cube", "cube");
 					event.Handled = true;
 				}
+				*/
 				else if (key == GLFW_KEY_1) {
 					s_GizmoMode = GizmoMode::Translate;
 					event.Handled = true;
@@ -495,32 +497,59 @@ namespace Orion {
 	}
 
 
-	// --- Primitives ---
-
-	void EditorLayer::AddPrimitive(std::string primitiveFileName)
+	// Primitives 
+	void EditorLayer::AddPrimitive(const std::string& name, const std::string& modelFileName)
 	{
 		std::shared_ptr<Scene> scene = SceneManager::GetActiveScene();
+		if (!scene) return;
+
 		EntityID entity = scene->CreateEntity();
 
 		EntityDataComponent edc;
+		edc.name = name;
 		scene->AddEntityDataComponent(entity, edc);
 
-		TransformComponent tc;
-		scene->AddTransformComponent(entity, tc);
+		scene->AddTransformComponent(entity, TransformComponent{});
 
-		std::string meshPath = AssetManager::GetAssetsFolderPath() + "models\\" + primitiveFileName + ".obj";
+		// Resolve mesh from the project's models folder.
+		// If the mesh hasn't been loaded yet (e.g. user just added the file) try loading it on demand.
+		std::string meshPath = AssetManager::GetAssetsFolderPath() + "models\\" + modelFileName + ".obj";
 		AssetID meshID = AssetManager::GetMeshID(meshPath);
-		MeshComponent mc;
-		mc.mesh = meshID;
-		scene->AddMeshComponent(entity, mc);
+		if (meshID == INVALID_ASSET_ID) {
+			AssetManager::LoadMesh(meshPath);
+			meshID = AssetManager::GetMeshID(meshPath);
+		}
 
+		if (meshID != INVALID_ASSET_ID) {
+			scene->AddMeshComponent(entity, MeshComponent{ meshID });
+		}
+
+		// Apply the project's default material when present.
 		std::string matPath = AssetManager::GetAssetsFolderPath() + "materials\\default.mtl::default";
 		AssetID matID = AssetManager::GetMaterialID(matPath);
-		MaterialComponent matc;
-		matc.material = matID;
-		scene->AddMaterialComponent(entity, matc);
+		if (matID != INVALID_ASSET_ID) {
+			scene->AddMaterialComponent(entity, MaterialComponent{ matID });
+		}
 
-		std::cout << "Primitive added with EntityID: " << entity << std::endl;
+		// Static rigidbody — primitives placed in the editor default to immovable
+		// collision geometry. The user can change BodyType in the inspector at any time.
+		RigidbodyComponent rb;
+		rb.bodyType = BodyType::Static;
+		scene->AddRigidbodyComponent(entity, rb);
+
+		// Unit box collider with half-extents 0.5 — at scale (1,1,1) this exactly
+		// wraps a 1×1×1 mesh. PhysicsWorld multiplies these by the transform scale
+		// at play-start, so resizing the entity in the inspector keeps the collider
+		// in sync automatically without any manual adjustment.
+		ColliderComponent col;
+		col.shape = ColliderShape::Box;
+		col.boxHalfExtents = { 0.5f, 0.5f, 0.5f };
+		col.isTrigger = false;
+		scene->AddColliderComponent(entity, col);
+
+		SetSelectedEntity(entity);
+
+		std::cout << "[EditorLayer] Created primitive '" << name << "' (entity " << entity << ")\n";
 	}
 
 }

@@ -434,6 +434,34 @@
           1.0
         ]
       }
+    },
+    {
+      "id": 19,
+      "material": {
+        "mtl": "materials/default.mtl",
+        "name": "default"
+      },
+      "mesh": {
+        "path": "models/cube.obj"
+      },
+      "name": "Cube",
+      "transform": {
+        "position": [
+          0.0,
+          4.829744815826416,
+          -9.060171127319336
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
     }
   ],
   "scene": {

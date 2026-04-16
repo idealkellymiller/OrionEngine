@@ -31,7 +31,11 @@ namespace Orion {
 		static void SetPlayState(PlayState state) { s_PlayState = state; }
 		static bool IsPlaying() { return s_PlayState == PlayState::Playing; }
 
-		void AddPrimitive(std::string primitiveFileName);
+		// Create an entity in the active scene for a built-in primitive.
+		// `name` is the display name ("Cube", "Sphere", …).
+		// `modelFileName` is the stem of the .obj under assets/models/ (e.g. "cube").
+		// Looks up the mesh + default material from AssetManager; creates and selects the entity.
+		static void AddPrimitive(const std::string& name, const std::string& modelFileName);
 
 		// Play mode
 		void EnterPlayMode();

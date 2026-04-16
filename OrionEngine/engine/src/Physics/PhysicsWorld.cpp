@@ -192,15 +192,19 @@ namespace Orion {
 		TransformComponent* tc  = scene.GetTransformComponent(entity);
 		if (!rb || !col || !tc) return;
 
-		// Collider dimensions are specified in world space — no scale multiplication.
-		// The user sets the exact size they want in the inspector.
+		// Collider dimensions are world-space values — the inspector always shows
+		// exactly what Jolt receives. When the user drags Scale in the inspector,
+		// DrawTransformFields proportionally adjusts these values to stay in sync,
+		// so no multiplication by tc->scale is needed here.
 		JPH::RefConst<JPH::Shape> shape;
 		if (col->shape == ColliderShape::Box) {
-			float convexRadius = std::min(0.05f, std::min({ col->boxHalfExtents.x, col->boxHalfExtents.y, col->boxHalfExtents.z }) * 0.5f);
-			shape = new JPH::BoxShape(JPH::Vec3(col->boxHalfExtents.x, col->boxHalfExtents.y, col->boxHalfExtents.z), convexRadius);
+			glm::vec3 extents = glm::max(col->boxHalfExtents, glm::vec3(0.001f));
+			float convexRadius = std::min(0.05f, std::min({ extents.x, extents.y, extents.z }) * 0.5f);
+			shape = new JPH::BoxShape(JPH::Vec3(extents.x, extents.y, extents.z), convexRadius);
 		}
 		else {
-			shape = new JPH::SphereShape(col->sphereRadius);
+			float radius = std::max(col->sphereRadius, 0.001f);
+			shape = new JPH::SphereShape(radius);
 		}
 
 		// Position & rotation from Transform
@@ -278,9 +282,10 @@ namespace Orion {
 		          << " type=" << typeStr
 		          << " pos=(" << tc->position.x << "," << tc->position.y << "," << tc->position.z << ")";
 		if (col->shape == ColliderShape::Box) {
-			std::cout << " Box(" << col->boxHalfExtents.x << "," << col->boxHalfExtents.y << "," << col->boxHalfExtents.z << ")";
+			glm::vec3 extents = glm::max(col->boxHalfExtents, glm::vec3(0.001f));
+			std::cout << " Box(half=" << extents.x << "," << extents.y << "," << extents.z << ")";
 		} else {
-			std::cout << " Sphere(r=" << col->sphereRadius << ")";
+			std::cout << " Sphere(r=" << std::max(col->sphereRadius, 0.001f) << ")";
 		}
 		std::cout << "\n";
 	}

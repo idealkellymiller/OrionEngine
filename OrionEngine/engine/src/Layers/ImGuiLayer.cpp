@@ -615,6 +615,7 @@ namespace Orion {
 					tc->scale.y = oldScale.y + delta.z;
 				}
 			}
+
 		}
 		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Scale Uniform", "Scale Uniform"), &scaleUniform);
 	}
@@ -1260,8 +1261,7 @@ namespace Orion {
 
 	void ImGuiLayer::ShowHierarchyModule()
 	{
-		if (!showHierarchyModule)
-			return;
+		if (!showHierarchyModule) { return; }
 
 		if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Hierarchy", "Hierarchy"), &showHierarchyModule))
 		{
@@ -1285,58 +1285,35 @@ namespace Orion {
 						scene->AddTransformComponent(newEntity, TransformComponent{});
 						EditorLayer::SetSelectedEntity(newEntity);
 
-						//if (ImGui::MenuItem("Create Monkey"))
-						//{
-						//	EntityID monkey = scene->CreateEntity();
+						if (ImGui::MenuItem("Create Cube"))
+							EditorLayer::AddPrimitive("Cube", "cube");
 
-						//	scene->AddEntityDataComponent(monkey, { "Monkey" });
-						//	scene->AddTransformComponent(monkey, {});
+						if (ImGui::MenuItem("Create Sphere"))
+							EditorLayer::AddPrimitive("Sphere", "sphere");
 
-						//	scene->AddMeshComponent(monkey, MeshComponent{ "engine/engineAssets/primitives/monkey.obj" });
+						if (ImGui::MenuItem("Create Plane"))
+							EditorLayer::AddPrimitive("Plane", "square");
 
-						//	EditorLayer::SetSelectedEntity(monkey);
-						//}
+						if (ImGui::MenuItem("Create Monkey"))
+							EditorLayer::AddPrimitive("Monkey", "monkey");
 
-						//if (ImGui::MenuItem("Create Cube"))
-						//{
-						//	EntityID cube = scene->CreateEntity();
-
-						//	scene->AddEntityDataComponent(cube, { "Cube" });
-						//	scene->AddTransformComponent(cube, {});
-
-						//	scene->AddMeshComponent(cube, MeshComponent{ "engine/engineAssets/primitives/cube.obj" });
-
-						//	EditorLayer::SetSelectedEntity(cube);
-						//}
-
-						//if (ImGui::MenuItem("Create Square"))
-						//{
-						//	EntityID square = scene->CreateEntity();
-
-						//	scene->AddEntityDataComponent(square, { "Square" });
-						//	scene->AddTransformComponent(square, {});
-
-						//	scene->AddMeshComponent(square, MeshComponent{ "engine/engineAssets/primitives/square.obj" });
-
-						//	EditorLayer::SetSelectedEntity(square);
-						//}
+						ImGui::EndPopup();
 					}
-					ImGui::EndPopup();
-				}
 
-				// Drop on empty space = unparent (make root)
-				if (ImGui::BeginDragDropTarget())
-				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+					// Drop on empty space = unparent (make root)
+					if (ImGui::BeginDragDropTarget())
 					{
-						EntityID droppedEntity = *(const EntityID*)payload->Data;
-						scene->RemoveParent(droppedEntity);
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+						{
+							EntityID droppedEntity = *(const EntityID*)payload->Data;
+							scene->RemoveParent(droppedEntity);
+						}
+						ImGui::EndDragDropTarget();
 					}
-					ImGui::EndDragDropTarget();
 				}
 			}
+			ImGui::End();
 		}
-		ImGui::End();
 	}
 
 	void ImGuiLayer::DrawEntityNode(EntityID entity, Scene& scene)
@@ -2209,4 +2186,5 @@ namespace Orion {
 		}
 
 	}
+
 }

@@ -101,6 +101,8 @@ project(OrionEngine LANGUAGES CXX C)
             
             "engine/src/Assets/AssetManager.cpp"
 
+            "engine/src/Audio/AudioEngine.cpp"
+
             "engine/src/ECS/Scene.cpp"
             "engine/src/ECS/SceneManager.cpp"
 

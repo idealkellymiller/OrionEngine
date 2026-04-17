@@ -72,6 +72,8 @@ namespace Orion {
         m_RigidbodyComponents.erase(entityID);
         m_ColliderComponents.erase(entityID);
         m_PointLightComponents.erase(entityID);
+        m_AudioSourceComponents.erase(entityID);
+        m_AudioListenerComponents.erase(entityID);
     }
 
     bool Scene::IsValidEntity(EntityID entityID) const
@@ -96,6 +98,8 @@ namespace Orion {
         m_RigidbodyComponents.clear();
         m_ColliderComponents.clear();
         m_PointLightComponents.clear();
+        m_AudioSourceComponents.clear();
+        m_AudioListenerComponents.clear();
         m_Relationships.clear();
     }
 
@@ -165,6 +169,10 @@ namespace Orion {
             AddColliderComponent(newEntity, *GetColliderComponent(source));
         if (HasPointLightComponent(source))
             AddPointLightComponent(newEntity, *GetPointLightComponent(source));
+        if (HasAudioSourceComponent(source))
+            AddAudioSourceComponent(newEntity, *GetAudioSourceComponent(source));
+        if (HasAudioListenerComponent(source))
+            AddAudioListenerComponent(newEntity, *GetAudioListenerComponent(source));
 
         // Inherit the source's parent so the duplicate appears as a sibling.
         EntityID parent = GetParent(source);
@@ -202,6 +210,8 @@ namespace Orion {
         newScene->m_RigidbodyComponents = m_RigidbodyComponents;
         newScene->m_ColliderComponents = m_ColliderComponents;
         newScene->m_PointLightComponents = m_PointLightComponents;
+        newScene->m_AudioSourceComponents = m_AudioSourceComponents;
+        newScene->m_AudioListenerComponents = m_AudioListenerComponents;
         newScene->m_Relationships = m_Relationships;
         return newScene;
     }
@@ -426,6 +436,52 @@ namespace Orion {
     void Scene::RemovePointLightComponent(EntityID entityID)
     {
         m_PointLightComponents.erase(entityID);
+    }
+
+
+    // --- Audio Source ---
+    void Scene::AddAudioSourceComponent(EntityID entityID, const AudioSourceComponent& component)
+    {
+        m_AudioSourceComponents[entityID] = component;
+    }
+
+    AudioSourceComponent* Scene::GetAudioSourceComponent(EntityID entityID)
+    {
+        auto it = m_AudioSourceComponents.find(entityID);
+        return (it != m_AudioSourceComponents.end()) ? &it->second : nullptr;
+    }
+
+    bool Scene::HasAudioSourceComponent(EntityID entityID) const
+    {
+        return m_AudioSourceComponents.find(entityID) != m_AudioSourceComponents.end();
+    }
+
+    void Scene::RemoveAudioSourceComponent(EntityID entityID)
+    {
+        m_AudioSourceComponents.erase(entityID);
+    }
+
+
+    // --- Audio Listener ---
+    void Scene::AddAudioListenerComponent(EntityID entityID, const AudioListenerComponent& component)
+    {
+        m_AudioListenerComponents[entityID] = component;
+    }
+
+    AudioListenerComponent* Scene::GetAudioListenerComponent(EntityID entityID)
+    {
+        auto it = m_AudioListenerComponents.find(entityID);
+        return (it != m_AudioListenerComponents.end()) ? &it->second : nullptr;
+    }
+
+    bool Scene::HasAudioListenerComponent(EntityID entityID) const
+    {
+        return m_AudioListenerComponents.find(entityID) != m_AudioListenerComponents.end();
+    }
+
+    void Scene::RemoveAudioListenerComponent(EntityID entityID)
+    {
+        m_AudioListenerComponents.erase(entityID);
     }
 
 

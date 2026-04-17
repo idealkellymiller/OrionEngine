@@ -3,6 +3,7 @@
 #include "ECS/Scene.h"
 #include "Scripting/Apollo.h"
 #include "Physics/PhysicsWorld.h"
+#include "Audio/AudioEngine.h"
 
 #include <memory>
 
@@ -54,6 +55,9 @@ namespace Orion {
 
 		// Jolt physics world — created at BeginPlay, destroyed at EndPlay.
 		PhysicsWorld m_PhysicsWorld;
+
+		// miniaudio engine — created at BeginPlay, destroyed at EndPlay.
+		AudioEngine m_AudioEngine;
 	};
 
 }

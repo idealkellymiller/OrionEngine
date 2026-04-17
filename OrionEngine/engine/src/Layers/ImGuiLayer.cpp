@@ -521,8 +521,10 @@ namespace Orion {
 		case ComponentType::Script:     return "Script";
 		case ComponentType::Rigidbody:  return "Rigidbody";
 		case ComponentType::Collider:   return "Collider";
-		case ComponentType::PointLight: return "Point Light";
-		default:                        return "Unknown";
+		case ComponentType::PointLight:    return "Point Light";
+		case ComponentType::AudioSource:   return "Audio Source";
+		case ComponentType::AudioListener: return "Audio Listener";
+		default:                           return "Unknown";
 		}
 	}
 
@@ -555,6 +557,10 @@ namespace Orion {
 			order.push_back(ComponentType::Collider);
 		if (scene.HasPointLightComponent(entity))
 			order.push_back(ComponentType::PointLight);
+		if (scene.HasAudioSourceComponent(entity))
+			order.push_back(ComponentType::AudioSource);
+		if (scene.HasAudioListenerComponent(entity))
+			order.push_back(ComponentType::AudioListener);
 
 		m_ComponentOrder[entity] = order;
 	}
@@ -812,6 +818,64 @@ namespace Orion {
 		ImGui::DragFloat("Quadratic", &plc->quadratic, 0.005f, 0.0f, 2.0f, "%.4f");
 	}
 
+	void ImGuiLayer::DrawAudioSourceFields(EntityID entity, Scene& scene)
+	{
+		AudioSourceComponent* asc = scene.GetAudioSourceComponent(entity);
+		if (!asc) return;
+
+		// Clip path: editable text or dropdown of known audio clips
+		char pathBuf[512];
+		strncpy_s(pathBuf, asc->clipPath.c_str(), sizeof(pathBuf) - 1);
+		pathBuf[sizeof(pathBuf) - 1] = '\0';
+		if (ImGui::InputText(IMGUI_ELEMENT_TITLE("Clip Path", "AudioClipPath"), pathBuf, sizeof(pathBuf)))
+			asc->clipPath = pathBuf;
+
+		// Dropdown of all registered audio clips for easy selection
+		std::string previewClip = asc->clipPath.empty() ? "(none)" : std::filesystem::path(asc->clipPath).filename().string();
+		if (ImGui::BeginCombo(IMGUI_ELEMENT_TITLE("Clip", "AudioClipCombo"), previewClip.c_str()))
+		{
+			if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("(none)", "AudioClipNone"), asc->clipPath.empty()))
+				asc->clipPath.clear();
+
+			for (auto& [id, asset] : AssetManager::GetAllAudioClipAssets())
+			{
+				// Show just the filename in the list. store the full path in the component
+				std::string assetsPath = AssetManager::GetAssetsFolderPath();
+				std::string relPath    = asset.filePath;
+				if (relPath.find(assetsPath) == 0)
+					relPath = relPath.substr(assetsPath.size());
+				std::replace(relPath.begin(), relPath.end(), '\\', '/');
+
+				bool selected = (asc->clipPath == relPath || asc->clipPath == asset.filePath);
+				if (ImGui::Selectable(asset.name.c_str(), selected))
+					asc->clipPath = relPath;
+
+				if (selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::Separator();
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Volume", "AudioVolume"), &asc->volume, 0.01f, 0.0f, 5.0f, "%.2f");
+		ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Pitch",  "AudioPitch"),  &asc->pitch,  0.01f, 0.1f, 4.0f, "%.2f");
+		ImGui::Checkbox (IMGUI_ELEMENT_TITLE("Loop",         "AudioLoop"),        &asc->loop);
+		ImGui::Checkbox (IMGUI_ELEMENT_TITLE("Play On Start","AudioPlayOnStart"), &asc->playOnStart);
+		ImGui::Checkbox (IMGUI_ELEMENT_TITLE("Spatial (3D)", "AudioSpatial"),     &asc->spatial);
+
+		if (asc->spatial) {
+			ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Min Distance", "AudioMinDist"), &asc->minDistance, 0.1f, 0.01f, 1000.0f, "%.2f");
+			ImGui::DragFloat(IMGUI_ELEMENT_TITLE("Max Distance", "AudioMaxDist"), &asc->maxDistance, 0.5f, 0.1f,  5000.0f, "%.2f");
+		}
+	}
+
+	void ImGuiLayer::DrawAudioListenerFields(EntityID /*entity*/, Scene& /*scene*/)
+	{
+		// The AudioListenerComponent has no configurable properties = its presence alone
+		// tells the AudioEngine which entity is the listener.
+		ImGui::TextDisabled("This entity receives audio. One listener per scene.");
+	}
+
 	// ---------- Draw one component entry ----------
 
 	// Helper: draw a button that appears grayed-out and does nothing when disabled.
@@ -892,9 +956,11 @@ namespace Orion {
 			case ComponentType::Material:   DrawMaterialFields(entity, scene);    break;
 			case ComponentType::Camera:     DrawCameraFields(entity, scene);      break;
 			case ComponentType::Script:     DrawScriptFields(entity, scene);      break;
-			case ComponentType::Rigidbody:  DrawRigidbodyFields(entity, scene);   break;
-			case ComponentType::Collider:    DrawColliderFields(entity, scene);    break;
-			case ComponentType::PointLight: DrawPointLightFields(entity, scene);  break;
+			case ComponentType::Rigidbody:     DrawRigidbodyFields(entity, scene);    break;
+			case ComponentType::Collider:      DrawColliderFields(entity, scene);     break;
+			case ComponentType::PointLight:    DrawPointLightFields(entity, scene);   break;
+			case ComponentType::AudioSource:   DrawAudioSourceFields(entity, scene);  break;
+			case ComponentType::AudioListener: DrawAudioListenerFields(entity, scene); break;
 			}
 			ImGui::TreePop();
 		}
@@ -908,9 +974,11 @@ namespace Orion {
 			case ComponentType::Material: scene.RemoveMaterialComponent(entity);  break;
 			case ComponentType::Camera:    scene.RemoveCameraComponent(entity);    break;
 			case ComponentType::Script:    scene.RemoveScriptComponent(entity);    break;
-			case ComponentType::Rigidbody: scene.RemoveRigidbodyComponent(entity); break;
-			case ComponentType::Collider:   scene.RemoveColliderComponent(entity);   break;
-			case ComponentType::PointLight: scene.RemovePointLightComponent(entity); break;
+			case ComponentType::Rigidbody:     scene.RemoveRigidbodyComponent(entity);    break;
+			case ComponentType::Collider:      scene.RemoveColliderComponent(entity);     break;
+			case ComponentType::PointLight:    scene.RemovePointLightComponent(entity);   break;
+			case ComponentType::AudioSource:   scene.RemoveAudioSourceComponent(entity);  break;
+			case ComponentType::AudioListener: scene.RemoveAudioListenerComponent(entity); break;
 			default: break;
 			}
 			order.erase(order.begin() + index);
@@ -995,6 +1063,24 @@ namespace Orion {
 				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Point Light", "AddPointLightComp"))) {
 					scene.AddPointLightComponent(entity, PointLightComponent{});
 					order.push_back(ComponentType::PointLight);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::AudioSource)) {
+				addableCount++;
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Audio Source", "AddAudioSourceComp"))) {
+					scene.AddAudioSourceComponent(entity, AudioSourceComponent{});
+					order.push_back(ComponentType::AudioSource);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			if (!hasType(ComponentType::AudioListener)) {
+				addableCount++;
+				if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("Audio Listener", "AddAudioListenerComp"))) {
+					scene.AddAudioListenerComponent(entity, AudioListenerComponent{});
+					order.push_back(ComponentType::AudioListener);
 					ImGui::CloseCurrentPopup();
 				}
 			}

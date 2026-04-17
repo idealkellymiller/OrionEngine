@@ -26,6 +26,9 @@ namespace Orion {
     std::unordered_map<std::string, AssetID> AssetManager::m_MeshPathToID;
     std::unordered_map<std::string, AssetID> AssetManager::m_TexturePathToID;
     std::unordered_map<std::string, AssetID> AssetManager::m_MaterialPathToID;
+    std::unordered_map<std::string, AssetID> AssetManager::m_AudioClipPathToID;
+
+    std::unordered_map<AssetID, AudioClipAsset> AssetManager::m_AudioClipAssets;
 
 
     // Helper: is this extension a supported image format?
@@ -33,6 +36,13 @@ namespace Orion {
     {
         return ext == ".png" || ext == ".jpg" || ext == ".jpeg"
             || ext == ".tga" || ext == ".bmp" || ext == ".hdr";
+    }
+
+    // Helper: is this extension a supported audio format?
+    static bool IsAudioExtension(const std::string& ext)
+    {
+        return ext == ".wav" || ext == ".mp3" || ext == ".ogg"
+            || ext == ".flac" || ext == ".opus";
     }
 
     namespace fs = std::filesystem;
@@ -61,6 +71,7 @@ namespace Orion {
         std::vector<fs::path> meshFiles;
         std::vector<fs::path> textureFiles;
         std::vector<fs::path> mtlFiles;
+        std::vector<fs::path> audioFiles;
 
         // Recursively walk through every file/folder under asset root.
         for (const auto& entry : fs::recursive_directory_iterator(assetRoot)) {
@@ -86,6 +97,10 @@ namespace Orion {
             {
                 mtlFiles.push_back(filePath);
             }
+            else if (IsAudioExtension(extension))
+            {
+                audioFiles.push_back(filePath);
+            }
             // .lua, .scene, etc. are handled elsewhere — skip silently
         }
 
@@ -93,6 +108,7 @@ namespace Orion {
         std::sort(meshFiles.begin(), meshFiles.end());
         std::sort(textureFiles.begin(), textureFiles.end());
         std::sort(mtlFiles.begin(), mtlFiles.end());
+        std::sort(audioFiles.begin(), audioFiles.end());
 
         // Load order: Textures first, then standalone .mtl files,
         // then Meshes (which also auto-import their referenced .mtl)
@@ -104,6 +120,9 @@ namespace Orion {
 
         for (const auto& path : meshFiles)
             LoadMesh(path.string());
+
+        for (const auto& path : audioFiles)
+            LoadAudioClip(path.string());
 
         std::cout << "\nSuccessfully loaded assets.\n";
     }
@@ -368,6 +387,32 @@ namespace Orion {
             file.close();
             std::cout << "[Assets] Saved: " << mtlPath << "\n";
         }
+    }
+
+    void AssetManager::LoadAudioClip(const std::string& filePath)
+    {
+        // Avoid duplicate loads
+        if (m_AudioClipPathToID.find(filePath) != m_AudioClipPathToID.end())
+            return;
+
+        // Only register the metadata here.
+        // The actual decoding happens inside AudioEngine via miniaudio.
+        if (!std::filesystem::exists(filePath)) {
+            std::cout << "[Assets] Audio clip not found: " << filePath << "\n";
+            return;
+        }
+
+        AssetID assetID = m_NextAssetID++;
+
+        AudioClipAsset asset;
+        asset.assetID  = assetID;
+        asset.filePath = filePath;
+        asset.name     = std::filesystem::path(filePath).stem().string();
+
+        m_AudioClipAssets[assetID]    = asset;
+        m_AudioClipPathToID[filePath] = assetID;
+
+        std::cout << "[Assets] Audio clip registered: AssetID " << assetID << " --- " << filePath << "\n";
     }
 
     void AssetManager::PrintMatsPathToID()

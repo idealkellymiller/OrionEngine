@@ -6,6 +6,7 @@
 
 #include "Scripting/Apollo.h"
 #include "Physics/PhysicsWorld.h"
+#include "Audio/AudioEngine.h"
 #include "ECS/SceneManager.h"
 #include "Assets/AssetManager.h"
 #include "Application.h"
@@ -48,11 +49,13 @@ namespace Orion {
     // Lifecycle
     // ================================================================
 
-    void ScriptEngine::Init(std::shared_ptr<Scene> scene, const std::string& assetsPath, PhysicsWorld* physicsWorld)
+    void ScriptEngine::Init(std::shared_ptr<Scene> scene, const std::string& assetsPath,
+                            PhysicsWorld* physicsWorld, AudioEngine* audioEngine)
     {
         m_Scene = scene;
         m_AssetsPath = assetsPath;
         m_PhysicsWorld = physicsWorld;
+        m_AudioEngine  = audioEngine;
 
         // Create the Lua virtual machine and open the standard libraries
         // (string, table, math, etc. — no io/os for sandboxing).
@@ -72,6 +75,7 @@ namespace Orion {
         RegisterPhysicsBindings();
         RegisterLogBindings();
         RegisterSceneBindings();
+        RegisterAudioBindings();
 
         // Walk every entity that has a ScriptComponent and load its script file.
         for (EntityID entity : scene->GetEntities()) {
@@ -821,6 +825,136 @@ namespace Orion {
 
         app["GetTimeScale"] = []() -> float {
             return Application::GetTimeScale();
+        };
+    }
+
+    // ================================================================
+    // Bindings: Audio
+    // ================================================================
+    // Exposes Audio.Play(), Audio.Stop(), Audio.Pause(), Audio.Resume(),
+    // Audio.SetVolume(), Audio.SetPitch(), Audio.IsPlaying(),
+    // Audio.PlayOneShot(), Audio.PlayOneShot2D().
+    //
+    // All entity-targeted functions accept an optional EntityID so scripts
+    // can control other entities' audio, not just the entity running the script.
+
+    void ScriptEngine::RegisterAudioBindings()
+    {
+        sol::state& lua = *m_Lua;
+
+        sol::table audio = lua.create_named_table("Audio");
+
+        // Audio.Play([entityID])
+        audio["Play"] = sol::overload(
+            [this]() {
+                if (m_AudioEngine && m_CurrentEntity != INVALID_ENTITY)
+                    m_AudioEngine->Play(m_CurrentEntity);
+            },
+            [this](EntityID id) {
+                if (m_AudioEngine)
+                    m_AudioEngine->Play(id);
+            }
+        );
+
+        // Audio.Stop([entityID])
+        audio["Stop"] = sol::overload(
+            [this]() {
+                if (m_AudioEngine && m_CurrentEntity != INVALID_ENTITY)
+                    m_AudioEngine->Stop(m_CurrentEntity);
+            },
+            [this](EntityID id) {
+                if (m_AudioEngine)
+                    m_AudioEngine->Stop(id);
+            }
+        );
+
+        // Audio.Pause([entityID])
+        audio["Pause"] = sol::overload(
+            [this]() {
+                if (m_AudioEngine && m_CurrentEntity != INVALID_ENTITY)
+                    m_AudioEngine->Pause(m_CurrentEntity);
+            },
+            [this](EntityID id) {
+                if (m_AudioEngine)
+                    m_AudioEngine->Pause(id);
+            }
+        );
+
+        // Audio.Resume([entityID])
+        audio["Resume"] = sol::overload(
+            [this]() {
+                if (m_AudioEngine && m_CurrentEntity != INVALID_ENTITY)
+                    m_AudioEngine->Resume(m_CurrentEntity);
+            },
+            [this](EntityID id) {
+                if (m_AudioEngine)
+                    m_AudioEngine->Resume(id);
+            }
+        );
+
+        // Audio.IsPlaying([entityID]) -> bool
+        audio["IsPlaying"] = sol::overload(
+            [this]() -> bool {
+                if (!m_AudioEngine || m_CurrentEntity == INVALID_ENTITY) return false;
+                return m_AudioEngine->IsPlaying(m_CurrentEntity);
+            },
+            [this](EntityID id) -> bool {
+                if (!m_AudioEngine) return false;
+                return m_AudioEngine->IsPlaying(id);
+            }
+        );
+
+        // Audio.SetVolume(volume [, entityID])
+        audio["SetVolume"] = sol::overload(
+            [this](float volume) {
+                if (m_AudioEngine && m_CurrentEntity != INVALID_ENTITY)
+                    m_AudioEngine->SetVolume(m_CurrentEntity, volume);
+            },
+            [this](float volume, EntityID id) {
+                if (m_AudioEngine)
+                    m_AudioEngine->SetVolume(id, volume);
+            }
+        );
+
+        // Audio.SetPitch(pitch [, entityID])
+        audio["SetPitch"] = sol::overload(
+            [this](float pitch) {
+                if (m_AudioEngine && m_CurrentEntity != INVALID_ENTITY)
+                    m_AudioEngine->SetPitch(m_CurrentEntity, pitch);
+            },
+            [this](float pitch, EntityID id) {
+                if (m_AudioEngine)
+                    m_AudioEngine->SetPitch(id, pitch);
+            }
+        );
+
+        // Audio.PlayOneShot(clipPath [, volume [, x, y, z]])
+        // 3D one-shot at optional world position (defaults to origin)
+        audio["PlayOneShot"] = sol::overload(
+            [this](const std::string& path) {
+                if (m_AudioEngine) m_AudioEngine->PlayOneShot(path, 0, 0, 0, 1.0f);
+            },
+            [this](const std::string& path, float volume) {
+                if (m_AudioEngine) m_AudioEngine->PlayOneShot(path, 0, 0, 0, volume);
+            },
+            [this](const std::string& path, float volume, float x, float y, float z) {
+                if (m_AudioEngine) m_AudioEngine->PlayOneShot(path, x, y, z, volume);
+            }
+        );
+
+        // Audio.PlayOneShot2D(clipPath [, volume])
+        audio["PlayOneShot2D"] = sol::overload(
+            [this](const std::string& path) {
+                if (m_AudioEngine) m_AudioEngine->PlayOneShot2D(path, 1.0f);
+            },
+            [this](const std::string& path, float volume) {
+                if (m_AudioEngine) m_AudioEngine->PlayOneShot2D(path, volume);
+            }
+        );
+
+        // Audio.StopAll()
+        audio["StopAll"] = [this]() {
+            if (m_AudioEngine) m_AudioEngine->StopAll();
         };
     }
 

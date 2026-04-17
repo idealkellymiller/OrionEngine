@@ -28,6 +28,12 @@ namespace Orion {
 		std::string filePath = "";
 	};
 
+	struct ORION_API AudioClipAsset {
+		AssetID assetID = INVALID_ASSET_ID;
+		std::string name = "";
+		std::string filePath = "";
+	};
+
 	struct ORION_API MaterialAsset {
 		AssetID assetID = INVALID_ASSET_ID;
 		std::string name = "";

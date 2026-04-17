@@ -230,6 +230,26 @@ namespace Orion {
 				newScene->AddPointLightComponent(entity, plComp);
 			}
 
+			// --- Audio Source ---
+			if (entityJson.contains("audioSource")) {
+				const auto& a = entityJson["audioSource"];
+				AudioSourceComponent comp;
+				if (a.contains("clipPath"))    comp.clipPath    = a["clipPath"].get<std::string>();
+				if (a.contains("volume"))      comp.volume      = a["volume"].get<float>();
+				if (a.contains("pitch"))       comp.pitch       = a["pitch"].get<float>();
+				if (a.contains("loop"))        comp.loop        = a["loop"].get<bool>();
+				if (a.contains("playOnStart")) comp.playOnStart = a["playOnStart"].get<bool>();
+				if (a.contains("spatial"))     comp.spatial     = a["spatial"].get<bool>();
+				if (a.contains("minDistance")) comp.minDistance = a["minDistance"].get<float>();
+				if (a.contains("maxDistance")) comp.maxDistance = a["maxDistance"].get<float>();
+				newScene->AddAudioSourceComponent(entity, comp);
+			}
+
+			// --- Audio Listener ---
+			if (entityJson.contains("audioListener")) {
+				newScene->AddAudioListenerComponent(entity, AudioListenerComponent{});
+			}
+
 			// --- Collider ---
 			if (entityJson.contains("collider")) {
 				const auto& col = entityJson["collider"];
@@ -380,6 +400,23 @@ namespace Orion {
 				entityJson["pointLight"]["linear"]    = plc->linear;
 				entityJson["pointLight"]["quadratic"] = plc->quadratic;
 			}
+
+			// --- Audio Source ---
+			AudioSourceComponent* asc = s_ActiveScene->GetAudioSourceComponent(entity);
+			if (asc) {
+				entityJson["audioSource"]["clipPath"]    = asc->clipPath;
+				entityJson["audioSource"]["volume"]      = asc->volume;
+				entityJson["audioSource"]["pitch"]       = asc->pitch;
+				entityJson["audioSource"]["loop"]        = asc->loop;
+				entityJson["audioSource"]["playOnStart"] = asc->playOnStart;
+				entityJson["audioSource"]["spatial"]     = asc->spatial;
+				entityJson["audioSource"]["minDistance"] = asc->minDistance;
+				entityJson["audioSource"]["maxDistance"] = asc->maxDistance;
+			}
+
+			// --- Audio Listener ---
+			if (s_ActiveScene->HasAudioListenerComponent(entity))
+				entityJson["audioListener"] = true;
 
 			// --- Collider ---
 			ColliderComponent* col = s_ActiveScene->GetColliderComponent(entity);

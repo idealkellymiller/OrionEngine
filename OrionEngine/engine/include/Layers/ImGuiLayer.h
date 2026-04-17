@@ -22,7 +22,9 @@ namespace Orion {
 		Script,       // Lua script path
 		Rigidbody,    // Physics body (dynamic/kinematic/static, mass, damping)
 		Collider,     // Physics collider (box/sphere, trigger, offset)
-		PointLight    // Point light source
+		PointLight,   // Point light source
+		AudioSource,  // Audio source (clip, volume, pitch, loop, spatial)
+		AudioListener // Audio listener (marks the entity as the audio ear)
 	};
 
 	class ORION_API ImGuiLayer : public Layer {
@@ -83,6 +85,8 @@ namespace Orion {
 		void DrawRigidbodyFields(EntityID entity, Scene& scene);
 		void DrawColliderFields(EntityID entity, Scene& scene);
 		void DrawPointLightFields(EntityID entity, Scene& scene);
+		void DrawAudioSourceFields(EntityID entity, Scene& scene);
+		void DrawAudioListenerFields(EntityID entity, Scene& scene);
 
 		// "Add Component" popup
 		void DrawAddComponentPopup(EntityID entity, Scene& scene);

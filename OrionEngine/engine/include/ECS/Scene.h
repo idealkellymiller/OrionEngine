@@ -88,6 +88,26 @@ namespace Orion {
         float quadratic     = 0.032f;
     };
 
+    // Plays an audio clip at this entity's world position.
+    // AudioEngine loads the clip at play-start and updates the 3D position each frame.
+    struct AudioSourceComponent {
+        std::string clipPath;           // relative to assets folder, e.g. "audio/boom.wav"
+        float volume = 1.0f;
+        float pitch  = 1.0f;
+        bool  loop         = false;
+        bool  playOnStart  = false;
+        bool  spatial      = true;      // true = 3D positional; false = 2D non-positional
+        float minDistance  = 1.0f;      // distance at which attenuation starts
+        float maxDistance  = 20.0f;     // distance at which sound is inaudible
+    };
+
+    // Marks this entity as the audio listener (camera).
+    // AudioEngine reads its TransformComponent each frame to update the listener pose.
+    // If no listener exists in the scene, audio uses world-origin as the listener.
+    struct AudioListenerComponent {
+        // No configuration needed = existence of the component is sufficient.
+    };
+
 
 
 
@@ -170,6 +190,18 @@ namespace Orion {
         bool HasPointLightComponent(EntityID entityID) const;
         void RemovePointLightComponent(EntityID entityID);
 
+        // Audio Source
+        void AddAudioSourceComponent(EntityID entityID, const AudioSourceComponent& component);
+        AudioSourceComponent* GetAudioSourceComponent(EntityID entityID);
+        bool HasAudioSourceComponent(EntityID entityID) const;
+        void RemoveAudioSourceComponent(EntityID entityID);
+
+        // Audio Listener
+        void AddAudioListenerComponent(EntityID entityID, const AudioListenerComponent& component);
+        AudioListenerComponent* GetAudioListenerComponent(EntityID entityID);
+        bool HasAudioListenerComponent(EntityID entityID) const;
+        void RemoveAudioListenerComponent(EntityID entityID);
+
         // Relationships (parent-child hierarchy)
         void SetParent(EntityID child, EntityID parent);
         void RemoveParent(EntityID child);
@@ -202,6 +234,8 @@ namespace Orion {
         std::unordered_map<EntityID, RigidbodyComponent> m_RigidbodyComponents;
         std::unordered_map<EntityID, ColliderComponent> m_ColliderComponents;
         std::unordered_map<EntityID, PointLightComponent> m_PointLightComponents;
+        std::unordered_map<EntityID, AudioSourceComponent> m_AudioSourceComponents;
+        std::unordered_map<EntityID, AudioListenerComponent> m_AudioListenerComponents;
         std::unordered_map<EntityID, RelationshipComponent> m_Relationships;
 
         // Empty children vector returned by GetChildren when entity has no relationships.

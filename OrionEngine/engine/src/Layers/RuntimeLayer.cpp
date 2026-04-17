@@ -66,6 +66,10 @@ namespace Orion {
 		if (m_PhysicsWorld.IsInitialized())
 			m_PhysicsWorld.Step(dt);
 
+		// --- Update audio: listener pose + 3D source positions + sweep one-shots ---
+		if (m_AudioEngine.IsInitialized())
+			m_AudioEngine.Update(dt);
+
 		// --- Drive the renderer camera from the active CameraComponent ---
 		ApplyRuntimeCamera();
 
@@ -97,12 +101,14 @@ namespace Orion {
 							fullPath = assetsPath + fullPath;
 						}
 
-						// Tear down physics + scripting against the old runtime scene.
+						// Tear down physics + audio + scripting against the old runtime scene.
 						// We deliberately do NOT call EndPlay() — that would discard the
 						// original editor snapshot, so exiting play mode would restore
 						// into the newly-loaded scene instead of the user's edit target.
 						if (m_PhysicsWorld.IsInitialized())
 							m_PhysicsWorld.Shutdown();
+						if (m_AudioEngine.IsInitialized())
+							m_AudioEngine.Shutdown();
 						if (m_ScriptEngine.IsInitialized())
 							m_ScriptEngine.Shutdown();
 
@@ -119,10 +125,9 @@ namespace Orion {
 						SceneManager::SetActiveScene(m_RuntimeScene);
 						m_RuntimeTime = 0.0f;
 
-						// Re-init scripts and physics against the new runtime scene.
+						// Re-init physics, audio, and scripts against the new runtime scene.
 						// Note: m_EditorSceneSnapshot is untouched, so ExitPlayMode later
 						// still restores the original pre-play editor scene.
-						m_ScriptEngine.Init(m_RuntimeScene, assetsPath, &m_PhysicsWorld);
 						m_PhysicsWorld.Init(m_RuntimeScene);
 						m_PhysicsWorld.SetCollisionCallback(
 							[this](EntityID a, EntityID b, bool isTrigger) {
@@ -130,7 +135,10 @@ namespace Orion {
 									m_ScriptEngine.OnCollision(a, b, isTrigger);
 							}
 						);
+						m_AudioEngine.Init(m_RuntimeScene, assetsPath);
+						m_ScriptEngine.Init(m_RuntimeScene, assetsPath, &m_PhysicsWorld, &m_AudioEngine);
 						m_ScriptEngine.OnStart();
+						m_AudioEngine.OnStart();
 
 						std::cout << "[RuntimeLayer] Loaded scene during play: " << fullPath << "\n";
 					});
@@ -159,14 +167,10 @@ namespace Orion {
 
 		m_RuntimeTime = 0.0f;
 
-		// 4. Initialize Apollo scripting — loads all ScriptComponents
-		//    Pass the PhysicsWorld pointer so Lua scripts can call Physics.AddForce(), etc.
-		m_ScriptEngine.Init(m_RuntimeScene, AssetManager::GetAssetsFolderPath(), &m_PhysicsWorld);
-
-		// 5. Initialize Jolt physics world from the runtime scene
+		// 4. Initialize Jolt physics world from the runtime scene
 		m_PhysicsWorld.Init(m_RuntimeScene);
 
-		// 6. Set up collision callback — forwards to script OnCollision(otherID, isTrigger)
+		// 5. Set up collision callback — forwards to script OnCollision(otherID, isTrigger)
 		m_PhysicsWorld.SetCollisionCallback(
 			[this](EntityID a, EntityID b, bool isTrigger) {
 				if (m_ScriptEngine.IsInitialized()) {
@@ -175,8 +179,16 @@ namespace Orion {
 			}
 		);
 
-		// 7. Call OnStart() on all loaded scripts
+		// 6. Initialize audio — loads clips for all AudioSourceComponents
+		m_AudioEngine.Init(m_RuntimeScene, AssetManager::GetAssetsFolderPath());
+
+		// 7. Initialize Apollo scripting — pass physics and audio pointers for Lua bindings
+		m_ScriptEngine.Init(m_RuntimeScene, AssetManager::GetAssetsFolderPath(),
+		                    &m_PhysicsWorld, &m_AudioEngine);
+
+		// 8. Call OnStart() on all scripts, then fire playOnStart audio sources
 		m_ScriptEngine.OnStart();
+		m_AudioEngine.OnStart();
 
 		std::cout << "[RuntimeLayer] Play mode started.\n";
 	}
@@ -204,13 +216,10 @@ namespace Orion {
 
 		m_RuntimeTime = 0.0f;
 
-		// 3. Initialize scripting
-		m_ScriptEngine.Init(m_RuntimeScene, assetsFolderPath, &m_PhysicsWorld);
-
-		// 4. Initialize physics
+		// 3. Initialize physics
 		m_PhysicsWorld.Init(m_RuntimeScene);
 
-		// 5. Collision callback
+		// 4. Collision callback
 		m_PhysicsWorld.SetCollisionCallback(
 			[this](EntityID a, EntityID b, bool isTrigger) {
 				if (m_ScriptEngine.IsInitialized())
@@ -218,8 +227,15 @@ namespace Orion {
 			}
 		);
 
-		// 6. Call OnStart() on all scripts
+		// 5. Initialize audio
+		m_AudioEngine.Init(m_RuntimeScene, assetsFolderPath);
+
+		// 6. Initialize scripting — pass physics and audio pointers
+		m_ScriptEngine.Init(m_RuntimeScene, assetsFolderPath, &m_PhysicsWorld, &m_AudioEngine);
+
+		// 7. Call OnStart() on scripts and fire playOnStart audio sources
 		m_ScriptEngine.OnStart();
+		m_AudioEngine.OnStart();
 
 		std::cout << "[RuntimeLayer] Standalone game started: " << scenePath << "\n";
 	}
@@ -229,6 +245,10 @@ namespace Orion {
 		// Shut down physics before restoring the scene.
 		if (m_PhysicsWorld.IsInitialized())
 			m_PhysicsWorld.Shutdown();
+
+		// Shut down audio before restoring the scene.
+		if (m_AudioEngine.IsInitialized())
+			m_AudioEngine.Shutdown();
 
 		// Shut down Apollo before restoring the scene.
 		if (m_ScriptEngine.IsInitialized())

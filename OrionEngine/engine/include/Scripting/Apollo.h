@@ -34,6 +34,7 @@
 
 // Forward declarations
 namespace Orion { class PhysicsWorld; }
+namespace Orion { class AudioEngine;  }
 
 // Forward-declare sol::state to avoid pulling sol2 into every header.
 // Only ScriptEngine.cpp includes the full sol2 headers.
@@ -67,7 +68,8 @@ namespace Orion {
         // Create the Lua VM, register all engine bindings (Transform, Input, etc.),
         // and load every ScriptComponent in the scene.
         // physicsWorld can be nullptr if physics is not initialized.
-        void Init(std::shared_ptr<Scene> scene, const std::string& assetsPath, PhysicsWorld* physicsWorld = nullptr);
+        void Init(std::shared_ptr<Scene> scene, const std::string& assetsPath,
+                  PhysicsWorld* physicsWorld = nullptr, AudioEngine* audioEngine = nullptr);
 
         // Call OnStart() on all scripts that haven't started yet.
         void OnStart();
@@ -108,6 +110,7 @@ namespace Orion {
         void RegisterPhysicsBindings();     // Physics.AddForce(), .AddImpulse(), .GetVelocity(), etc.
         void RegisterLogBindings();         // Log.Info(), .Warn(), .Error()
         void RegisterSceneBindings();       // Scene.Load(), .Reload(); Application.Quit(), .SetTimeScale(), etc.
+        void RegisterAudioBindings();       // Audio.Play(), .Stop(), .PlayOneShot(), etc.
 
         // ----- Script loading -----
 
@@ -148,6 +151,10 @@ namespace Orion {
         // Pointer to the PhysicsWorld (owned by RuntimeLayer, not us).
         // May be nullptr if physics is not active.
         PhysicsWorld* m_PhysicsWorld = nullptr;
+
+        // Pointer to the AudioEngine (owned by RuntimeLayer, not us).
+        // May be nullptr if audio is not active.
+        AudioEngine* m_AudioEngine = nullptr;
 
         // Set by Scene.Load / Scene.Reload bindings. Drained by RuntimeLayer.
         // Absolute or assets-relative path, or "__RELOAD__" for current scene.

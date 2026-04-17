@@ -162,9 +162,10 @@ namespace Orion {
 						const std::string& path = SceneManager::GetActiveScenePath();
 						if (!path.empty()) {
 							SceneManager::SaveScene(path);
+							ImGuiLayer::ShowNotification("Scene saved.");
 						}
 						else {
-							std::cout << "[EditorLayer] No scene path to save to.\n";
+							ImGuiLayer::ShowNotification("No save path — use File \u2192 Save As");
 						}
 						event.Handled = true;
 					}
@@ -217,8 +218,9 @@ namespace Orion {
 					}
 				}
 				else if (key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) {
-					if (s_SelectedEntity != INVALID_ENTITY) {
-						SceneManager::GetActiveScene()->DestroyEntity(s_SelectedEntity);
+					auto scene = SceneManager::GetActiveScene();
+					if (scene && s_SelectedEntity != INVALID_ENTITY) {
+						scene->DestroyEntity(s_SelectedEntity);
 						s_SelectedEntity = INVALID_ENTITY;
 					}
 					event.Handled = true;
@@ -309,7 +311,7 @@ namespace Orion {
 
 		// Build gizmo data matching what the Renderer uses (world space)
 		auto scene = SceneManager::GetActiveScene();
-		if (!scene->HasTransformComponent(s_SelectedEntity)) return false;
+		if (!scene || !scene->HasTransformComponent(s_SelectedEntity)) return false;
 
 		glm::mat4 worldTransform = scene->GetWorldTransform(s_SelectedEntity);
 
@@ -348,6 +350,7 @@ namespace Orion {
 			return;
 
 		auto scene = SceneManager::GetActiveScene();
+		if (!scene) return;
 		auto* tc = scene->GetTransformComponent(s_SelectedEntity);
 		if (!tc) return;
 
@@ -473,11 +476,11 @@ namespace Orion {
 		if (m_DraggingGizmo)
 		{
 			auto scene = SceneManager::GetActiveScene();
-			auto* tc = scene->GetTransformComponent(s_SelectedEntity);
+			auto* tc = scene ? scene->GetTransformComponent(s_SelectedEntity) : nullptr;
 
-			if (tc->position != m_InitialTransformPos ||
+			if (tc && (tc->position != m_InitialTransformPos ||
 				tc->rotation != m_InitialTransformRot ||
-				tc->scale != m_InitialTransformScale)
+				tc->scale != m_InitialTransformScale))
 			{
 				// create TransformAction to store in action stacks for future undo/redoing
 				auto action = std::make_shared<TransformAction>(

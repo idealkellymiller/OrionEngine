@@ -8,6 +8,7 @@
 #include "ECS/Scene.h"
 
 #include <unordered_map>
+#include <string>
 
 namespace Orion {
 
@@ -42,6 +43,9 @@ namespace Orion {
 		static bool GetViewportHovered() { return s_ViewportHovered; }
 		static bool GetViewportFocused() { return s_ViewportFocused; }
 
+		// Show a brief toast message overlaid on the viewport (fades out after `duration` seconds).
+		static void ShowNotification(const std::string& message, float duration = 3.0f);
+
 		static ImVec2 GetViewportMin() { return s_ViewportImageMin; }
 		static ImVec2 GetViewportMax() { return s_ViewportImageMax; }
 
@@ -50,6 +54,10 @@ namespace Orion {
 		static ImVec2 s_ViewportImageMin;
 		static ImVec2 s_ViewportImageMax;
 		static EntityID s_HoveredEntity;
+
+		// Toast notification
+		static std::string s_NotificationMessage;
+		static float       s_NotificationTimer;   // seconds remaining; 0 = hidden
 
 		static bool s_ViewportHovered;
 		static bool s_ViewportFocused;
@@ -64,6 +72,9 @@ namespace Orion {
 
 		// Per-entity component display order (survives reselection within a session).
 		std::unordered_map<EntityID, std::vector<ComponentType>> m_ComponentOrder;
+
+		// Per-entity uniform-scale toggle — resets to false when a different entity is selected.
+		bool m_ScaleUniform = false;
 
 		// Builds or refreshes the display-order list for the given entity.
 		void RebuildComponentOrder(EntityID entity, Scene& scene);

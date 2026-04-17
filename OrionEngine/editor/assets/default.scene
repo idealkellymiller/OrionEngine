@@ -15,7 +15,7 @@
       },
       "transform": {
         "position": [
-          -5.001379489898682,
+          -5.775357246398926,
           3.413325071334839,
           4.1681976318359375
         ],
@@ -114,6 +114,7 @@
       }
     },
     {
+      "audioListener": true,
       "camera": {
         "far": 100.0,
         "fov": 60.0,
@@ -419,9 +420,9 @@
       },
       "transform": {
         "position": [
-          7.288640975952148,
+          8.0,
           2.375941276550293,
-          4.816571235656738
+          4.058635234832764
         ],
         "rotation": [
           0.0,
@@ -450,6 +451,37 @@
           0.0,
           4.829744815826416,
           -9.060171127319336
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "audioSource": {
+        "clipPath": "audio/Fah.mp3",
+        "loop": false,
+        "maxDistance": 20.0,
+        "minDistance": 1.0,
+        "pitch": 1.0,
+        "playOnStart": true,
+        "spatial": true,
+        "volume": 1.0
+      },
+      "id": 21,
+      "name": "FAH",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
         ],
         "rotation": [
           0.0,

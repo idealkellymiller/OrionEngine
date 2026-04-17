@@ -1,3 +1,4 @@
+#define NOMINMAX	// resolves std::max error
 #include "EngineCore.h"
 #include "Layers/ImGuiLayer.h"
 #include "Layers/EditorLayer.h"
@@ -8,6 +9,7 @@
 #include "Core/ProjectSettings.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"   // ClearActiveID
 #include "libintl.h"
 
 // #include "Platform/OpenGL/ImGuiOpenGLRenderer.h"
@@ -44,6 +46,15 @@ namespace Orion {
 	bool ImGuiLayer::s_ViewportDragging = false;
 	ImVec2 ImGuiLayer::s_ViewportImageMin = { 0, 0 };
 	ImVec2 ImGuiLayer::s_ViewportImageMax = { 0, 0 };
+
+	std::string ImGuiLayer::s_NotificationMessage;
+	float       ImGuiLayer::s_NotificationTimer = 0.0f;
+
+	void ImGuiLayer::ShowNotification(const std::string& message, float duration)
+	{
+		s_NotificationMessage = message;
+		s_NotificationTimer   = duration;
+	}
 
 
 	ImGuiLayer::ImGuiLayer()
@@ -186,7 +197,10 @@ namespace Orion {
 			// Block keyboard events only when ImGui truly needs them
 			// (e.g. typing in an InputText) AND the user isn't actively
 			// interacting with the viewport (camera fly uses WASD).
-			if (io.WantCaptureKeyboard && !s_ViewportFocused && !s_ViewportDragging)
+			// Never block Ctrl+key combos — they are global editor shortcuts
+			// (Ctrl+S, Ctrl+Z, Ctrl+Y, etc.) that must reach EditorLayer regardless
+			// of which panel has focus.
+			if (io.WantCaptureKeyboard && !s_ViewportFocused && !s_ViewportDragging && !io.KeyCtrl)
 			{
 				event.Handled = true;
 			}
@@ -206,10 +220,13 @@ namespace Orion {
 		}
 		case EventType::MouseButtonReleased:
 		{
-			// End viewport drag on any release.
+			// Capture whether a viewport drag was active before clearing it.
+			// If the drag started in the viewport, the release must reach EditorLayer
+			// even if the cursor is now outside — otherwise camera/gizmo state stays stuck.
+			bool wasDragging = s_ViewportDragging;
 			s_ViewportDragging = false;
 
-			if (io.WantCaptureMouse && !s_ViewportHovered)
+			if (io.WantCaptureMouse && !s_ViewportHovered && !wasDragging)
 				event.Handled = true;
 			break;
 		}
@@ -577,7 +594,9 @@ namespace Orion {
 		strncpy_s(nameBuf, data->name.c_str(), sizeof(nameBuf) - 1);
 		nameBuf[sizeof(nameBuf) - 1] = '\0';
 		if (ImGui::InputText(IMGUI_ELEMENT_TITLE("Name", "EntityNameField"), nameBuf, sizeof(nameBuf))) {
-			data->name = nameBuf;
+			// Don't allow an empty name — it breaks the hierarchy display
+			if (nameBuf[0] != '\0')
+				data->name = nameBuf;
 		}
 
 		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Enabled", "EnabledEntity"), &data->enabled);
@@ -590,40 +609,38 @@ namespace Orion {
 
 		ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Position", "Position"), &tc->position.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f");
 
-		if (ImGui::IsItemEdited())
-		{
-			std::cout << "[ImGuiLayer] IsItemEdited: " << ImGui::IsItemEdited() << std::endl;
-		}
-
 		// Display rotation in degrees, store in radians
 		glm::vec3 rotDeg = glm::degrees(tc->rotation);
 		if (ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Rotation", "Rotation"), &rotDeg.x, 0.1f, -FLT_MAX, +FLT_MAX, "%.1f"))
 			tc->rotation = glm::radians(rotDeg);
 
-		// Uniform-scale toggle
-		static bool scaleUniform = false;
+		// Uniform-scale toggle — state stored per-inspector-session, reset on entity change
 		glm::vec3 oldScale = tc->scale;
 
-		if (ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Scale", "Scale"), &tc->scale.x, 0.005f, -FLT_MAX, +FLT_MAX, "%.3f"))
+		if (ImGui::DragFloat3(IMGUI_ELEMENT_TITLE("Scale", "Scale"), &tc->scale.x, 0.005f, 0.001f, +FLT_MAX, "%.3f"))
 		{
-			if (scaleUniform) {
+			// Clamp each axis away from zero so physics/renderer never receive a degenerate scale
+			tc->scale.x = std::max(tc->scale.x, 0.001f);
+			tc->scale.y = std::max(tc->scale.y, 0.001f);
+			tc->scale.z = std::max(tc->scale.z, 0.001f);
+
+			if (m_ScaleUniform) {
 				glm::vec3 delta = tc->scale - oldScale;
 				if (delta.x != 0.0f) {
-					tc->scale.y = oldScale.y + delta.x;
-					tc->scale.z = oldScale.z + delta.x;
+					tc->scale.y = std::max(oldScale.y + delta.x, 0.001f);
+					tc->scale.z = std::max(oldScale.z + delta.x, 0.001f);
 				}
 				else if (delta.y != 0.0f) {
-					tc->scale.x = oldScale.x + delta.y;
-					tc->scale.z = oldScale.z + delta.y;
+					tc->scale.x = std::max(oldScale.x + delta.y, 0.001f);
+					tc->scale.z = std::max(oldScale.z + delta.y, 0.001f);
 				}
 				else if (delta.z != 0.0f) {
-					tc->scale.x = oldScale.x + delta.z;
-					tc->scale.y = oldScale.y + delta.z;
+					tc->scale.x = std::max(oldScale.x + delta.z, 0.001f);
+					tc->scale.y = std::max(oldScale.y + delta.z, 0.001f);
 				}
 			}
-
 		}
-		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Scale Uniform", "Scale Uniform"), &scaleUniform);
+		ImGui::Checkbox(IMGUI_ELEMENT_TITLE("Scale Uniform", "Scale Uniform"), &m_ScaleUniform);
 	}
 
 	void ImGuiLayer::DrawMeshFields(EntityID entity, Scene& scene)
@@ -1110,7 +1127,9 @@ namespace Orion {
 					m_SelectedAssetPath.clear();
 					// Rebuild the component display order when selection changes
 					if (m_InspectorEntity != selected) {
+						ImGui::ClearActiveID();   // abandon any in-progress widget edit on the old entity
 						m_InspectorEntity = selected;
+						m_ScaleUniform = false;   // don't leak toggle state across entities
 						// Only rebuild if we don't already have a cached order for this entity
 						if (m_ComponentOrder.find(selected) == m_ComponentOrder.end()) {
 							RebuildComponentOrder(selected, *scene);
@@ -1334,6 +1353,26 @@ namespace Orion {
 				// display rolling avg. framerate as overlay in top right corner
 				std::string framerateText = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
 				drawlist->AddText(ImVec2(s_ViewportImageMax.x - 80, s_ViewportImageMin.y), IM_COL32(255, 255, 255, 255), framerateText.c_str());
+
+				// --- Toast notification overlay (bottom-centre of viewport) ---
+				if (s_NotificationTimer > 0.0f) {
+					s_NotificationTimer -= ImGui::GetIO().DeltaTime;
+
+					// Fade out in the last 0.5 s
+					float alpha = glm::clamp(s_NotificationTimer / 0.5f, 0.0f, 1.0f);
+					ImU32 bgCol   = IM_COL32(30,  30,  30,  static_cast<int>(220 * alpha));
+					ImU32 txtCol  = IM_COL32(255, 255, 255, static_cast<int>(255 * alpha));
+
+					ImVec2 textSize = ImGui::CalcTextSize(s_NotificationMessage.c_str());
+					float  pad      = 10.0f;
+					float  vpCentreX = (s_ViewportImageMin.x + s_ViewportImageMax.x) * 0.5f;
+					float  y         = s_ViewportImageMax.y - textSize.y - pad * 3.0f;
+					ImVec2 bgMin = ImVec2(vpCentreX - textSize.x * 0.5f - pad, y - pad);
+					ImVec2 bgMax = ImVec2(vpCentreX + textSize.x * 0.5f + pad, y + textSize.y + pad);
+
+					drawlist->AddRectFilled(bgMin, bgMax, bgCol, 4.0f);
+					drawlist->AddText(ImVec2(bgMin.x + pad, y), txtCol, s_NotificationMessage.c_str());
+				}
 			}
 
 
@@ -1383,7 +1422,21 @@ namespace Orion {
 
 					if (ImGui::MenuItem("Create Monkey"))
 						EditorLayer::AddPrimitive("Monkey", "monkey");
-					
+
+					ImGui::Separator();
+
+					if (ImGui::MenuItem("Create Point Light")) {
+						auto scene2 = SceneManager::GetActiveScene();
+						if (scene2) {
+							EntityID e = scene2->CreateEntity();
+							EntityDataComponent edc; edc.name = "Point Light";
+							scene2->AddEntityDataComponent(e, edc);
+							scene2->AddTransformComponent(e, TransformComponent{});
+							scene2->AddPointLightComponent(e, PointLightComponent{});
+							EditorLayer::SetSelectedEntity(e);
+						}
+					}
+
 					ImGui::EndPopup();
 					
 
@@ -1634,6 +1687,10 @@ namespace Orion {
 			static char s_RenameBuf[256] = "";
 			static std::string s_RenameTargetPath;   // absolute path of the file/folder being renamed
 
+			static bool        s_ShowDeleteConfirm = false;
+			static std::string s_PendingDeletePath;
+			static bool        s_PendingDeleteIsFolder = false;
+
 			auto uniquePath = [&](const std::string& baseName, const std::string& ext) -> fs::path {
 				fs::path candidate = currentPath / (baseName + ext);
 				if (!fs::exists(candidate)) return candidate;
@@ -1786,13 +1843,10 @@ namespace Orion {
 						ImGui::Separator();
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
 						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FolderDelete"))) {
-							try {
-								fs::remove_all(dir.path());
-								std::cout << "[Assets] Deleted folder: " << dir.path().string() << "\n";
-							}
-							catch (const std::exception& e) {
-								std::cout << "[Assets] Delete failed: " << e.what() << "\n";
-							}
+							s_PendingDeletePath     = dir.path().string();
+							s_PendingDeleteIsFolder = true;
+							s_ShowDeleteConfirm     = true;
+							ImGui::OpenPopup("DeleteConfirmPopup");
 						}
 						ImGui::PopStyleColor();
 						ImGui::EndPopup();
@@ -1842,13 +1896,10 @@ namespace Orion {
 						ImGui::Separator();
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
 						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FileDelete"))) {
-							try {
-								fs::remove(file.path());
-								std::cout << "[Assets] Deleted: " << file.path().string() << "\n";
-							}
-							catch (const std::exception& e) {
-								std::cout << "[Assets] Delete failed: " << e.what() << "\n";
-							}
+							s_PendingDeletePath     = file.path().string();
+							s_PendingDeleteIsFolder = false;
+							s_ShowDeleteConfirm     = true;
+							ImGui::OpenPopup("DeleteConfirmPopup");
 						}
 						ImGui::PopStyleColor();
 						ImGui::EndPopup();
@@ -2000,6 +2051,47 @@ namespace Orion {
 				ImGui::SameLine();
 				if (ImGui::Button(IMGUI_ELEMENT_TITLE("Cancel", "AssetRenameCancel"), ImVec2(80, 0))) {
 					s_RenameTargetPath.clear();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+
+			// ---------- Delete confirmation modal ----------
+			if (s_ShowDeleteConfirm) {
+				ImGui::OpenPopup("DeleteConfirmPopup");
+				s_ShowDeleteConfirm = false;
+			}
+
+			if (ImGui::BeginPopupModal("DeleteConfirmPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+				std::string itemName = fs::path(s_PendingDeletePath).filename().string();
+				if (s_PendingDeleteIsFolder)
+					ImGui::Text("Delete folder \"%s\" and ALL its contents?", itemName.c_str());
+				else
+					ImGui::Text("Delete \"%s\"?", itemName.c_str());
+				ImGui::TextDisabled("This cannot be undone.");
+				ImGui::Separator();
+
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+				if (ImGui::Button("Delete", ImVec2(100, 0))) {
+					try {
+						if (s_PendingDeleteIsFolder)
+							fs::remove_all(s_PendingDeletePath);
+						else
+							fs::remove(s_PendingDeletePath);
+						std::cout << "[Assets] Deleted: " << s_PendingDeletePath << "\n";
+					}
+					catch (const std::exception& e) {
+						std::cout << "[Assets] Delete failed: " << e.what() << "\n";
+					}
+					s_PendingDeletePath.clear();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::PopStyleColor(2);
+
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+					s_PendingDeletePath.clear();
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();

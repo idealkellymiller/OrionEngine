@@ -531,22 +531,6 @@ namespace Orion {
 			scene->AddMaterialComponent(entity, MaterialComponent{ matID });
 		}
 
-		// Static rigidbody — primitives placed in the editor default to immovable
-		// collision geometry. The user can change BodyType in the inspector at any time.
-		RigidbodyComponent rb;
-		rb.bodyType = BodyType::Static;
-		scene->AddRigidbodyComponent(entity, rb);
-
-		// Unit box collider with half-extents 0.5 — at scale (1,1,1) this exactly
-		// wraps a 1×1×1 mesh. PhysicsWorld multiplies these by the transform scale
-		// at play-start, so resizing the entity in the inspector keeps the collider
-		// in sync automatically without any manual adjustment.
-		ColliderComponent col;
-		col.shape = ColliderShape::Box;
-		col.boxHalfExtents = { 0.5f, 0.5f, 0.5f };
-		col.isTrigger = false;
-		scene->AddColliderComponent(entity, col);
-
 		SetSelectedEntity(entity);
 
 		std::cout << "[EditorLayer] Created primitive '" << name << "' (entity " << entity << ")\n";

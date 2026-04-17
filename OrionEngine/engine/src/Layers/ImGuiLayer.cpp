@@ -1284,21 +1284,22 @@ namespace Orion {
 						scene->AddEntityDataComponent(newEntity, EntityDataComponent{});
 						scene->AddTransformComponent(newEntity, TransformComponent{});
 						EditorLayer::SetSelectedEntity(newEntity);
-
-						if (ImGui::MenuItem("Create Cube"))
-							EditorLayer::AddPrimitive("Cube", "cube");
-
-						if (ImGui::MenuItem("Create Sphere"))
-							EditorLayer::AddPrimitive("Sphere", "sphere");
-
-						if (ImGui::MenuItem("Create Plane"))
-							EditorLayer::AddPrimitive("Plane", "square");
-
-						if (ImGui::MenuItem("Create Monkey"))
-							EditorLayer::AddPrimitive("Monkey", "monkey");
-
-						ImGui::EndPopup();
 					}
+
+					if (ImGui::MenuItem("Create Cube"))
+						EditorLayer::AddPrimitive("Cube", "cube");
+
+					if (ImGui::MenuItem("Create Sphere"))
+						EditorLayer::AddPrimitive("Sphere", "sphere");
+
+					if (ImGui::MenuItem("Create Plane"))
+						EditorLayer::AddPrimitive("Plane", "square");
+
+					if (ImGui::MenuItem("Create Monkey"))
+						EditorLayer::AddPrimitive("Monkey", "monkey");
+					
+					ImGui::EndPopup();
+					
 
 					// Drop on empty space = unparent (make root)
 					if (ImGui::BeginDragDropTarget())

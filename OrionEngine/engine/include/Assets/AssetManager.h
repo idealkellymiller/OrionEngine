@@ -19,6 +19,7 @@ namespace Orion {
         ~AssetManager() = default;
 
         static void LoadAssetsFolder();
+        static void LoadEngineAssetsFolder();
 
         //// --- Asset registration ---
         //// Adds metadata for a texture asset to the database
@@ -94,6 +95,20 @@ namespace Orion {
         static void SetAssetsFolderPath(std::string filePath) { m_AssetsFolderPath = filePath; }
         static std::string GetAssetsFolderPath() { return m_AssetsFolderPath; }
 
+        static void SetEngineAssetsFolderPath(std::string filePath) { m_EngineAssetsFolderPath = filePath; }
+        static std::string GetEngineAssetsFolderPath() { return m_EngineAssetsFolderPath; }
+
+        // Returns the relative scene-ref for an absolute asset path.
+        // Paths under the engine assets folder are prefixed with "engine://".
+        // Paths under the user assets folder have the prefix stripped.
+        // If neither matches the raw absolute path is returned.
+        static std::string ToSceneRef(const std::string& absPath);
+
+        // Resolves a scene-ref back to an absolute file path.
+        // "engine://..." → engineAssetsFolder + rest
+        // anything else   → assetsFolder + ref
+        static std::string FromSceneRef(const std::string& ref);
+
         static void PrintMatsPathToID();
 
         // Write all in-memory material properties back to their .mtl files on disk
@@ -105,8 +120,16 @@ namespace Orion {
         // Parse a .mtl file and auto-create Material + Texture assets from it
         static void LoadMTLFile(const std::string& mtlPath);
 
+        // Parse a custom .mtrl file (engine material format) and register a Material asset.
+        static void LoadMTRLFile(const std::string& mtrlPath);
+
     private:
         static std::string m_AssetsFolderPath;
+        static std::string m_EngineAssetsFolderPath;
+
+        // Shared folder-scanning implementation used by both LoadAssetsFolder
+        // and LoadEngineAssetsFolder.
+        static void LoadFolder(const std::string& folderPath);
 
         static AssetID m_NextAssetID;
 

@@ -7,7 +7,7 @@ end
 function OnUpdate(dt)
     -- Called every frame with delta time
 
-    if Input.GetKeyPressed("Q") then
+    if Input.IsKeyPressed("Q") then
         Application.Quit()
     end
 end

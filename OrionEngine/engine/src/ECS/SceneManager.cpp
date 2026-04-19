@@ -115,8 +115,7 @@ namespace Orion {
 
 			// --- Mesh ---
 			if (entityJson.contains("mesh") && entityJson["mesh"].contains("path")) {
-				std::string meshPath = AssetManager::GetAssetsFolderPath() + entityJson["mesh"]["path"].get<std::string>();
-				std::replace(meshPath.begin(), meshPath.end(), '/', '\\');
+				std::string meshPath = AssetManager::FromSceneRef(entityJson["mesh"]["path"].get<std::string>());
 
 				AssetID meshID = AssetManager::GetMeshID(meshPath);
 				if (meshID == INVALID_ASSET_ID) {
@@ -140,26 +139,29 @@ namespace Orion {
 				const auto& matJson = entityJson["material"];
 
 				if (matJson.contains("mtl") && matJson.contains("name")) {
-					// .mtl material: stored as mtl file path + material name
-					std::string mtlRelPath = matJson["mtl"].get<std::string>();
+					// .mtl / .mtrl material: stored as scene-ref + material name
+					std::string mtlRef  = matJson["mtl"].get<std::string>();
 					std::string matName = matJson["name"].get<std::string>();
-					std::string mtlAbsPath = AssetManager::GetAssetsFolderPath() + mtlRelPath;
-					std::replace(mtlAbsPath.begin(), mtlAbsPath.end(), '/', '\\');
+					std::string mtlAbsPath = AssetManager::FromSceneRef(mtlRef);
 
 					// Build the key used by AssetManager: "<abs_mtl_path>::<name>"
 					std::string matKey = mtlAbsPath + "::" + matName;
 					materialID = AssetManager::GetMaterialID(matKey);
 
 					if (materialID == INVALID_ASSET_ID) {
-						// Try loading the .mtl file
-						AssetManager::LoadMTLFile(mtlAbsPath);
+						// Try loading the material file (handles both .mtl and .mtrl)
+						std::string ext = std::filesystem::path(mtlAbsPath).extension().string();
+						for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+						if (ext == ".mtrl")
+							AssetManager::LoadMTRLFile(mtlAbsPath);
+						else
+							AssetManager::LoadMTLFile(mtlAbsPath);
 						materialID = AssetManager::GetMaterialID(matKey);
 					}
 				}
 				else if (matJson.contains("path")) {
 					// Legacy path-based material (backwards compat)
-					std::string materialPath = AssetManager::GetAssetsFolderPath() + matJson["path"].get<std::string>();
-					std::replace(materialPath.begin(), materialPath.end(), '/', '\\');
+					std::string materialPath = AssetManager::FromSceneRef(matJson["path"].get<std::string>());
 					materialID = AssetManager::GetMaterialID(materialPath);
 				}
 
@@ -300,8 +302,6 @@ namespace Orion {
 		j["scene"]["version"] = 1;
 		j["entities"] = json::array();
 
-		std::string assetsPath = AssetManager::GetAssetsFolderPath();
-
 		for (EntityID entity : s_ActiveScene->GetEntities()) {
 			json entityJson;
 			entityJson["id"] = entity;
@@ -328,11 +328,7 @@ namespace Orion {
 			MeshComponent* mc = s_ActiveScene->GetMeshComponent(entity);
 			if (mc && mc->mesh != INVALID_ASSET_ID) {
 				std::string meshPath = AssetManager::GetMeshPath(mc->mesh);
-				// Convert to relative path and forward slashes for JSON
-				if (meshPath.find(assetsPath) == 0)
-					meshPath = meshPath.substr(assetsPath.size());
-				std::replace(meshPath.begin(), meshPath.end(), '\\', '/');
-				entityJson["mesh"]["path"] = meshPath;
+				entityJson["mesh"]["path"] = AssetManager::ToSceneRef(meshPath);
 			}
 
 			// --- Material ---
@@ -340,26 +336,18 @@ namespace Orion {
 			if (matc && matc->material != INVALID_ASSET_ID) {
 				std::string matKey = AssetManager::GetMaterialPath(matc->material);
 
-				// Check if this is an .mtl-sourced material (key format: "path.mtl::MaterialName")
+				// Check if this is an .mtl/.mtrl-sourced material
+				// (key format: "abs_path.mtl::MaterialName")
 				size_t sep = matKey.find("::");
 				if (sep != std::string::npos) {
 					std::string mtlAbsPath = matKey.substr(0, sep);
-					std::string matName = matKey.substr(sep + 2);
-
-					// Make mtl path relative to assets folder
-					if (mtlAbsPath.find(assetsPath) == 0)
-						mtlAbsPath = mtlAbsPath.substr(assetsPath.size());
-					std::replace(mtlAbsPath.begin(), mtlAbsPath.end(), '\\', '/');
-
-					entityJson["material"]["mtl"] = mtlAbsPath;
+					std::string matName    = matKey.substr(sep + 2);
+					entityJson["material"]["mtl"]  = AssetManager::ToSceneRef(mtlAbsPath);
 					entityJson["material"]["name"] = matName;
 				}
 				else {
 					// Legacy path-based fallback
-					if (matKey.find(assetsPath) == 0)
-						matKey = matKey.substr(assetsPath.size());
-					std::replace(matKey.begin(), matKey.end(), '\\', '/');
-					entityJson["material"]["path"] = matKey;
+					entityJson["material"]["path"] = AssetManager::ToSceneRef(matKey);
 				}
 			}
 

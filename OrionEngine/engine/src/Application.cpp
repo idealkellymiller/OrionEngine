@@ -123,13 +123,53 @@ namespace fs = std::filesystem;
 
 	void Application::Run(int argc, char** argv)
 	{
+		// Set the working directory to <engine-root>/editor/ so every relative path
+		// in the codebase resolves correctly in both dev and installed builds:
+		//
+		//   ../engine/shaders/   -> <root>/engine/shaders/   (Renderer shaders)
+		//   ../editor/assets/    -> <root>/editor/assets/    (scene / asset files)
+		//
+		// We locate <engine-root> by walking up from the exe until we find a directory
+		// that contains engine/shaders/.  This works regardless of how many levels deep
+		// the exe lives (dev: build/bin/Debug--Windows/; installed: bin/).
+#if ORN_PLATFORM_WINDOWS
+		{
+			wchar_t exePathW[MAX_PATH] = {};
+			GetModuleFileNameW(nullptr, exePathW, MAX_PATH);
+			fs::path dir = fs::path(exePathW).parent_path();
+
+			fs::path engineRoot;
+			for (int i = 0; i < 6; ++i) {
+				if (fs::exists(dir / "engine" / "shaders")) {
+					engineRoot = dir;
+					break;
+				}
+				if (dir.has_parent_path() && dir != dir.parent_path())
+					dir = dir.parent_path();
+				else
+					break;
+			}
+
+			if (!engineRoot.empty()) {
+				fs::path workDir = engineRoot / "editor";
+				fs::create_directories(workDir);   // ensure editor/ exists on fresh installs
+				SetCurrentDirectoryW(workDir.c_str());
+				std::cout << "[App] Working directory set to: " << workDir.string() << "\n";
+			} else {
+				std::cout << "[App] Warning: could not locate engine root; shaders may not load.\n";
+			}
+		}
+#endif
+
 		// initialize Renderer here, after window creation in main.
 		Orion::Renderer::Init();
 
 		// Determine assets folder and startup scene.
-		// If a .scene file was passed as argument (e.g. double-click from Explorer),
-		// use its parent directory as the assets folder.
-		std::string assetsFolderPath = "..\\editor\\assets\\";
+		// Priority:
+		//   1. A .scene file passed on the command line (e.g. double-click from Explorer)
+		//   2. assets\ right next to the exe (installed / flat layout)
+		//   3. ..\editor\assets\ (dev / build-game layout where exe lives in bin\)
+		std::string assetsFolderPath;
 		std::string startupScene = "default.scene";
 
 		if (argc > 1) {
@@ -141,9 +181,32 @@ namespace fs = std::filesystem;
 			}
 		}
 
-		// Load Assets
+		if (assetsFolderPath.empty()) {
+			// Working directory is always <engine-root>/editor/ (set above),
+			// so assets live at assets/ relative to that.
+			assetsFolderPath = "assets\\";
+			std::cout << "[App] Assets folder: " << assetsFolderPath << "\n";
+		}
+
+		// Load Assets — user assets first, then built-in engine assets
 		AssetManager::SetAssetsFolderPath(assetsFolderPath);
 		AssetManager::LoadAssetsFolder();
+
+		// Engine assets live at <engine-root>/engine/engineAssets/ relative to the
+		// working directory which is always <engine-root>/editor/.
+		{
+			fs::path engineAssetsPath = fs::absolute("../engine/engineAssets/");
+			if (fs::exists(engineAssetsPath)) {
+				std::string engPath = engineAssetsPath.string();
+				// Ensure trailing separator
+				if (!engPath.empty() && engPath.back() != '\\' && engPath.back() != '/')
+					engPath += '\\';
+				AssetManager::SetEngineAssetsFolderPath(engPath);
+				AssetManager::LoadEngineAssetsFolder();
+			} else {
+				std::cout << "[App] Engine assets not found at: " << engineAssetsPath.string() << "\n";
+			}
+		}
 
 		// Load project settings (from the assets folder, next to scene files).
 		// If the file doesn't exist yet, defaults are kept.
@@ -152,8 +215,15 @@ namespace fs = std::filesystem;
 		// set localization
 		SetLocalization(ProjectSettings::Get().editorLanguage);
 
-		// Load (startup) Scene
-		SceneManager::LoadScene(AssetManager::GetAssetsFolderPath() + startupScene);
+		// Load (startup) Scene — only if the file actually exists.
+		// A fresh install with no Sample Project has no scene file; just start empty.
+		{
+			std::string scenePath = AssetManager::GetAssetsFolderPath() + startupScene;
+			if (fs::exists(scenePath))
+				SceneManager::LoadScene(scenePath);
+			else
+				std::cout << "[App] No startup scene found at '" << scenePath << "' — starting with empty scene.\n";
+		}
 
 		//--------------------------MAIN APP LOOP--------------------------
 		while (m_Running) {

@@ -11,6 +11,7 @@
 #include "Assets/AssetManager.h"
 
 #include <iostream>
+#include <filesystem>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -101,9 +102,15 @@ namespace Orion {
 		dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent& e) -> bool {
 			s_EditorCamera.OnMouseMoved(e.GetX(), e.GetY());
 
-			// Update gizmo drag if active
-			if (m_DraggingGizmo)
-				UpdateGizmoDrag(e.GetX(), e.GetY());
+			// Update gizmo drag if active.
+			// Use ImGui::GetMousePos() rather than e.GetX/Y() so the coordinates
+			// are always in the same space as m_LastDragMouseX/Y (which is set from
+			// ImGui::GetMousePos() in TryBeginGizmoDrag). A mismatch causes a large
+			// spurious delta on the very first drag frame — visible as a jump.
+			if (m_DraggingGizmo) {
+				ImVec2 mp = ImGui::GetMousePos();
+				UpdateGizmoDrag(mp.x, mp.y);
+			}
 
 			return false;
 		});
@@ -111,8 +118,12 @@ namespace Orion {
 		dispatcher.Dispatch<MouseBtnPressedEvent>([this](MouseBtnPressedEvent& e) -> bool {
 			s_EditorCamera.OnMouseButtonPressed(e.GetMouseBtn());
 
-			// Left-click: try gizmo grab first, then entity selection (editor only)
-			if (e.GetMouseBtn() == GLFW_MOUSE_BUTTON_LEFT && s_PlayState == PlayState::Stopped) {
+			// Left-click: try gizmo grab first, then entity selection (editor only).
+			// Both operations are gated on the viewport being hovered so that clicks
+			// on other panels (inspector, hierarchy, asset browser) never accidentally
+			// change the selection or start a drag using stale picking data.
+			if (e.GetMouseBtn() == GLFW_MOUSE_BUTTON_LEFT && s_PlayState == PlayState::Stopped
+				&& ImGuiLayer::GetViewportHovered()) {
 				ImVec2 mousePos = ImGui::GetMousePos();
 				if (!TryBeginGizmoDrag(mousePos.x, mousePos.y)) {
 					// No gizmo hit — select entity
@@ -158,14 +169,23 @@ namespace Orion {
 				if (ctrl) {
 					if (key == GLFW_KEY_S)
 					{
-						// Ctrl+S: save scene
+						// Ctrl+S: save to existing path, or open Save As dialog if none
 						const std::string& path = SceneManager::GetActiveScenePath();
 						if (!path.empty()) {
-							SceneManager::SaveScene(path);
-							ImGuiLayer::ShowNotification("Scene saved.");
+							if (SceneManager::SaveScene(path))
+								ImGuiLayer::ShowNotification("Saved: " + std::filesystem::path(path).filename().string());
+							else
+								ImGuiLayer::ShowNotification("Save failed — check write permissions.", 5.0f);
 						}
 						else {
-							ImGuiLayer::ShowNotification("No save path — use File \u2192 Save As");
+							std::string newPath = ImGuiLayer::ShowSaveFileDialog(
+							    AssetManager::GetAssetsFolderPath());
+							if (!newPath.empty()) {
+								if (SceneManager::SaveScene(newPath))
+									ImGuiLayer::ShowNotification("Saved: " + std::filesystem::path(newPath).filename().string());
+								else
+									ImGuiLayer::ShowNotification("Save failed — check write permissions.", 5.0f);
+							}
 						}
 						event.Handled = true;
 					}
@@ -466,7 +486,9 @@ namespace Orion {
 				else if (m_DragAxis == GizmoAxis::Y)  tc->scale.y += projectedPx;
 				else if (m_DragAxis == GizmoAxis::Z)  tc->scale.z += projectedPx;
 
-				tc->scale = glm::max(tc->scale, glm::vec3(0.01f));
+				tc->scale.x = std::max(tc->scale.x, 0.01f);
+				tc->scale.y = std::max(tc->scale.y, 0.01f);
+				tc->scale.z = std::max(tc->scale.z, 0.01f);
 			}
 		}
 	}
@@ -500,7 +522,7 @@ namespace Orion {
 	}
 
 
-	// Primitives 
+	// Primitives
 	void EditorLayer::AddPrimitive(const std::string& name, const std::string& modelFileName)
 	{
 		std::shared_ptr<Scene> scene = SceneManager::GetActiveScene();
@@ -514,25 +536,54 @@ namespace Orion {
 
 		scene->AddTransformComponent(entity, TransformComponent{});
 
-		// Resolve mesh from the project's models folder.
-		// If the mesh hasn't been loaded yet (e.g. user just added the file) try loading it on demand.
-		std::string meshPath = AssetManager::GetAssetsFolderPath() + "models\\" + modelFileName + ".obj";
-		AssetID meshID = AssetManager::GetMeshID(meshPath);
+		// Resolve mesh from engine built-in primitives first, then fall back to the
+		// project's models folder for user-supplied meshes.
+		AssetID meshID = INVALID_ASSET_ID;
+
+		std::string engAssetsPath = AssetManager::GetEngineAssetsFolderPath();
+		if (!engAssetsPath.empty()) {
+			std::string engMeshPath = engAssetsPath + "primitives\\" + modelFileName + ".obj";
+			meshID = AssetManager::GetMeshID(engMeshPath);
+			if (meshID == INVALID_ASSET_ID) {
+				AssetManager::LoadMesh(engMeshPath);
+				meshID = AssetManager::GetMeshID(engMeshPath);
+			}
+		}
+
+		// If not found in engine assets, try the user project's models folder
 		if (meshID == INVALID_ASSET_ID) {
-			AssetManager::LoadMesh(meshPath);
-			meshID = AssetManager::GetMeshID(meshPath);
+			std::string userMeshPath = AssetManager::GetAssetsFolderPath() + "models\\" + modelFileName + ".obj";
+			meshID = AssetManager::GetMeshID(userMeshPath);
+			if (meshID == INVALID_ASSET_ID) {
+				AssetManager::LoadMesh(userMeshPath);
+				meshID = AssetManager::GetMeshID(userMeshPath);
+			}
 		}
 
-		if (meshID != INVALID_ASSET_ID) {
+		if (meshID != INVALID_ASSET_ID)
 			scene->AddMeshComponent(entity, MeshComponent{ meshID });
+
+		// Apply the engine's built-in default material.
+		// Falls back to the project's default.mtl if the engine material isn't available.
+		AssetID matID = INVALID_ASSET_ID;
+
+		if (!engAssetsPath.empty()) {
+			std::string engMatKey = engAssetsPath + "materials\\default.mtrl::default";
+			matID = AssetManager::GetMaterialID(engMatKey);
+			if (matID == INVALID_ASSET_ID) {
+				AssetManager::LoadMTRLFile(engAssetsPath + "materials\\default.mtrl");
+				matID = AssetManager::GetMaterialID(engMatKey);
+			}
 		}
 
-		// Apply the project's default material when present.
-		std::string matPath = AssetManager::GetAssetsFolderPath() + "materials\\default.mtl::default";
-		AssetID matID = AssetManager::GetMaterialID(matPath);
-		if (matID != INVALID_ASSET_ID) {
-			scene->AddMaterialComponent(entity, MaterialComponent{ matID });
+		if (matID == INVALID_ASSET_ID) {
+			// Fallback: user project default.mtl
+			std::string userMatKey = AssetManager::GetAssetsFolderPath() + "materials\\default.mtl::default";
+			matID = AssetManager::GetMaterialID(userMatKey);
 		}
+
+		if (matID != INVALID_ASSET_ID)
+			scene->AddMaterialComponent(entity, MaterialComponent{ matID });
 
 		SetSelectedEntity(entity);
 

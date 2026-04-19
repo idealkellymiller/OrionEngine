@@ -1,4 +1,9 @@
 #define NOMINMAX	// resolves std::max error
+#if defined(_WIN32) || defined(ORN_PLATFORM_WINDOWS)
+#define WIN32_LEAN_AND_MEAN   // exclude rarely-used Windows headers (avoids prsht.h etc.)
+#include <windows.h>          // must come before commdlg.h
+#include <commdlg.h>          // GetSaveFileName / GetOpenFileName
+#endif
 #include "EngineCore.h"
 #include "Layers/ImGuiLayer.h"
 #include "Layers/EditorLayer.h"
@@ -54,6 +59,42 @@ namespace Orion {
 	{
 		s_NotificationMessage = message;
 		s_NotificationTimer   = duration;
+	}
+
+	std::string ImGuiLayer::ShowSaveFileDialog(const std::string& defaultDir,
+	                                            const std::string& defaultName)
+	{
+#if defined(_WIN32)
+		char fileName[MAX_PATH] = {};
+		// Pre-fill the filename box with the suggested name (lpstrDefExt appends .scene if omitted)
+		strncpy_s(fileName, (defaultName + ".scene").c_str(), MAX_PATH - 1);
+
+		// Resolve the initial directory: prefer the supplied defaultDir, then the
+		// assets folder, then fall back to %USERPROFILE%\Documents.
+		std::string initDir = defaultDir;
+		if (initDir.empty())
+			initDir = AssetManager::GetAssetsFolderPath();
+		if (initDir.empty()) {
+			char userProfile[MAX_PATH] = {};
+			if (GetEnvironmentVariableA("USERPROFILE", userProfile, MAX_PATH) > 0)
+				initDir = std::string(userProfile) + "\\Documents";
+		}
+
+		OPENFILENAMEA ofn   = {};
+		ofn.lStructSize     = sizeof(ofn);
+		ofn.hwndOwner       = nullptr;   // no explicit owner — dialog is still modal to the process
+		ofn.lpstrFilter     = "Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
+		ofn.lpstrFile       = fileName;
+		ofn.nMaxFile        = MAX_PATH;
+		ofn.lpstrDefExt     = "scene";
+		ofn.lpstrInitialDir = initDir.empty() ? nullptr : initDir.c_str();
+		ofn.lpstrTitle      = "Save Scene";
+		ofn.Flags           = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+		if (GetSaveFileNameA(&ofn))
+			return std::string(fileName);
+#endif
+		return "";
 	}
 
 
@@ -277,10 +318,38 @@ namespace Orion {
 			{
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save", "Save"), "CTRL + S")) {
 					const std::string& path = SceneManager::GetActiveScenePath();
-					if (!path.empty())
-						SceneManager::SaveScene(path);
+					if (!path.empty()) {
+						if (SceneManager::SaveScene(path))
+							ShowNotification("Saved: " + std::filesystem::path(path).filename().string());
+						else
+							ShowNotification("Save failed — check write permissions.", 5.0f);
+					} else {
+						// No path yet — fall through to Save As
+						std::string newPath = ShowSaveFileDialog(AssetManager::GetAssetsFolderPath());
+						if (!newPath.empty()) {
+							if (SceneManager::SaveScene(newPath))
+								ShowNotification("Saved: " + std::filesystem::path(newPath).filename().string());
+							else
+								ShowNotification("Save failed — check write permissions.", 5.0f);
+						}
+					}
 				}
-				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save as", "Save as"), "CTRL + SHIFT + S")) {}
+				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Save as", "Save as"), "CTRL + SHIFT + S")) {
+					const std::string& currentPath = SceneManager::GetActiveScenePath();
+					std::string defaultDir  = currentPath.empty()
+					    ? AssetManager::GetAssetsFolderPath()
+					    : std::filesystem::path(currentPath).parent_path().string();
+					std::string defaultName = currentPath.empty()
+					    ? "untitled"
+					    : std::filesystem::path(currentPath).stem().string();
+					std::string newPath = ShowSaveFileDialog(defaultDir, defaultName);
+					if (!newPath.empty()) {
+						if (SceneManager::SaveScene(newPath))
+							ShowNotification("Saved: " + std::filesystem::path(newPath).filename().string());
+						else
+							ShowNotification("Save failed — check write permissions.", 5.0f);
+					}
+				}
 				ImGui::Separator();
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Build Game...", "BuildGame"))) {
 					showBuildGamePopup = true;
@@ -856,16 +925,12 @@ namespace Orion {
 
 			for (auto& [id, asset] : AssetManager::GetAllAudioClipAssets())
 			{
-				// Show just the filename in the list. store the full path in the component
-				std::string assetsPath = AssetManager::GetAssetsFolderPath();
-				std::string relPath    = asset.filePath;
-				if (relPath.find(assetsPath) == 0)
-					relPath = relPath.substr(assetsPath.size());
-				std::replace(relPath.begin(), relPath.end(), '\\', '/');
+				// Show just the asset name; store the scene-ref in the component
+				std::string sceneRef = AssetManager::ToSceneRef(asset.filePath);
 
-				bool selected = (asc->clipPath == relPath || asc->clipPath == asset.filePath);
+				bool selected = (asc->clipPath == sceneRef || asc->clipPath == asset.filePath);
 				if (ImGui::Selectable(asset.name.c_str(), selected))
-					asc->clipPath = relPath;
+					asc->clipPath = sceneRef;
 
 				if (selected)
 					ImGui::SetItemDefaultFocus();
@@ -1411,21 +1476,18 @@ namespace Orion {
 						EditorLayer::SetSelectedEntity(newEntity);
 					}
 
-					if (ImGui::MenuItem("Create Cube"))
-						EditorLayer::AddPrimitive("Cube", "cube");
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Cube",   "HierCreateCube")))
+						EditorLayer::AddPrimitive("Cube",   "cube");
 
-					if (ImGui::MenuItem("Create Sphere"))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Plane",  "HierCreatePlane")))
+						EditorLayer::AddPrimitive("Plane",  "plane");
+
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Sphere", "HierCreateSphere")))
 						EditorLayer::AddPrimitive("Sphere", "sphere");
-
-					if (ImGui::MenuItem("Create Plane"))
-						EditorLayer::AddPrimitive("Plane", "square");
-
-					if (ImGui::MenuItem("Create Monkey"))
-						EditorLayer::AddPrimitive("Monkey", "monkey");
 
 					ImGui::Separator();
 
-					if (ImGui::MenuItem("Create Point Light")) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Point Light", "HierCreatePointLight"))) {
 						auto scene2 = SceneManager::GetActiveScene();
 						if (scene2) {
 							EntityID e = scene2->CreateEntity();
@@ -1606,12 +1668,58 @@ namespace Orion {
 				return;
 			}
 
+			// --- Tab bar: Project assets / Engine assets ---
+			static int s_AssetBrowserTab = 0;  // 0 = Project, 1 = Engine
+			bool hasEngineAssets = !AssetManager::GetEngineAssetsFolderPath().empty() &&
+			                       fs::exists(AssetManager::GetEngineAssetsFolderPath());
+
+			if (hasEngineAssets)
+			{
+				bool switchedToProject = false;
+				bool switchedToEngine  = false;
+
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 4));
+				if (ImGui::BeginTabBar("AssetBrowserTabs"))
+				{
+					if (ImGui::BeginTabItem(IMGUI_ELEMENT_TITLE("Project", "ABTabProject"))) {
+						if (s_AssetBrowserTab != 0) { s_AssetBrowserTab = 0; switchedToProject = true; }
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem(IMGUI_ELEMENT_TITLE("Engine", "ABTabEngine"))) {
+						if (s_AssetBrowserTab != 1) { s_AssetBrowserTab = 1; switchedToEngine = true; }
+						ImGui::EndTabItem();
+					}
+					ImGui::EndTabBar();
+				}
+				ImGui::PopStyleVar();
+
+				// When switching tabs, reset current dir to the new root
+				if (switchedToProject)
+					m_AssetBrowserCurrentDir = fs::path(assetsRoot).make_preferred().string();
+				else if (switchedToEngine)
+					m_AssetBrowserCurrentDir = fs::path(AssetManager::GetEngineAssetsFolderPath()).make_preferred().string();
+			}
+
+			// Determine which root to browse based on active tab
+			bool browsingEngineAssets = (s_AssetBrowserTab == 1 && hasEngineAssets);
+			std::string activeRoot = browsingEngineAssets
+			    ? AssetManager::GetEngineAssetsFolderPath()
+			    : assetsRoot;
+
 			// Ensure root path uses consistent separators
-			fs::path rootPath = fs::path(assetsRoot).make_preferred();
+			fs::path rootPath = fs::path(activeRoot).make_preferred();
 
 			// Initialise current directory to root on first open
 			if (m_AssetBrowserCurrentDir.empty())
 				m_AssetBrowserCurrentDir = rootPath.string();
+
+			// If current dir is not under the active root, reset it
+			{
+				std::string curNorm  = fs::path(m_AssetBrowserCurrentDir).make_preferred().string();
+				std::string rootNorm = rootPath.string();
+				if (curNorm.find(rootNorm) != 0)
+					m_AssetBrowserCurrentDir = rootNorm;
+			}
 
 			fs::path currentPath(m_AssetBrowserCurrentDir);
 			if (!fs::exists(currentPath) || !fs::is_directory(currentPath))
@@ -1624,7 +1732,7 @@ namespace Orion {
 				std::vector<std::pair<std::string, fs::path>> crumbs;
 
 				// Root crumb
-				crumbs.push_back({ "Assets", rootPath });
+				crumbs.push_back({ browsingEngineAssets ? "Engine" : "Assets", rootPath });
 
 				// Walk the relative path and build intermediate absolute paths
 				if (relative != "." && !relative.empty()) {
@@ -1830,25 +1938,29 @@ namespace Orion {
 						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Open", "FolderOpen"))) {
 							m_AssetBrowserCurrentDir = dir.path().string();
 						}
-						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Rename", "FolderOpen"))) {
-							s_RenameTargetPath = dir.path().string();
-							strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
-							s_ShowRenamePopup = true;
+						if (!browsingEngineAssets) {
+							if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Rename", "FolderRename"))) {
+								s_RenameTargetPath = dir.path().string();
+								strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
+								s_ShowRenamePopup = true;
+							}
 						}
 						ImGui::Separator();
 						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Show in Explorer", "FolderShowInExplorer"))) {
 							std::string absPath = fs::absolute(dir.path()).string();
 							ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 						}
-						ImGui::Separator();
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FolderDelete"))) {
-							s_PendingDeletePath     = dir.path().string();
-							s_PendingDeleteIsFolder = true;
-							s_ShowDeleteConfirm     = true;
-							ImGui::OpenPopup("DeleteConfirmPopup");
+						if (!browsingEngineAssets) {
+							ImGui::Separator();
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+							if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FolderDelete"))) {
+								s_PendingDeletePath     = dir.path().string();
+								s_PendingDeleteIsFolder = true;
+								s_ShowDeleteConfirm     = true;
+								ImGui::OpenPopup("DeleteConfirmPopup");
+							}
+							ImGui::PopStyleColor();
 						}
-						ImGui::PopStyleColor();
 						ImGui::EndPopup();
 					}
 				}
@@ -1883,25 +1995,29 @@ namespace Orion {
 								ShellExecuteA(NULL, "open", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 							}
 						}
-						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Rename", "FileRename"))) {
-							s_RenameTargetPath = file.path().string();
-							strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
-							s_ShowRenamePopup = true;
+						if (!browsingEngineAssets) {
+							if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Rename", "FileRename"))) {
+								s_RenameTargetPath = file.path().string();
+								strncpy_s(s_RenameBuf, name.c_str(), sizeof(s_RenameBuf) - 1);
+								s_ShowRenamePopup = true;
+							}
 						}
 						ImGui::Separator();
 						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Show in Explorer", "FileShowInExplorer"))) {
 							std::string absPath = fs::absolute(file.path().parent_path()).string();
 							ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 						}
-						ImGui::Separator();
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FileDelete"))) {
-							s_PendingDeletePath     = file.path().string();
-							s_PendingDeleteIsFolder = false;
-							s_ShowDeleteConfirm     = true;
-							ImGui::OpenPopup("DeleteConfirmPopup");
+						if (!browsingEngineAssets) {
+							ImGui::Separator();
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+							if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Delete", "FileDelete"))) {
+								s_PendingDeletePath     = file.path().string();
+								s_PendingDeleteIsFolder = false;
+								s_ShowDeleteConfirm     = true;
+								ImGui::OpenPopup("DeleteConfirmPopup");
+							}
+							ImGui::PopStyleColor();
 						}
-						ImGui::PopStyleColor();
 						ImGui::EndPopup();
 					}
 
@@ -1943,23 +2059,21 @@ namespace Orion {
 
 			// ---------- Right-click on empty space: "Create" context menu ----------
 			if (ImGui::BeginPopupContextWindow("AssetBrowserContextMenu", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
-				if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("New", "NewAsset"))) {
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Folder", "NewFolder"))) {
-						createNewFolder();
+				if (!browsingEngineAssets) {
+					if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("New", "NewAsset"))) {
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Folder", "NewFolder")))
+							createNewFolder();
+						ImGui::Separator();
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Scene (.scene)", "NewScene")))
+							createNewScene();
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Material (.mtl)", "NewMaterial")))
+							createNewMaterial();
+						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Lua Script (.lua)", "NewScript")))
+							createNewScript();
+						ImGui::EndMenu();
 					}
 					ImGui::Separator();
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Scene (.scene)", "NewScene"))) {
-						createNewScene();
-					}
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Material (.mtl)", "NewMaterial"))) {
-						createNewMaterial();
-					}
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Lua Script (.lua)", "NewScript"))) {
-						createNewScript();
-					}
-					ImGui::EndMenu();
 				}
-				ImGui::Separator();
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Show in Explorer", "ShowInExplorerAsset"))) {
 					std::string absPath = fs::absolute(currentPath).string();
 					ShellExecuteA(NULL, "explore", absPath.c_str(), NULL, NULL, SW_SHOWNORMAL);

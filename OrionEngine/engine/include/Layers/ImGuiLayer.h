@@ -46,6 +46,11 @@ namespace Orion {
 		// Show a brief toast message overlaid on the viewport (fades out after `duration` seconds).
 		static void ShowNotification(const std::string& message, float duration = 3.0f);
 
+		// Open a native OS Save File dialog filtered to .scene files.
+		// Returns the chosen absolute path, or empty string if cancelled.
+		static std::string ShowSaveFileDialog(const std::string& defaultDir = "",
+		                                       const std::string& defaultName = "untitled");
+
 		static ImVec2 GetViewportMin() { return s_ViewportImageMin; }
 		static ImVec2 GetViewportMax() { return s_ViewportImageMax; }
 

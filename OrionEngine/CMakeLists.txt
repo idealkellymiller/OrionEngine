@@ -135,6 +135,7 @@ project(OrionEngine LANGUAGES CXX C)
             Lua
             gettext_intl
             Jolt
+            comdlg32   # native Windows file dialogs (GetSaveFileName / GetOpenFileName)
         )
 
         get_target_property(OUT_DEFS Engine COMPILE_DEFINITIONS)

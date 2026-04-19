@@ -3,11 +3,11 @@
     {
       "id": 1,
       "material": {
-        "mtl": "materials/stone.mtl",
+        "mtl": "engine://materials/stone.mtrl",
         "name": "stone"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "engine://primitives/cube.obj"
       },
       "name": "Cube",
       "script": {
@@ -49,11 +49,11 @@
       },
       "id": 2,
       "material": {
-        "mtl": "materials/default.mtl",
+        "mtl": "engine://materials/default.mtrl",
         "name": "default"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "engine://primitives/cube.obj"
       },
       "name": "Floor",
       "rigidbody": {
@@ -87,7 +87,7 @@
     {
       "id": 3,
       "material": {
-        "mtl": "materials/glass.mtl",
+        "mtl": "engine://materials/glass.mtrl",
         "name": "glass"
       },
       "mesh": {
@@ -156,9 +156,9 @@
       "name": "Cubert",
       "transform": {
         "position": [
-          3.9306249618530273,
+          4.387341499328613,
           3.7170767784118652,
-          -0.23397912085056305
+          1.0661087036132813
         ],
         "rotation": [
           -1.5707963705062866,
@@ -183,14 +183,14 @@
         "offset": [
           0.0,
           0.0,
-          1.0
+          0.0
         ],
         "shape": 1,
         "sphereRadius": 1.2999999523162842
       },
       "id": 9,
       "material": {
-        "mtl": "materials/stone.mtl",
+        "mtl": "engine://materials/stone.mtrl",
         "name": "stone"
       },
       "mesh": {
@@ -250,7 +250,7 @@
         "name": "green"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "engine://primitives/cube.obj"
       },
       "name": "SCUBA",
       "rigidbody": {
@@ -297,9 +297,9 @@
       },
       "transform": {
         "position": [
-          8.066082954406738,
-          1.5887929201126099,
-          -9.20009994506836
+          5.655409336090088,
+          4.676852226257324,
+          -6.9465789794921875
         ],
         "rotation": [
           0.0,
@@ -316,11 +316,11 @@
     {
       "id": 13,
       "material": {
-        "mtl": "materials/default.mtl",
+        "mtl": "engine://materials/default.mtrl",
         "name": "default"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "engine://primitives/cube.obj"
       },
       "name": "Roof",
       "transform": {
@@ -412,7 +412,7 @@
         "name": "red"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "engine://primitives/cube.obj"
       },
       "name": "SCUBA (Copy)",
       "script": {
@@ -439,17 +439,17 @@
     {
       "id": 19,
       "material": {
-        "mtl": "materials/default.mtl",
+        "mtl": "engine://materials/default.mtrl",
         "name": "default"
       },
       "mesh": {
-        "path": "models/cube.obj"
+        "path": "engine://primitives/cube.obj"
       },
       "name": "Cube",
       "transform": {
         "position": [
-          0.0,
-          4.829744815826416,
+          -2.2409303188323975,
+          6.0753397941589355,
           -9.060171127319336
         ],
         "rotation": [
@@ -473,7 +473,7 @@
         "pitch": 1.0,
         "playOnStart": true,
         "spatial": true,
-        "volume": 1.0
+        "volume": 10.0
       },
       "id": 21,
       "name": "FAH",
@@ -492,6 +492,34 @@
           1.0,
           1.0,
           1.0
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "material": {
+        "mtl": "engine://materials/glass.mtrl",
+        "name": "glass"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "Bubble",
+      "transform": {
+        "position": [
+          1.3454389572143555,
+          5.259145736694336,
+          -5.198929786682129
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          4.260000228881836,
+          4.260000228881836,
+          4.260000228881836
         ]
       }
     }

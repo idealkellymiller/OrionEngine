@@ -98,6 +98,14 @@ Section "OrionEngine Editor (required)" SecCore
     File "..\engine\shaders\Gradient.frag"
     File "..\engine\shaders\Gizmo.vert"
     File "..\engine\shaders\Gizmo.frag"
+    File "..\engine\shaders\ToneMap.vert"
+    File "..\engine\shaders\ToneMap.frag"
+    File "..\engine\shaders\Wireframe.vert"
+    File "..\engine\shaders\Wireframe.frag"
+
+    ; --- Default project folder (always present so the editor has a valid startup state) ---
+    SetOutPath "$INSTDIR\editor\assets"
+    File /nonfatal "..\editor\assets\project.settings"
 
     ; --- Engine built-in assets ---
     SetOutPath "$INSTDIR\engine\engineAssets\materials"

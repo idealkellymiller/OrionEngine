@@ -246,8 +246,8 @@
       },
       "id": 10,
       "material": {
-        "mtl": "materials/green.mtl",
-        "name": "green"
+        "mtl": "materials/orionSymbol.mtl",
+        "name": "orionSymbol"
       },
       "mesh": {
         "path": "engine://primitives/cube.obj"
@@ -357,9 +357,9 @@
       },
       "transform": {
         "position": [
-          -6.419719219207764,
-          2.047795534133911,
-          -6.130831241607666
+          -2.4683773517608643,
+          2.911886215209961,
+          -4.02437162399292
         ],
         "rotation": [
           0.0,

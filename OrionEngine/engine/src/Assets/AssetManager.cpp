@@ -33,6 +33,13 @@ namespace Orion {
     std::unordered_map<AssetID, AudioClipAsset> AssetManager::m_AudioClipAssets;
 
 
+    // File-local alias — delegates to the member defined in the header so
+    // behaviour is identical in both header-inline lookups and .cpp load functions.
+    static std::string NormalizePath(const std::string& path)
+    {
+        return AssetManager::NormalizePlainPath(path);
+    }
+
     // Helper: is this extension a supported image format?
     static bool IsTextureExtension(const std::string& ext)
     {
@@ -144,19 +151,25 @@ namespace Orion {
 
     std::string AssetManager::ToSceneRef(const std::string& absPath)
     {
-        // Prefer engine assets prefix first (so engine assets under a sub-path of
-        // the user assets folder still get the correct prefix).
-        if (!m_EngineAssetsFolderPath.empty() && absPath.find(m_EngineAssetsFolderPath) == 0) {
-            std::string rel = absPath.substr(m_EngineAssetsFolderPath.size());
+        // Normalize so the comparison works regardless of how the caller constructed
+        // the path (mixed separators, relative segments, etc.)
+        std::string norm = NormalizePath(absPath);
+
+        std::string engRoot  = m_EngineAssetsFolderPath.empty() ? "" : NormalizePath(m_EngineAssetsFolderPath);
+        std::string userRoot = m_AssetsFolderPath.empty()       ? "" : NormalizePath(m_AssetsFolderPath);
+
+        // Prefer engine assets prefix first
+        if (!engRoot.empty() && norm.find(engRoot) == 0) {
+            std::string rel = norm.substr(engRoot.size());
             std::replace(rel.begin(), rel.end(), '\\', '/');
             return "engine://" + rel;
         }
-        if (!m_AssetsFolderPath.empty() && absPath.find(m_AssetsFolderPath) == 0) {
-            std::string rel = absPath.substr(m_AssetsFolderPath.size());
+        if (!userRoot.empty() && norm.find(userRoot) == 0) {
+            std::string rel = norm.substr(userRoot.size());
             std::replace(rel.begin(), rel.end(), '\\', '/');
             return rel;
         }
-        return absPath;
+        return norm;
     }
 
     std::string AssetManager::FromSceneRef(const std::string& ref)
@@ -185,18 +198,20 @@ namespace Orion {
 
     void AssetManager::LoadMTRLFile(const std::string& mtrlPath)
     {
-        std::ifstream file(mtrlPath);
+        const std::string normMtrlPath = NormalizePath(mtrlPath);
+
+        std::ifstream file(normMtrlPath);
         if (!file.is_open()) {
-            std::cout << "[Assets] Could not open .mtrl: " << mtrlPath << "\n";
+            std::cout << "[Assets] Could not open .mtrl: " << normMtrlPath << "\n";
             return;
         }
 
         // One .mtrl = one material, named after the file stem
-        fs::path p(mtrlPath);
+        fs::path p(normMtrlPath);
         std::string matName = p.stem().string();
-        std::string matKey  = mtrlPath + "::" + matName;
+        std::string matKey  = normMtrlPath + "::" + matName;
 
-        if (m_MaterialPathToID.find(matKey) != m_MaterialPathToID.end())
+        if (m_MaterialPathToID.count(matKey))
             return; // already loaded
 
         std::string diffuseTexRelPath;
@@ -228,12 +243,13 @@ namespace Orion {
         // Resolve texture path
         std::string resolvedTexPath;
         if (!diffuseTexRelPath.empty()) {
-            // Try absolute first, then relative to engine assets, then user assets
+            // Try absolute first, then relative to the .mtrl file's directory,
+            // then engine/user asset folders.
             if (fs::exists(diffuseTexRelPath)) {
                 resolvedTexPath = diffuseTexRelPath;
             } else {
                 // Try relative to the .mtrl file's directory
-                fs::path mtrlDir = p.parent_path();
+                fs::path mtrlDir = fs::path(normMtrlPath).parent_path();
                 fs::path candidate = mtrlDir / diffuseTexRelPath;
                 if (fs::exists(candidate)) {
                     resolvedTexPath = candidate.string();
@@ -248,6 +264,10 @@ namespace Orion {
                     if (fs::exists(userPath)) resolvedTexPath = userPath;
                 }
             }
+
+            // Normalize so the key always matches what LoadTexture stores
+            if (!resolvedTexPath.empty())
+                resolvedTexPath = NormalizePath(resolvedTexPath);
 
             if (!resolvedTexPath.empty() && GetTextureID(resolvedTexPath) == INVALID_ASSET_ID)
                 LoadTexture(resolvedTexPath);
@@ -323,40 +343,39 @@ namespace Orion {
 
     void AssetManager::LoadMesh(const std::string filePath)
     {
+        const std::string normPath = NormalizePath(filePath);
+
         // Avoid duplicate loads
-        auto existing = m_MeshPathToID.find(filePath);
-        if (existing != m_MeshPathToID.end())
+        if (m_MeshPathToID.count(normPath))
             return;
 
         // Use the full OBJ loader to get geometry + material refs
         OBJResult objResult;
-        if (!OBJLoader::Load(filePath, objResult)) {
-            std::cout << "Failed to parse OBJ: " << filePath << "\n";
+        if (!OBJLoader::Load(normPath, objResult)) {
+            std::cout << "Failed to parse OBJ: " << normPath << "\n";
             return;
         }
 
         std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
         if (!mesh->Create(objResult.vertices, objResult.indices)) {
-            std::cout << "Failed to create mesh: " << filePath << "\n";
+            std::cout << "Failed to create mesh: " << normPath << "\n";
             return;
         }
 
         AssetID assetID = m_NextAssetID++;
 
         MeshAsset asset;
-        asset.assetID = assetID;
-        asset.filePath = filePath;
+        asset.assetID  = assetID;
+        asset.filePath = normPath;
+        asset.name     = fs::path(normPath).stem().string();
 
-        std::filesystem::path path(filePath);
-        asset.name = path.stem().string();
+        m_MeshAssets[assetID]    = asset;
+        m_LoadedMeshes[assetID]  = mesh;
+        m_MeshPathToID[normPath] = assetID;
 
-        m_MeshAssets[assetID] = asset;
-        m_LoadedMeshes[assetID] = mesh;
-        m_MeshPathToID[filePath] = assetID;
-
-        std::cout << "OBJ loaded to AssetID: " << assetID << " --- " << filePath << "\n"
+        std::cout << "OBJ loaded to AssetID: " << assetID << " --- " << normPath << "\n"
             << " --- Vertices: " << objResult.vertices.size() << "\n"
-            << " --- Indices: " << objResult.indices.size() << "\n";
+            << " --- Indices:  " << objResult.indices.size() << "\n";
 
         // Auto-import materials from the .mtl file referenced by this OBJ
         if (!objResult.mtlLibPath.empty())
@@ -365,31 +384,30 @@ namespace Orion {
 
     void AssetManager::LoadTexture(const std::string filePath)
     {
+        const std::string normPath = NormalizePath(filePath);
+
         // Avoid duplicate loads
-        auto existing = m_TexturePathToID.find(filePath);
-        if (existing != m_TexturePathToID.end())
+        if (m_TexturePathToID.count(normPath))
             return;
 
         std::shared_ptr<Texture> texture = std::make_shared<Texture>();
-
-        if (!texture->LoadFromFile(filePath)) {
-            std::cout << "Failed to load texture: " << filePath << "\n";
+        if (!texture->LoadFromFile(normPath)) {
+            std::cout << "Failed to load texture: " << normPath << "\n";
             return;
         }
 
         AssetID assetID = m_NextAssetID++;
 
         TextureAsset asset;
-        asset.assetID = assetID;
-        asset.filePath = filePath;
-        std::filesystem::path path(filePath);
-        asset.name = path.stem().string();
+        asset.assetID  = assetID;
+        asset.filePath = normPath;
+        asset.name     = fs::path(normPath).stem().string();
 
-        m_TextureAssets[assetID] = asset;
-        m_LoadedTextures[assetID] = texture;
-        m_TexturePathToID[filePath] = assetID;
+        m_TextureAssets[assetID]    = asset;
+        m_LoadedTextures[assetID]   = texture;
+        m_TexturePathToID[normPath] = assetID;
 
-        std::cout << "Texture loaded to AssetID: " << assetID << " --- " << filePath << "\n";
+        std::cout << "Texture loaded to AssetID: " << assetID << " --- " << normPath << "\n";
     }
 
     void AssetManager::LoadMaterial(const std::string filePath)
@@ -410,16 +428,17 @@ namespace Orion {
 
     void AssetManager::LoadMTLFile(const std::string& mtlPath)
     {
+        const std::string normMtlPath = NormalizePath(mtlPath);
+
         std::vector<MTLMaterial> mtlMaterials;
-        if (!MTLLoader::Load(mtlPath, mtlMaterials))
+        if (!MTLLoader::Load(normMtlPath, mtlMaterials))
             return;
 
         // For each material in the .mtl, auto-load its textures and create a Material asset
         for (const MTLMaterial& mtlMat : mtlMaterials)
         {
-            // Build a virtual path key: "<mtl_path>::<material_name>"
-            // This allows multiple .mtl files to have materials with the same name
-            std::string matKey = mtlPath + "::" + mtlMat.name;
+            // Build a virtual path key: "<abs_mtl_path>::<material_name>"
+            std::string matKey = normMtlPath + "::" + mtlMat.name;
 
             // Skip if already loaded
             if (m_MaterialPathToID.find(matKey) != m_MaterialPathToID.end())
@@ -429,23 +448,32 @@ namespace Orion {
             std::string resolvedTexPath = mtlMat.diffuseMap;
             if (!resolvedTexPath.empty()) {
                 // If the path from MTLLoader isn't absolute or doesn't exist,
-                // try resolving relative to the user assets folder, then engine assets.
+                // try resolving relative to the .mtl directory first, then asset folders.
                 if (!std::filesystem::exists(resolvedTexPath)) {
-                    std::string assetsRelative = m_AssetsFolderPath + resolvedTexPath;
-                    std::replace(assetsRelative.begin(), assetsRelative.end(), '/', '\\');
-                    if (std::filesystem::exists(assetsRelative)) {
-                        resolvedTexPath = assetsRelative;
-                    } else if (!m_EngineAssetsFolderPath.empty()) {
-                        std::string engRelative = m_EngineAssetsFolderPath + resolvedTexPath;
-                        std::replace(engRelative.begin(), engRelative.end(), '/', '\\');
-                        if (std::filesystem::exists(engRelative))
-                            resolvedTexPath = engRelative;
+                    // Try relative to the .mtl file's own directory (most common MTL convention)
+                    fs::path mtlDir = fs::path(normMtlPath).parent_path();
+                    fs::path candidate = mtlDir / resolvedTexPath;
+                    if (fs::exists(candidate)) {
+                        resolvedTexPath = candidate.string();
+                    } else {
+                        std::string assetsRelative = m_AssetsFolderPath + resolvedTexPath;
+                        std::replace(assetsRelative.begin(), assetsRelative.end(), '/', '\\');
+                        if (std::filesystem::exists(assetsRelative)) {
+                            resolvedTexPath = assetsRelative;
+                        } else if (!m_EngineAssetsFolderPath.empty()) {
+                            std::string engRelative = m_EngineAssetsFolderPath + resolvedTexPath;
+                            std::replace(engRelative.begin(), engRelative.end(), '/', '\\');
+                            if (std::filesystem::exists(engRelative))
+                                resolvedTexPath = engRelative;
+                        }
                     }
                 }
 
-                // Check if already loaded under any path
-                AssetID existingTex = GetTextureID(resolvedTexPath);
-                if (existingTex == INVALID_ASSET_ID)
+                // Normalize so the key always matches what LoadTexture stores
+                if (!resolvedTexPath.empty())
+                    resolvedTexPath = NormalizePath(resolvedTexPath);
+
+                if (!resolvedTexPath.empty() && GetTextureID(resolvedTexPath) == INVALID_ASSET_ID)
                     LoadTexture(resolvedTexPath);
             }
 
@@ -541,18 +569,19 @@ namespace Orion {
                 file << "Ns " << asset->specularShininess << "\n";
                 file << "d " << asset->colorTint.a << "\n";
 
-                // Write texture reference if one is assigned
+                // Write texture reference relative to the .mtl file's directory.
+                // fs::relative handles any layout including sibling folders
+                // (e.g. ../textures/bricks.png), which is standard MTL practice.
                 if (asset->diffuseTexture.assetID != INVALID_ASSET_ID && !asset->diffuseTexture.filePath.empty()) {
-                    // Try to make path relative to the .mtl file's directory
                     fs::path texAbsPath(asset->diffuseTexture.filePath);
                     fs::path mtlDir = fs::path(mtlPath).parent_path();
-                    std::string texRef = asset->diffuseTexture.filePath;
 
-                    // If both are under the assets folder, make relative to .mtl dir
-                    auto relPath = fs::relative(texAbsPath, mtlDir);
-                    if (!relPath.empty() && relPath.string().find("..") != 0) {
-                        texRef = relPath.string();
-                    }
+                    std::error_code ec;
+                    fs::path relPath = fs::relative(texAbsPath, mtlDir, ec);
+                    std::string texRef = (!ec && !relPath.empty())
+                        ? relPath.string()
+                        : asset->diffuseTexture.filePath;   // fallback: absolute (different drive, etc.)
+
                     std::replace(texRef.begin(), texRef.end(), '\\', '/');
                     file << "map_Kd " << texRef << "\n";
                 }
@@ -565,14 +594,16 @@ namespace Orion {
 
     void AssetManager::LoadAudioClip(const std::string& filePath)
     {
+        const std::string normPath = NormalizePath(filePath);
+
         // Avoid duplicate loads
-        if (m_AudioClipPathToID.find(filePath) != m_AudioClipPathToID.end())
+        if (m_AudioClipPathToID.count(normPath))
             return;
 
         // Only register the metadata here.
         // The actual decoding happens inside AudioEngine via miniaudio.
-        if (!std::filesystem::exists(filePath)) {
-            std::cout << "[Assets] Audio clip not found: " << filePath << "\n";
+        if (!std::filesystem::exists(normPath)) {
+            std::cout << "[Assets] Audio clip not found: " << normPath << "\n";
             return;
         }
 
@@ -580,13 +611,13 @@ namespace Orion {
 
         AudioClipAsset asset;
         asset.assetID  = assetID;
-        asset.filePath = filePath;
-        asset.name     = std::filesystem::path(filePath).stem().string();
+        asset.filePath = normPath;
+        asset.name     = fs::path(normPath).stem().string();
 
-        m_AudioClipAssets[assetID]    = asset;
-        m_AudioClipPathToID[filePath] = assetID;
+        m_AudioClipAssets[assetID]     = asset;
+        m_AudioClipPathToID[normPath]  = assetID;
 
-        std::cout << "[Assets] Audio clip registered: AssetID " << assetID << " --- " << filePath << "\n";
+        std::cout << "[Assets] Audio clip registered: AssetID " << assetID << " --- " << normPath << "\n";
     }
 
     void AssetManager::PrintMatsPathToID()

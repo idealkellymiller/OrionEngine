@@ -5,4 +5,4 @@ Kd 1 1 1
 Ks 0.117 0.117 0.117
 Ns 24
 d 1
-map_Kd ../editor/assets/textures/Skull.jpg
+map_Kd ../textures/Skull.jpg

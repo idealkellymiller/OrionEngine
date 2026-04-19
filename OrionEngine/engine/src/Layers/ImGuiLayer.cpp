@@ -1235,7 +1235,7 @@ namespace Orion {
 					std::string selExt = selPath.extension().string();
 					for (char& c : selExt) c = (char)std::tolower((unsigned char)c);
 
-					if (selExt == ".mtl") {
+					if (selExt == ".mtl" || selExt == ".mtrl") {
 						ImGui::Text("Material: %s", selPath.filename().string().c_str());
 						ImGui::Separator();
 
@@ -1706,8 +1706,10 @@ namespace Orion {
 			    ? AssetManager::GetEngineAssetsFolderPath()
 			    : assetsRoot;
 
-			// Ensure root path uses consistent separators
-			fs::path rootPath = fs::path(activeRoot).make_preferred();
+			// Ensure root path is absolute with consistent separators so all paths
+			// derived from it (m_AssetBrowserCurrentDir, m_SelectedAssetPath) match
+			// the absolute keys stored by AssetManager after normalization.
+			fs::path rootPath = fs::absolute(fs::path(activeRoot)).make_preferred();
 
 			// Initialise current directory to root on first open
 			if (m_AssetBrowserCurrentDir.empty())
@@ -1978,9 +1980,10 @@ namespace Orion {
 					bool clicked = ImGui::Selectable(label.c_str(), isSelected, ImGuiSelectableFlags_AllowDoubleClick);
 					ImGui::PopStyleColor();
 
-					// Single click selects the asset (for inspector editing)
+					// Single click selects the asset (for inspector editing).
+					// Store as normalized absolute path so it matches AssetManager keys.
 					if (clicked && !ImGui::IsMouseDoubleClicked(0)) {
-						m_SelectedAssetPath = file.path().string();
+						m_SelectedAssetPath = AssetManager::NormalizePlainPath(file.path().string());
 						EditorLayer::SetSelectedEntity(INVALID_ENTITY);
 					}
 
@@ -2108,11 +2111,11 @@ namespace Orion {
 
 							// If we renamed the current directory, update the path
 							if (m_AssetBrowserCurrentDir == oldPath.string())
-								m_AssetBrowserCurrentDir = newPath.string();
+								m_AssetBrowserCurrentDir = AssetManager::NormalizePlainPath(newPath.string());
 
 							// If we renamed a selected asset, update the selection
-							if (m_SelectedAssetPath == oldPath.string())
-								m_SelectedAssetPath = newPath.string();
+							if (m_SelectedAssetPath == AssetManager::NormalizePlainPath(oldPath.string()))
+								m_SelectedAssetPath = AssetManager::NormalizePlainPath(newPath.string());
 
 							// If it's a .mtl file, update newmtl tags and AssetManager keys
 							std::string ext = newPath.extension().string();

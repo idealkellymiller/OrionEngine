@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
+#include <filesystem>
 
 #include "Assets/AssetTypes.h"
 #include "Renderer/Mesh.h"
@@ -48,19 +49,25 @@ namespace Orion {
         static void LoadAudioClip(const std::string& filePath);
 
         static AssetID GetMeshID(const std::string filePath) {
-            auto it = m_MeshPathToID.find(filePath);
+            auto it = m_MeshPathToID.find(NormalizePlainPath(filePath));
             return (it != m_MeshPathToID.end()) ? it->second : INVALID_ASSET_ID;
         }
         static AssetID GetTextureID(const std::string filePath) {
-            auto it = m_TexturePathToID.find(filePath);
+            auto it = m_TexturePathToID.find(NormalizePlainPath(filePath));
             return (it != m_TexturePathToID.end()) ? it->second : INVALID_ASSET_ID;
         }
-        static AssetID GetMaterialID(const std::string filePath) {
-            auto it = m_MaterialPathToID.find(filePath);
+        // Material keys have the form "<abs_file_path>::<name>".
+        // Normalize the file-path portion only; leave the name part untouched.
+        static AssetID GetMaterialID(const std::string key) {
+            size_t sep = key.find("::");
+            std::string normKey = (sep != std::string::npos)
+                ? NormalizePlainPath(key.substr(0, sep)) + "::" + key.substr(sep + 2)
+                : key;
+            auto it = m_MaterialPathToID.find(normKey);
             return (it != m_MaterialPathToID.end()) ? it->second : INVALID_ASSET_ID;
         }
         static AssetID GetAudioClipID(const std::string& filePath) {
-            auto it = m_AudioClipPathToID.find(filePath);
+            auto it = m_AudioClipPathToID.find(NormalizePlainPath(filePath));
             return (it != m_AudioClipPathToID.end()) ? it->second : INVALID_ASSET_ID;
         }
         static std::string GetAudioClipPath(AssetID id) {
@@ -123,6 +130,14 @@ namespace Orion {
         // Parse a custom .mtrl file (engine material format) and register a Material asset.
         static void LoadMTRLFile(const std::string& mtrlPath);
 
+        // Make a plain file path absolute and convert separators to OS-native form.
+        // Used in GetXxxID lookups and Load* functions so the map key is always
+        // the same string regardless of how the caller constructed the path.
+        // Do NOT call this on material keys ("path::name") — only on bare file paths.
+        static std::string NormalizePlainPath(const std::string& path) {
+            return std::filesystem::absolute(std::filesystem::path(path)).make_preferred().string();
+        }
+
     private:
         static std::string m_AssetsFolderPath;
         static std::string m_EngineAssetsFolderPath;
@@ -130,6 +145,8 @@ namespace Orion {
         // Shared folder-scanning implementation used by both LoadAssetsFolder
         // and LoadEngineAssetsFolder.
         static void LoadFolder(const std::string& folderPath);
+
+        
 
         static AssetID m_NextAssetID;
 

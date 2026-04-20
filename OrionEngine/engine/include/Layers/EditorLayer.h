@@ -31,6 +31,13 @@ namespace Orion {
 		static void SetPlayState(PlayState state) { s_PlayState = state; }
 		static bool IsPlaying() { return s_PlayState == PlayState::Playing; }
 
+		// Singleton accessor — set in constructor, valid for the lifetime of the layer.
+		static EditorLayer* Get() { return s_Instance; }
+
+		// Safe static wrappers — call via ImGuiLayer buttons, etc.
+		static void RequestEnterPlay() { if (s_Instance) s_Instance->EnterPlayMode(); }
+		static void RequestExitPlay()  { if (s_Instance) s_Instance->ExitPlayMode(); }
+
 		// Create an entity in the active scene for a built-in primitive.
 		// `name` is the display name ("Cube", "Sphere", …).
 		// `modelFileName` is the stem of the .obj under assets/models/ (e.g. "cube").
@@ -52,6 +59,7 @@ namespace Orion {
 		static EntityID s_ClipboardEntity;  // Last entity copied via Ctrl+C; source for Ctrl+V paste.
 		static GizmoMode s_GizmoMode;
 		static PlayState s_PlayState;
+		static EditorLayer* s_Instance;
 
 		static EditorCamera s_EditorCamera;
 

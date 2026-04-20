@@ -55,6 +55,18 @@ namespace Orion {
 	std::string ImGuiLayer::s_NotificationMessage;
 	float       ImGuiLayer::s_NotificationTimer = 0.0f;
 
+	std::vector<ImGuiLayer::ConsoleEntry> ImGuiLayer::s_ConsoleEntries;
+
+	void ImGuiLayer::AddConsoleMessage(ConsoleEntry::Level level, const char* source, const char* message)
+	{
+		s_ConsoleEntries.push_back({ level, source ? source : "", message ? message : "" });
+	}
+
+	void ImGuiLayer::ClearConsole()
+	{
+		s_ConsoleEntries.clear();
+	}
+
 	void ImGuiLayer::ShowNotification(const std::string& message, float duration)
 	{
 		s_NotificationMessage = message;
@@ -152,7 +164,6 @@ namespace Orion {
 			if (!assetsPath.empty()) {
 				static std::string iniPath = assetsPath + "imgui_layout.ini";
 				ImGui::GetIO().IniFilename = iniPath.c_str();
-				// Load the layout file if it exists
 				if (std::filesystem::exists(iniPath))
 					ImGui::LoadIniSettingsFromDisk(iniPath.c_str());
 				iniLoaded = true;
@@ -171,6 +182,7 @@ namespace Orion {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
 		ImGui::DockSpaceOverViewport();
 
 		static bool show = true;
@@ -375,13 +387,13 @@ namespace Orion {
 				CHECKED_MENU_ITEM(IMGUI_ELEMENT_TITLE("Controls", "ControlsCheck"), showControlsModule);
 				ImGui::Separator();
 				if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Reset Layout", "ResetLayout"))) {
-					// Delete the saved layout file. Layout resets on next app restart.
 					ImGuiIO& menuIO = ImGui::GetIO();
 					if (menuIO.IniFilename)
 						std::filesystem::remove(menuIO.IniFilename);
 				}
 				ImGui::EndMenu();
 			}
+
 			ImGui::EndMainMenuBar();
 		}
 
@@ -1336,113 +1348,149 @@ namespace Orion {
 
 	void ImGuiLayer::ShowViewportModule()
 	{
-		if (showViewportModule)
+		if (!showViewportModule)
+			return;
+
+		// Zero window padding so the toolbar/image sit flush against the panel edges.
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		bool windowOpen = ImGui::Begin(IMGUI_ELEMENT_TITLE("Viewport", "Viewport"), &showViewportModule);
+		ImGui::PopStyleVar();
+
+		if (windowOpen)
 		{
+			s_ViewportHovered = ImGui::IsWindowHovered();
+			s_ViewportFocused = ImGui::IsWindowFocused();
 
-			static ImVec2 viewportSize = ImVec2(0.0f, 0.0f);
-			//bool viewportHovered = false;
-			//bool viewportFocused = false;
+			ImDrawList* drawList   = ImGui::GetWindowDrawList();
+			float       contentW   = ImGui::GetContentRegionAvail().x;
 
-			if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Viewport", "Viewport"), &showViewportModule))
-			{
-				s_ViewportHovered = ImGui::IsWindowHovered();
-				s_ViewportFocused = ImGui::IsWindowFocused();
+			// ================================================================
+			// Viewport Toolbar
+			// ================================================================
+			const float  tbH      = 28.0f;
+			const float  btnPadX  =  6.0f;  // padding between toolbar edge and first button
+			ImVec2       tbMin    = ImGui::GetCursorScreenPos();
+			ImVec2       tbMax    = ImVec2(tbMin.x + contentW, tbMin.y + tbH);
 
-				// Viewport window
-				viewportSize = ImGui::GetContentRegionAvail();
+			// Toolbar background + bottom border
+			drawList->AddRectFilled(tbMin, tbMax, IM_COL32(28, 28, 28, 235));
+			drawList->AddLine(ImVec2(tbMin.x, tbMax.y - 1), ImVec2(tbMax.x, tbMax.y - 1), IM_COL32(55, 55, 55, 255));
 
-				// Prevent weird zero-cases when minimized/collapsed
-				if (viewportSize.x < 1.0f) viewportSize.x = 1.0f;
-				if (viewportSize.y < 1.0f) viewportSize.y = 1.0f;
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 3.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,  ImVec2(4.0f, 0.0f));
 
-				// Resize the framebuffer if panel size changed
-				// TODO: make viewportframebuffer static variable that is accessed through renderer facade
-				Renderer::GetViewportFramebuffer()->Resize(
-					static_cast<unsigned int>(viewportSize.x),
-					static_cast<unsigned int>(viewportSize.y)
-				);
+			// Vertically centre all widgets in the toolbar
+			float btnH = ImGui::GetFrameHeight();
+			float btnY = tbMin.y + (tbH - btnH) * 0.5f;
 
+			// ---- Left group: Lit / Wireframe ----
+			ImGui::SetCursorScreenPos(ImVec2(tbMin.x + btnPadX, btnY));
+			ViewMode currentMode = Renderer::GetViewMode();
 
-				// Get the size available inside this window for content
-				// Save image rect before drawing.
-				s_ViewportImageMin = ImGui::GetCursorScreenPos();
-				ImDrawList* drawlist = ImGui::GetWindowDrawList();
+			auto viewBtn = [&](const char* label, ViewMode mode) {
+				bool active = (currentMode == mode);
+				ImVec4 col = active
+					? ImVec4(0.26f, 0.59f, 0.98f, 0.90f)
+					: ImVec4(0.18f, 0.18f, 0.18f, 0.85f);
+				ImGui::PushStyleColor(ImGuiCol_Button,        col);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, active
+					? ImVec4(0.26f, 0.59f, 0.98f, 1.00f)
+					: ImVec4(0.28f, 0.28f, 0.28f, 1.00f));
+				if (ImGui::Button(label))
+					Renderer::SetViewMode(mode);
+				ImGui::PopStyleColor(2);
+			};
+			viewBtn(IMGUI_ELEMENT_TITLE("Lit",       "LitBtn"),       ViewMode::Lit);
+			ImGui::SameLine();
+			viewBtn(IMGUI_ELEMENT_TITLE("Wireframe", "WireframeBtn"), ViewMode::Wireframe);
 
-				// Show the framebuffer's color texture inside ImGui
-				// ImGui uses ImTextureID, and for OpenGL that is just the texture handle cast.
-				// UVs are flipped vertically because OpenGL texture origin is bottom-left,
-				// while ImGui expects top-left style display.
-				ImGui::Image(
-					(ImTextureID)(intptr_t)Renderer::GetViewportFramebuffer()->GetColorAttachment(),
-					ImVec2(viewportSize.x, viewportSize.y),
-					ImVec2(0, 1),   // UV top-left
-					ImVec2(1, 0)    // UV bottom-right
-				);
+			// ---- Centre group: Play / Stop ----
+			bool  playing   = EditorLayer::IsPlaying();
+			float playBtnW  = 54.0f;
+			float groupW    = playBtnW * 2.0f + 4.0f;  // two buttons + 4 px gap
+			float centerX   = tbMin.x + (contentW - groupW) * 0.5f;
+			ImGui::SetCursorScreenPos(ImVec2(centerX, btnY));
 
-				// IMPORTANT for picking
-				// Top-left of where the image will be drawn in screen coordinates
-				s_ViewportImageMax = ImVec2(
-					s_ViewportImageMin.x + viewportSize.x,
-					s_ViewportImageMin.y + viewportSize.y
-				);
+			ImGui::PushStyleColor(ImGuiCol_Button,
+				playing ? ImVec4(0.18f, 0.55f, 0.18f, 1.00f)
+				        : ImVec4(0.22f, 0.48f, 0.22f, 0.80f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.65f, 0.25f, 1.0f));
+			if (ImGui::Button(_("Play"), ImVec2(playBtnW, 0.0f)) && !playing)
+				EditorLayer::RequestEnterPlay();
+			ImGui::PopStyleColor(2);
 
-				// --- View mode buttons (top-left overlay) ---
-				{
-					ImVec2 btnPos = ImVec2(s_ViewportImageMin.x + 8.0f, s_ViewportImageMin.y + 8.0f);
-					ImGui::SetCursorScreenPos(btnPos);
+			ImGui::SameLine(0.0f, 4.0f);
 
-					ViewMode currentMode = Renderer::GetViewMode();
+			ImGui::PushStyleColor(ImGuiCol_Button,
+				playing ? ImVec4(0.65f, 0.18f, 0.18f, 1.00f)
+				        : ImVec4(0.30f, 0.15f, 0.15f, 0.50f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.22f, 0.22f, 1.0f));
+			if (ImGui::Button(_("Stop"), ImVec2(playBtnW, 0.0f)) && playing)
+				EditorLayer::RequestExitPlay();
+			ImGui::PopStyleColor(2);
 
-					// Highlight the active button
-					auto modeButton = [&](const char* label, ViewMode mode) {
-						bool active = (currentMode == mode);
-						if (active) {
-							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.8f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.0f));
-						}
-						else {
-							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.7f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
-						}
-						if (ImGui::Button(label, ImVec2(70, 22))) {
-							Renderer::SetViewMode(mode);
-						}
-						ImGui::PopStyleColor(2);
-						};
+			// ---- Right: FPS counter ----
+			std::string fpsText = std::format("FPS: {:.0f}", ImGui::GetIO().Framerate);
+			ImVec2 fpsSize = ImGui::CalcTextSize(fpsText.c_str());
+			ImVec2 fpsPos  = ImVec2(tbMax.x - fpsSize.x - 10.0f,
+			                        tbMin.y + (tbH - fpsSize.y) * 0.5f);
+			drawList->AddText(fpsPos, IM_COL32(170, 170, 170, 255), fpsText.c_str());
 
-					modeButton(IMGUI_ELEMENT_TITLE("Lit", "LitBtn"), ViewMode::Lit);
-					ImGui::SameLine();
-					modeButton(IMGUI_ELEMENT_TITLE("Wireframe", "WireframeBtn"), ViewMode::Wireframe);
-				}
+			ImGui::PopStyleVar(2);
 
-				// display rolling avg. framerate as overlay in top right corner
-				std::string framerateText = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
-				drawlist->AddText(ImVec2(s_ViewportImageMax.x - 80, s_ViewportImageMin.y), IM_COL32(255, 255, 255, 255), framerateText.c_str());
+			// Advance cursor to just below the toolbar so the image starts there.
+			ImGui::SetCursorScreenPos(ImVec2(tbMin.x, tbMax.y));
 
-				// --- Toast notification overlay (bottom-centre of viewport) ---
-				if (s_NotificationTimer > 0.0f) {
-					s_NotificationTimer -= ImGui::GetIO().DeltaTime;
+			// ================================================================
+			// Framebuffer Image
+			// ================================================================
+			ImVec2 imageSize = ImGui::GetContentRegionAvail();
+			if (imageSize.x < 1.0f) imageSize.x = 1.0f;
+			if (imageSize.y < 1.0f) imageSize.y = 1.0f;
 
-					// Fade out in the last 0.5 s
-					float alpha = glm::clamp(s_NotificationTimer / 0.5f, 0.0f, 1.0f);
-					ImU32 bgCol   = IM_COL32(30,  30,  30,  static_cast<int>(220 * alpha));
-					ImU32 txtCol  = IM_COL32(255, 255, 255, static_cast<int>(255 * alpha));
+			// Resize the framebuffer to match the actual image area (excludes toolbar).
+			Renderer::GetViewportFramebuffer()->Resize(
+				static_cast<unsigned int>(imageSize.x),
+				static_cast<unsigned int>(imageSize.y)
+			);
 
-					ImVec2 textSize = ImGui::CalcTextSize(s_NotificationMessage.c_str());
-					float  pad      = 10.0f;
-					float  vpCentreX = (s_ViewportImageMin.x + s_ViewportImageMax.x) * 0.5f;
-					float  y         = s_ViewportImageMax.y - textSize.y - pad * 3.0f;
-					ImVec2 bgMin = ImVec2(vpCentreX - textSize.x * 0.5f - pad, y - pad);
-					ImVec2 bgMax = ImVec2(vpCentreX + textSize.x * 0.5f + pad, y + textSize.y + pad);
+			// Record image rect for picking and overlay positioning.
+			s_ViewportImageMin = ImGui::GetCursorScreenPos();
 
-					drawlist->AddRectFilled(bgMin, bgMax, bgCol, 4.0f);
-					drawlist->AddText(ImVec2(bgMin.x + pad, y), txtCol, s_NotificationMessage.c_str());
-				}
+			// UVs flipped vertically: OpenGL origin is bottom-left; ImGui expects top-left.
+			ImGui::Image(
+				(ImTextureID)(intptr_t)Renderer::GetViewportFramebuffer()->GetColorAttachment(),
+				imageSize,
+				ImVec2(0, 1),
+				ImVec2(1, 0)
+			);
+
+			s_ViewportImageMax = ImVec2(
+				s_ViewportImageMin.x + imageSize.x,
+				s_ViewportImageMin.y + imageSize.y
+			);
+
+			// ---- Toast notification (bottom-centre of rendered image) ----
+			if (s_NotificationTimer > 0.0f) {
+				s_NotificationTimer -= ImGui::GetIO().DeltaTime;
+
+				float alpha  = glm::clamp(s_NotificationTimer / 0.5f, 0.0f, 1.0f);
+				ImU32 bgCol  = IM_COL32(30,  30,  30,  static_cast<int>(220 * alpha));
+				ImU32 txtCol = IM_COL32(255, 255, 255, static_cast<int>(255 * alpha));
+
+				ImVec2 textSize  = ImGui::CalcTextSize(s_NotificationMessage.c_str());
+				float  pad       = 10.0f;
+				float  vpCentreX = (s_ViewportImageMin.x + s_ViewportImageMax.x) * 0.5f;
+				float  y         = s_ViewportImageMax.y - textSize.y - pad * 3.0f;
+				ImVec2 bgMin = ImVec2(vpCentreX - textSize.x * 0.5f - pad, y - pad);
+				ImVec2 bgMax = ImVec2(vpCentreX + textSize.x * 0.5f + pad, y + textSize.y + pad);
+
+				drawList->AddRectFilled(bgMin, bgMax, bgCol, 4.0f);
+				drawList->AddText(ImVec2(bgMin.x + pad, y), txtCol, s_NotificationMessage.c_str());
 			}
-
-
-			ImGui::End();
 		}
+
+		ImGui::End();
 	}
 
 	// ================================================================
@@ -2240,53 +2288,69 @@ namespace Orion {
 
 	void ImGuiLayer::ShowConsoleModule()
 	{
-		if (showConsoleModule)
-		{
-			if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Console", "Console"), &showConsoleModule))
-			{
-				static ImGuiTextFilter filter;
-				filter.Draw("Search");
-				//const char* lines[] = { "aaa1.c", "bbb1.c", "ccc1.c", "aaa2.cpp", "bbb2.cpp", "ccc2.cpp", "abc.h", "hello, world" };
-				//for (int i = 0; i < IM_COUNTOF(lines); i++)
-				//	if (filter.PassFilter(lines[i]))
-				//		ImGui::BulletText("%s", lines[i]);
-				//ImGui::TreePop();
+		if (!showConsoleModule)
+			return;
 
-				if (ImGui::BeginTable("ConsoleOutputTable", 1))
+		if (ImGui::Begin(IMGUI_ELEMENT_TITLE("Console", "Console"), &showConsoleModule))
+		{
+			// --- Toolbar: filter + clear ---
+			static ImGuiTextFilter filter;
+			filter.Draw("##ConsoleFilter", 200.0f);
+			ImGui::SameLine();
+			if (ImGui::Button(_("Clear")))
+				ClearConsole();
+			ImGui::SameLine();
+			// Level toggles
+			static bool showTrace   = true;
+			static bool showWarning = true;
+			static bool showError   = true;
+			ImGui::Checkbox(_("Info"),    &showTrace);
+			ImGui::SameLine();
+			ImGui::Checkbox(_("Warning"), &showWarning);
+			ImGui::SameLine();
+			ImGui::Checkbox(_("Error"),   &showError);
+			ImGui::Separator();
+
+			// --- Scrolling log area ---
+			ImGui::BeginChild("##ConsoleScrollArea", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+			if (ImGui::BeginTable("ConsoleOutputTable", 1, ImGuiTableFlags_RowBg))
+			{
+				ImGui::TableSetupColumn("Output", ImGuiTableColumnFlags_WidthStretch);
+
+				for (const auto& entry : s_ConsoleEntries)
 				{
-					ImGui::TableSetupColumn("Output", ImGuiTableColumnFlags_WidthFixed);
+					// Level filter
+					if (entry.level == ConsoleEntry::Level::Trace   && !showTrace)   continue;
+					if (entry.level == ConsoleEntry::Level::Warning && !showWarning) continue;
+					if (entry.level == ConsoleEntry::Level::Error   && !showError)   continue;
+
+					// Text filter
+					std::string full = std::format("[{}] {}", entry.source, entry.message);
+					if (!filter.PassFilter(full.c_str())) continue;
 
 					ImGui::TableNextRow();
 					if (ImGui::TableSetColumnIndex(0))
 					{
-						ShowConsoleTraceOutput("TEST", "This is an example trace output.");
+						if (entry.level == ConsoleEntry::Level::Warning)
+							ShowConsoleWarningOutput(entry.source.c_str(), entry.message.c_str());
+						else if (entry.level == ConsoleEntry::Level::Error)
+							ShowConsoleErrorOutput(entry.source.c_str(), entry.message.c_str());
+						else
+							ShowConsoleTraceOutput(entry.source.c_str(), entry.message.c_str());
 					}
-
-					ImGui::TableNextRow();
-					if (ImGui::TableNextColumn())
-					{
-						ShowConsoleWarningOutput("TEST", "This is an example warning output.");
-					}
-
-					ImGui::TableNextRow();
-					if (ImGui::TableNextColumn())
-					{
-						ShowConsoleErrorOutput("TEST", "This is an example error output!");
-					}
-
-					for (int i = 0; i < 50; i++) {
-						ImGui::TableNextRow();
-						if (ImGui::TableNextColumn())
-						{
-							ShowConsoleTraceOutput("TEST", std::format("Output {}", i).c_str());
-						}
-					}
-
 				}
+
 				ImGui::EndTable();
 			}
-			ImGui::End();
+
+			// Auto-scroll to bottom when new messages arrive
+			if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+				ImGui::SetScrollHereY(1.0f);
+
+			ImGui::EndChild();
 		}
+		ImGui::End();
 	}
 
 	void ImGuiLayer::ShowControlsModule()
@@ -2296,13 +2360,17 @@ namespace Orion {
 		{
 			{_("Undo"), "CTRL + Z"},
 			{_("Redo"), "CTRL + Y"},
+			{_("Save"), "CTRL + S"},
+			{_("Save As"), "CTRL + SHIFT + S"},
 			{_("Rotate Viewport Angle"), "ALT + MMB"},
 			{_("Zoom In"), _("Mouse Scroll Down")},
 			{_("Zoom Out"),_("Mouse Scroll Up")},
 			{_("Create Camera From View"), "CTRL + SHIFT + C"},
-			{_("Move"),"W"},
-			{_("Rotate"),"E"},
-			{_("Scale"),"R"},
+			{_("Translate Gizmo"),"W  (or  1)"},
+			{_("Rotate Gizmo"),"E  (or  2)"},
+			{_("Scale Gizmo"),"R  (or  3)"},
+			{_("Focus Selected"),"F"},
+			{_("Play / Stop"),"P"},
 			{_("Duplicate"),"CTRL + D"},
 			{_("Delete"),"DELETE"}
 		};

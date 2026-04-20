@@ -161,6 +161,7 @@ SectionEnd
 ; Sample Project (optional)
 ; ---------------------------------------------------------------------------
 Section "Sample Project" SecSamples
+    ; Root assets (settings + scenes — not imgui_layout.ini, that is per-user state)
     SetOutPath "$INSTDIR\editor\assets"
     File /nonfatal "..\editor\assets\project.settings"
     File /nonfatal "..\editor\assets\*.scene"
@@ -176,6 +177,9 @@ Section "Sample Project" SecSamples
 
     SetOutPath "$INSTDIR\editor\assets\scripts"
     File /nonfatal "..\editor\assets\scripts\*.*"
+
+    SetOutPath "$INSTDIR\editor\assets\audio"
+    File /nonfatal "..\editor\assets\audio\*.*"
 SectionEnd
 
 ; ---------------------------------------------------------------------------
@@ -240,7 +244,7 @@ SectionEnd
 ; ---------------------------------------------------------------------------
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecCore}      "The OrionEngine editor, runtime, shaders, and built-in assets. (Required)"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecSamples}   "A sample project with demo scenes, models, textures, materials, and scripts."
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecSamples}   "A sample project with demo scenes, models, textures, materials, scripts, and audio files."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecVCRedist}  "Microsoft Visual C++ Runtime required to run the engine. Skip if already installed."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecFileAssoc} "Associate .scene files with OrionEngine so you can double-click to open them."
     !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop}   "Create a shortcut on the Desktop."

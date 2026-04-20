@@ -37,6 +37,7 @@ namespace Orion {
 	GizmoMode EditorLayer::s_GizmoMode = GizmoMode::Translate;
 	PlayState EditorLayer::s_PlayState = PlayState::Stopped;
 	EditorCamera EditorLayer::s_EditorCamera;
+	EditorLayer* EditorLayer::s_Instance = nullptr;
 
 	ActionStack* m_ActionStack = new ActionStack();
 	glm::vec3 m_InitialTransformPos, m_InitialTransformRot, m_InitialTransformScale;
@@ -44,7 +45,7 @@ namespace Orion {
 
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
-
+		s_Instance = this;
 	}
 
 	EditorLayer::~EditorLayer()
@@ -251,6 +252,17 @@ namespace Orion {
 					event.Handled = true;
 				}
 				*/
+				else if (key == GLFW_KEY_F) {
+					// Focus camera on the selected entity
+					auto scene = SceneManager::GetActiveScene();
+					if (scene && s_SelectedEntity != INVALID_ENTITY &&
+					    scene->HasTransformComponent(s_SelectedEntity)) {
+						glm::mat4 world = scene->GetWorldTransform(s_SelectedEntity);
+						glm::vec3 entityPos = glm::vec3(world[3]);
+						s_EditorCamera.FocusOn(entityPos);
+					}
+					event.Handled = true;
+				}
 				else if (key == GLFW_KEY_1) {
 					s_GizmoMode = GizmoMode::Translate;
 					event.Handled = true;

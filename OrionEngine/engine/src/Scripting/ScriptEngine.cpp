@@ -11,6 +11,7 @@
 #include "Assets/AssetManager.h"
 #include "Application.h"
 #include "Core/Input.h"
+#include "Layers/ImGuiLayer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -214,8 +215,9 @@ namespace Orion {
         auto result = m_Lua->safe_script(source, env, sol::script_pass_on_error);
         if (!result.valid()) {
             sol::error err = result;
-            std::cout << "[Apollo] Script load error (" << filePath << "): "
-                      << err.what() << "\n";
+            std::string errMsg = std::string(filePath) + ": " + err.what();
+            Orion::ImGuiLayer::AddConsoleMessage(Orion::ImGuiLayer::ConsoleEntry::Level::Error, "Script", errMsg.c_str());
+            std::cout << "[Apollo] Script load error (" << filePath << "): " << err.what() << "\n";
             return false;
         }
 
@@ -771,14 +773,17 @@ namespace Orion {
         sol::table log = lua.create_named_table("Log");
 
         log["Info"] = [this](const std::string& msg) {
+            Orion::ImGuiLayer::AddConsoleMessage(Orion::ImGuiLayer::ConsoleEntry::Level::Trace, "Script", msg.c_str());
             std::cout << "[Script] " << msg << "\n";
         };
 
         log["Warn"] = [this](const std::string& msg) {
+            Orion::ImGuiLayer::AddConsoleMessage(Orion::ImGuiLayer::ConsoleEntry::Level::Warning, "Script", msg.c_str());
             std::cout << "[Script WARN] " << msg << "\n";
         };
 
         log["Error"] = [this](const std::string& msg) {
+            Orion::ImGuiLayer::AddConsoleMessage(Orion::ImGuiLayer::ConsoleEntry::Level::Error, "Script", msg.c_str());
             std::cerr << "[Script ERROR] " << msg << "\n";
         };
     }

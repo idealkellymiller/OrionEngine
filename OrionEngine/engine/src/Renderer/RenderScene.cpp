@@ -39,6 +39,12 @@ namespace Orion {
                 continue;
             }
 
+            // Skip disabled entities
+            if (scene->HasEntityDataComponent(entity)) {
+                EntityDataComponent* edc = scene->GetEntityDataComponent(entity);
+                if (edc && !edc->enabled) continue;
+            }
+
             // Get the components
             MeshComponent* meshComp = scene->GetMeshComponent(entity);
             MaterialComponent* materialComp = scene->GetMaterialComponent(entity);
@@ -77,6 +83,12 @@ namespace Orion {
         for (const auto& entity : scene->GetEntities()) {
             if (!scene->HasPointLightComponent(entity) || !scene->HasTransformComponent(entity))
                 continue;
+
+            // Skip disabled entities
+            if (scene->HasEntityDataComponent(entity)) {
+                EntityDataComponent* edc = scene->GetEntityDataComponent(entity);
+                if (edc && !edc->enabled) continue;
+            }
 
             PointLightComponent* plc = scene->GetPointLightComponent(entity);
             TransformComponent* tc = scene->GetTransformComponent(entity);

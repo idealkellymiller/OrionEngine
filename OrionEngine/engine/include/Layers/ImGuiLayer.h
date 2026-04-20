@@ -9,6 +9,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 namespace Orion {
 
@@ -46,6 +47,16 @@ namespace Orion {
 		// Show a brief toast message overlaid on the viewport (fades out after `duration` seconds).
 		static void ShowNotification(const std::string& message, float duration = 3.0f);
 
+		// Console message buffer — fed by ScriptEngine, EditorLayer, and any engine system.
+		struct ConsoleEntry {
+			enum class Level { Trace, Warning, Error };
+			Level       level;
+			std::string source;
+			std::string message;
+		};
+		static void AddConsoleMessage(ConsoleEntry::Level level, const char* source, const char* message);
+		static void ClearConsole();
+
 		// Open a native OS Save File dialog filtered to .scene files.
 		// Returns the chosen absolute path, or empty string if cancelled.
 		static std::string ShowSaveFileDialog(const std::string& defaultDir = "",
@@ -63,6 +74,9 @@ namespace Orion {
 		// Toast notification
 		static std::string s_NotificationMessage;
 		static float       s_NotificationTimer;   // seconds remaining; 0 = hidden
+
+		// Console log buffer
+		static std::vector<ConsoleEntry> s_ConsoleEntries;
 
 		static bool s_ViewportHovered;
 		static bool s_ViewportFocused;

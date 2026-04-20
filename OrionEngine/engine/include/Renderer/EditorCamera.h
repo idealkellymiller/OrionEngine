@@ -37,6 +37,10 @@ namespace Orion {
 			bool viewportFocused
 		);
 
+		// Move camera so that `target` sits `distance` units in front of it,
+		// keeping the current look direction. Used by the F shortcut in the editor.
+		void FocusOn(const glm::vec3& target, float distance = 5.0f);
+
 		// Optional speed controls
 		void SetMoveSpeed(float speed);
 		float GetMoveSpeed() const { return m_MoveSpeed; }

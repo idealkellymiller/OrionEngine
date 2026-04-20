@@ -56,6 +56,11 @@ namespace Orion {
         UpdateVectors();
     }
 
+    void EditorCamera::FocusOn(const glm::vec3& target, float distance)
+    {
+        m_Position = target - m_Forward * distance;
+    }
+
     void EditorCamera::SetMoveSpeed(float speed)
     {
         m_MoveSpeed = (speed < 0.1f) ? 0.1f : speed;

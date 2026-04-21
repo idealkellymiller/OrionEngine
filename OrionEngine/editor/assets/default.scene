@@ -522,6 +522,34 @@
           4.260000228881836
         ]
       }
+    },
+    {
+      "id": 24,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "models/10450_Rectangular_Grass_Patch_v1_iterations-2.obj"
+      },
+      "name": "Grass",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -1.5707963705062866,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.10000000149011612,
+          0.10000002384185791,
+          0.10000002384185791
+        ]
+      }
     }
   ],
   "scene": {

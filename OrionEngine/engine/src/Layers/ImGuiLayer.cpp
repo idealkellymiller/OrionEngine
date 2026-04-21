@@ -1247,7 +1247,7 @@ namespace Orion {
 					std::string selExt = selPath.extension().string();
 					for (char& c : selExt) c = (char)std::tolower((unsigned char)c);
 
-					if (selExt == ".mtl" || selExt == ".mtrl") {
+					if (selExt == ".mtl") {
 						ImGui::Text("Material: %s", selPath.filename().string().c_str());
 						ImGui::Separator();
 
@@ -1816,11 +1816,128 @@ namespace Orion {
 				}
 			}
 
+			// Opens a native multi-select file dialog and copies chosen files into
+			// the current browser directory, registering them with AssetManager.
+			auto importAssets = [&]() {
+#if defined(_WIN32)
+				// Buffer large enough for many files: first entry is the directory,
+				// subsequent entries are filenames (all null-separated, double-null terminated).
+				static char fileBuffer[8192];
+				ZeroMemory(fileBuffer, sizeof(fileBuffer));
+
+				OPENFILENAMEA ofn   = {};
+				ofn.lStructSize     = sizeof(ofn);
+				ofn.lpstrFilter     =
+					"All Supported Assets\0*.obj;*.png;*.jpg;*.jpeg;*.tga;*.bmp;*.mtl;*.wav;*.mp3;*.ogg;*.flac;*.lua;*.scene\0"
+					"3D Models (*.obj)\0*.obj\0"
+					"Textures (*.png;*.jpg;*.jpeg;*.tga;*.bmp)\0*.png;*.jpg;*.jpeg;*.tga;*.bmp\0"
+					"Materials (*.mtl)\0*.mtl\0"
+					"Audio (*.wav;*.mp3;*.ogg;*.flac)\0*.wav;*.mp3;*.ogg;*.flac\0"
+					"Scripts (*.lua)\0*.lua\0"
+					"Scenes (*.scene)\0*.scene\0"
+					"All Files (*.*)\0*.*\0";
+				ofn.lpstrFile       = fileBuffer;
+				ofn.nMaxFile        = sizeof(fileBuffer);
+				ofn.lpstrTitle      = "Import Asset(s)";
+				ofn.lpstrInitialDir = currentPath.string().c_str();
+				ofn.Flags           = OFN_EXPLORER | OFN_ALLOWMULTISELECT |
+				                      OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+				if (!GetOpenFileNameA(&ofn))
+					return;
+
+				// Parse the result buffer.
+				// Single selection: buffer = full path (no second null yet).
+				// Multi selection:  buffer = "dir\0name1\0name2\0\0"
+				std::vector<std::string> srcPaths;
+				char* p = fileBuffer;
+				std::string first = p;
+				p += first.size() + 1;
+
+				if (*p == '\0') {
+					// Single file
+					srcPaths.push_back(first);
+				} else {
+					// Multiple files — first token is the directory
+					while (*p != '\0') {
+						std::string fname = p;
+						srcPaths.push_back(first + "\\" + fname);
+						p += fname.size() + 1;
+					}
+				}
+
+				// Copy and register each file
+				std::string lastImported;
+				for (const auto& srcStr : srcPaths) {
+					fs::path src(srcStr);
+					fs::path dest = currentPath / src.filename();
+
+					// Skip if an identical file already exists (warn, don't overwrite silently)
+					if (fs::exists(dest)) {
+						AddConsoleMessage(ConsoleEntry::Level::Warning, "Import",
+							("Skipped (already exists): " + src.filename().string()).c_str());
+						continue;
+					}
+
+					try {
+						fs::copy_file(src, dest);
+					}
+					catch (const std::exception& e) {
+						AddConsoleMessage(ConsoleEntry::Level::Error, "Import",
+							(std::string("Copy failed — ") + src.filename().string() + ": " + e.what()).c_str());
+						continue;
+					}
+
+					// Register with AssetManager by extension
+					std::string ext = dest.extension().string();
+					for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+
+					if (ext == ".obj") {
+						AssetManager::LoadMesh(dest.string());
+					} else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
+					           ext == ".tga" || ext == ".bmp") {
+						AssetManager::LoadTexture(dest.string());
+					} else if (ext == ".mtl") {
+						AssetManager::LoadMTLFile(dest.string());
+					} else if (ext == ".wav" || ext == ".mp3" ||
+					           ext == ".ogg" || ext == ".flac") {
+						AssetManager::LoadAudioClip(dest.string());
+					}
+					// .lua and .scene are used on demand — no pre-registration needed.
+
+					AddConsoleMessage(ConsoleEntry::Level::Trace, "Import",
+						("Imported: " + src.filename().string()).c_str());
+					lastImported = AssetManager::NormalizePlainPath(dest.string());
+				}
+
+				// Select the last imported file so the inspector opens it immediately
+				if (!lastImported.empty()) {
+					m_SelectedAssetPath = lastImported;
+					EditorLayer::SetSelectedEntity(INVALID_ENTITY);
+				}
+#endif
+			};
+
 			ImGui::Separator();
 
-			// ---------- Search filter ----------
+			// ---------- Search + Import toolbar ----------
 			static ImGuiTextFilter filter;
-			filter.Draw("Search##AssetFilter", -1);
+			{
+				// Reserve space for the Import button (project tab only); full-width otherwise.
+				const float importBtnW = browsingEngineAssets ? 0.0f
+				    : ImGui::CalcTextSize(_("Import Asset...")).x
+				      + ImGui::GetStyle().FramePadding.x * 2.0f + 8.0f;
+				float searchW = ImGui::GetContentRegionAvail().x - importBtnW
+				                - (browsingEngineAssets ? 0.0f : ImGui::GetStyle().ItemSpacing.x);
+
+				filter.Draw("##AssetFilter", searchW);
+
+				if (!browsingEngineAssets) {
+					ImGui::SameLine();
+					if (ImGui::Button(_("Import Asset...")))
+						importAssets();
+				}
+			}
 			bool isSearching = filter.IsActive();
 
 			ImGui::Separator();
@@ -2111,6 +2228,9 @@ namespace Orion {
 			// ---------- Right-click on empty space: "Create" context menu ----------
 			if (ImGui::BeginPopupContextWindow("AssetBrowserContextMenu", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
 				if (!browsingEngineAssets) {
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Import Asset...", "CtxImportAsset")))
+						importAssets();
+					ImGui::Separator();
 					if (ImGui::BeginMenu(IMGUI_ELEMENT_TITLE("New", "NewAsset"))) {
 						if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Folder", "NewFolder")))
 							createNewFolder();

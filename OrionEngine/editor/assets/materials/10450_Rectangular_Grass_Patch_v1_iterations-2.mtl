@@ -1,0 +1,8 @@
+# Wavefront Material
+
+newmtl 10450_Rectangular_Grass_Patch_v1
+Kd 0.5882 0.5882 0.5882
+Ks 0.09 0.09 0.09
+Ns 10
+d 1
+map_Kd ../textures/10450_Rectangular_Grass_Patch_v1_Diffuse.jpg

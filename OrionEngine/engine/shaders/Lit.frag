@@ -86,21 +86,20 @@ float ComputeShadow(vec4 lightSpacePos, vec3 normal, vec3 lightDir)
 
 void main()
 {
-    // Start with material base color.
+    // Decode material base color from sRGB to linear space first.
+    // This must happen before any multiplication so each input is decoded exactly once.
     vec4 baseColor = u_Material.Color;
+    baseColor.rgb = SRGBToLinear(baseColor.rgb);
+    vec3 specColor = SRGBToLinear(u_Material.SpecularColor);
 
     // Multiply by texture if one is used.
+    // Texture is also sRGB — decode it once before blending with the base color.
     if (u_UseTexture == 1)
     {
         vec4 texColor = texture(u_DiffuseTexture, v_UV);
-        // Convert texture from sRGB to linear space before lighting.
         texColor.rgb = SRGBToLinear(texColor.rgb);
         baseColor *= texColor;
     }
-
-    // Convert material colors to linear space for correct lighting math.
-    baseColor.rgb = SRGBToLinear(baseColor.rgb);
-    vec3 specColor = SRGBToLinear(u_Material.SpecularColor);
 
     vec3 normal = normalize(v_WorldNormal);
     vec3 viewDir = normalize(u_CameraPos - v_WorldPos);

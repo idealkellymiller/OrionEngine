@@ -1,0 +1,998 @@
+{
+  "entities": [
+    {
+      "collider": {
+        "boxHalfExtents": [
+          10.199999809265137,
+          0.009999999776482582,
+          13.149999618530273
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 1,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -3.4666523933410645,
+          5.007012367248535,
+          -15.017541885375977
+        ],
+        "rotation": [
+          0.1367485672235489,
+          -0.42198798060417175,
+          -0.4249049425125122
+        ],
+        "scale": [
+          20.5049991607666,
+          59.689998626708984,
+          26.09600067138672
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 1.5499999523162842
+      },
+      "id": 2,
+      "material": {
+        "mtl": "materials/red.mtl",
+        "name": "red"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "RedMarble",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          0.08649179339408875,
+          25.193405151367188,
+          -33.538326263427734
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          3.7249999046325684,
+          3.7249999046325684,
+          3.7249999046325684
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          12.5,
+          0.1599999964237213,
+          8.800000190734863
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 3,
+      "material": {
+        "mtl": "engine://materials/stone.mtrl",
+        "name": "stone"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane",
+      "rigidbody": {
+        "angularDamping": 0.0,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          8.009936332702637,
+          17.433156967163086,
+          -31.801197052001953
+        ],
+        "rotation": [
+          0.6757862567901611,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          25.0,
+          25.0,
+          17.385000228881836
+        ]
+      }
+    },
+    {
+      "camera": {
+        "far": 100.0,
+        "fov": 80.0,
+        "isActive": true,
+        "near": 0.10000000149011612
+      },
+      "id": 5,
+      "name": "Camera",
+      "transform": {
+        "position": [
+          35.13987350463867,
+          9.331439971923828,
+          54.39534378051758
+        ],
+        "rotation": [
+          -0.30221471190452576,
+          0.8726863265037537,
+          0.3783235251903534
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "material": {
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "FinishLine",
+      "transform": {
+        "position": [
+          6.386379241943359,
+          -0.0834827721118927,
+          29.469161987304688
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          13.04800033569336,
+          1.0,
+          3.6579999923706055
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "material": {
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "FinishLine (1)",
+      "transform": {
+        "position": [
+          -6.63540506362915,
+          -0.003000000026077032,
+          29.4689998626709
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          13.04800033569336,
+          1.0,
+          3.6579999923706055
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 0.9100000262260437
+      },
+      "id": 10,
+      "material": {
+        "mtl": "materials/green.mtl",
+        "name": "green"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "GreenMarble",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          4.318456172943115,
+          25.193405151367188,
+          -33.538326263427734
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          2.1600000858306885,
+          2.1600000858306885,
+          2.1600000858306885
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 0.6100000143051147
+      },
+      "id": 13,
+      "material": {
+        "mtl": "materials/blue.mtl",
+        "name": "blue"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "TinyMarble",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 12.100000381469727
+      },
+      "transform": {
+        "position": [
+          13.304635047912598,
+          25.193405151367188,
+          -33.538326263427734
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.3949999809265137,
+          1.3949999809265137,
+          1.3949999809265137
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "material": {
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "FinishLine (2)",
+      "transform": {
+        "position": [
+          6.386379241943359,
+          -0.0834827721118927,
+          29.469161987304688
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          13.04800033569336,
+          1.0,
+          3.6579999923706055
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 16,
+      "material": {
+        "mtl": "engine://materials/default.mtrl",
+        "name": "default"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "CubeMarble",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 0.4099999964237213
+      },
+      "transform": {
+        "position": [
+          16.447872161865234,
+          25.345094680786133,
+          -32.28096389770508
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "audioSource": {
+        "clipPath": "audio/Elektronomia - Sky High [NCS Release].mp3",
+        "loop": false,
+        "maxDistance": 20.0,
+        "minDistance": 1.0,
+        "pitch": 1.0,
+        "playOnStart": true,
+        "spatial": true,
+        "volume": 1.0
+      },
+      "id": 17,
+      "name": "BGMusic",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          12.75,
+          0.25999999046325684,
+          15.600000381469727
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 19,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (1)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          9.689611434936523,
+          0.5719712972640991,
+          -16.48036003112793
+        ],
+        "rotation": [
+          0.20259767770767212,
+          -0.023516174405813217,
+          0.331633597612381
+        ],
+        "scale": [
+          25.575000762939453,
+          59.540000915527344,
+          31.166000366210938
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          12.75,
+          0.25999999046325684,
+          19.649999618530273
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 20,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (2)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          2.9550764560699463,
+          -4.708587646484375,
+          -1.279029369354248
+        ],
+        "rotation": [
+          0.04688957333564758,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          25.575000762939453,
+          59.540000915527344,
+          39.175052642822266
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          18.799999237060547,
+          0.20999999344348907,
+          12.75
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 24,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (3)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -7.769895076751709,
+          -10.105558395385742,
+          25.99010467529297
+        ],
+        "rotation": [
+          0.04688957333564758,
+          -0.467219740152359,
+          0.0
+        ],
+        "scale": [
+          37.334999084472656,
+          62.79999923706055,
+          25.107194900512695
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          13.75,
+          0.20999999344348907,
+          17.200000762939453
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 25,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (4)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -7.130160331726074,
+          -11.404458045959473,
+          53.67111587524414
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          27.049999237060547,
+          62.79999923706055,
+          34.66699981689453
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          12.75,
+          0.25999999046325684,
+          15.600000381469727
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 27,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (5)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          6.284313678741455,
+          -7.8841729164123535,
+          20.500564575195313
+        ],
+        "rotation": [
+          0.20259767770767212,
+          -0.023516174405813217,
+          0.13047263026237488
+        ],
+        "scale": [
+          25.575000762939453,
+          59.540000915527344,
+          31.166000366210938
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          7.849999904632568,
+          0.009999999776482582,
+          10.100000381469727
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 28,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (6)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -7.586239337921143,
+          3.7561323642730713,
+          -5.92732048034668
+        ],
+        "rotation": [
+          0.1367485672235489,
+          -0.42198798060417175,
+          -1.282457947731018
+        ],
+        "scale": [
+          15.829999923706055,
+          59.689998626708984,
+          26.09600067138672
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          16.299999237060547,
+          0.20999999344348907,
+          20.200000762939453
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 29,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (7)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          7.843281269073486,
+          -13.225015640258789,
+          47.331993103027344
+        ],
+        "rotation": [
+          0.0,
+          -0.8052565455436707,
+          0.0
+        ],
+        "scale": [
+          32.875,
+          68.625,
+          40.49200439453125
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          13.710000038146973,
+          0.4099999964237213,
+          17.200000762939453
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 32,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane (8)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": true,
+        "freezeRotY": true,
+        "freezeRotZ": true,
+        "gravityScale": 0.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -6.449073314666748,
+          -3.7984941005706787,
+          20.592859268188477
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          -0.6014758348464966
+        ],
+        "scale": [
+          27.049999237060547,
+          62.79999923706055,
+          34.66699981689453
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 1,
+        "sphereRadius": 2.4000000953674316
+      },
+      "id": 34,
+      "material": {
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "GlassMarble",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 2,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          8.87233829498291,
+          25.193405151367188,
+          -33.538326263427734
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          5.554999828338623,
+          5.554999828338623,
+          5.554999828338623
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          0.10000000149011612,
+          6.309999942779541,
+          12.800000190734863
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 36,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Cube",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          7.194513320922852,
+          0.0,
+          -14.499842643737793
+        ],
+        "rotation": [
+          0.0,
+          -0.0022153023164719343,
+          0.0
+        ],
+        "scale": [
+          0.04736298322677612,
+          6.321054935455322,
+          12.791800498962402
+        ]
+      }
+    }
+  ],
+  "scene": {
+    "name": "Saved Scene",
+    "version": 1
+  }
+}

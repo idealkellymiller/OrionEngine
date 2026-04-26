@@ -1,0 +1,8 @@
+# Wavefront Material
+
+newmtl finishline
+Kd 1 1 1
+Ks 1 1 1
+Ns 512
+d 1
+map_Kd ../textures/finishLine.png

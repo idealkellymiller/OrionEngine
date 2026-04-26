@@ -1524,31 +1524,19 @@ namespace Orion {
 						EditorLayer::SetSelectedEntity(newEntity);
 					}
 
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Cube",   "HierCreateCube")))
-						EditorLayer::AddPrimitive("Cube",   "cube");
+					if (ImGui::MenuItem("Create Cube"))
+						EditorLayer::AddPrimitive("Cube", "cube");
 
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Plane",  "HierCreatePlane")))
-						EditorLayer::AddPrimitive("Plane",  "plane");
-
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Sphere", "HierCreateSphere")))
+					if (ImGui::MenuItem("Create Sphere"))
 						EditorLayer::AddPrimitive("Sphere", "sphere");
 
-					ImGui::Separator();
+					if (ImGui::MenuItem("Create Plane"))
+						EditorLayer::AddPrimitive("Plane", "square");
 
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Point Light", "HierCreatePointLight"))) {
-						auto scene2 = SceneManager::GetActiveScene();
-						if (scene2) {
-							EntityID e = scene2->CreateEntity();
-							EntityDataComponent edc; edc.name = "Point Light";
-							scene2->AddEntityDataComponent(e, edc);
-							scene2->AddTransformComponent(e, TransformComponent{});
-							scene2->AddPointLightComponent(e, PointLightComponent{});
-							EditorLayer::SetSelectedEntity(e);
-						}
-					}
+					if (ImGui::MenuItem("Create Monkey"))
+						EditorLayer::AddPrimitive("Monkey", "monkey");
 
 					ImGui::EndPopup();
-					
 
 					// Drop on empty space = unparent (make root)
 					if (ImGui::BeginDragDropTarget())
@@ -2259,7 +2247,7 @@ namespace Orion {
 			}
 
 			if (ImGui::BeginPopupModal(IMGUI_ELEMENT_TITLE("Rename", "AssetRename"), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-				ImGui::Text(IMGUI_ELEMENT_TITLE("Enter new name:", "AssetRenameNewNamePrompt"));
+				ImGui::Text(_("Enter new name:"));
 				bool enter = ImGui::InputText("##RenameInput", s_RenameBuf, sizeof(s_RenameBuf),
 					ImGuiInputTextFlags_EnterReturnsTrue);
 
@@ -2480,19 +2468,24 @@ namespace Orion {
 		{
 			{_("Undo"), "CTRL + Z"},
 			{_("Redo"), "CTRL + Y"},
-			{_("Save"), "CTRL + S"},
-			{_("Save As"), "CTRL + SHIFT + S"},
-			{_("Rotate Viewport Angle"), "ALT + MMB"},
-			{_("Zoom In"), _("Mouse Scroll Down")},
-			{_("Zoom Out"),_("Mouse Scroll Up")},
-			{_("Create Camera From View"), "CTRL + SHIFT + C"},
-			{_("Translate Gizmo"),"W  (or  1)"},
-			{_("Rotate Gizmo"),"E  (or  2)"},
-			{_("Scale Gizmo"),"R  (or  3)"},
-			{_("Focus Selected"),"F"},
-			{_("Play / Stop"),"P"},
+			{_("Rotate Viewport Angle"), "RMB"},
+			{_("Move Camera Forward"), "RMB + W"},
+			{_("Move Camera Backward"), "RMB + S"},
+			{_("Move Camera Left"), "RMB + A"},
+			{_("Move Camera Right"), "RMB + D"},
+			{_("Move Camera Up"), "RMB + E"},
+			{_("Move Camera Down"), "RMB + Q"},
+			{_("Increase/Decrease Camera Speed"), "Scroll Wheel"},
+			//{_("Zoom In"), _("Mouse Scroll Down")},
+			//{_("Zoom Out"),_("Mouse Scroll Up")},
+			//{_("Create Camera From View"), "CTRL + SHIFT + C"},
+			{_("Move"),"1"},
+			{_("Rotate"),"2"},
+			{_("Scale"),"3"},
+			{_("Focus on Selected Object"), "F"},
 			{_("Duplicate"),"CTRL + D"},
-			{_("Delete"),"DELETE"}
+			{_("Delete"),"DELETE"},
+			{_("Play Mode"), "P"}
 		};
 
 		if (showControlsModule)
@@ -2504,7 +2497,7 @@ namespace Orion {
 					ImGuiTableFlags_SizingFixedFit |
 					ImGuiTableFlags_Hideable;
 
-				if (ImGui::BeginTable("ControlsTable", 3, flags))
+				if (ImGui::BeginTable("ControlsTable", 2, flags))
 				{
 					// make control name column fixed width, keybind column stretch
 					ImGui::TableSetupColumn(IMGUI_ELEMENT_TITLE("Control", "ControlCol"), ImGuiTableColumnFlags_WidthFixed);

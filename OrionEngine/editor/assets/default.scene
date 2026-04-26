@@ -550,6 +550,34 @@
           0.10000002384185791
         ]
       }
+    },
+    {
+      "id": 25,
+      "material": {
+        "mtl": "materials/blue.mtl",
+        "name": "blue"
+      },
+      "mesh": {
+        "path": "models/CatObj.obj"
+      },
+      "name": "New Entity",
+      "transform": {
+        "position": [
+          9.557611465454102,
+          4.899082660675049,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
     }
   ],
   "scene": {

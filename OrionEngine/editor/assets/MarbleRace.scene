@@ -198,37 +198,9 @@
       "name": "FinishLine",
       "transform": {
         "position": [
-          6.386379241943359,
-          -0.0834827721118927,
-          29.469161987304688
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          13.04800033569336,
-          1.0,
-          3.6579999923706055
-        ]
-      }
-    },
-    {
-      "id": 9,
-      "material": {
-        "mtl": "materials/FinishLine.mtl",
-        "name": "finishline"
-      },
-      "mesh": {
-        "path": "engine://primitives/plane.obj"
-      },
-      "name": "FinishLine (1)",
-      "transform": {
-        "position": [
-          -6.63540506362915,
-          -0.003000000026077032,
-          29.4689998626709
+          -10.519845962524414,
+          -10.337868690490723,
+          65.54086303710938
         ],
         "rotation": [
           0.0,
@@ -345,34 +317,6 @@
           1.3949999809265137,
           1.3949999809265137,
           1.3949999809265137
-        ]
-      }
-    },
-    {
-      "id": 14,
-      "material": {
-        "mtl": "materials/FinishLine.mtl",
-        "name": "finishline"
-      },
-      "mesh": {
-        "path": "engine://primitives/plane.obj"
-      },
-      "name": "FinishLine (2)",
-      "transform": {
-        "position": [
-          6.386379241943359,
-          -0.0834827721118927,
-          29.469161987304688
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          13.04800033569336,
-          1.0,
-          3.6579999923706055
         ]
       }
     },
@@ -987,6 +931,62 @@
           0.04736298322677612,
           6.321054935455322,
           12.791800498962402
+        ]
+      }
+    },
+    {
+      "id": 37,
+      "material": {
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "FinishLine (1)",
+      "transform": {
+        "position": [
+          2.4995181560516357,
+          -10.337868690490723,
+          65.54086303710938
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          13.04800033569336,
+          1.0,
+          3.6579999923706055
+        ]
+      }
+    },
+    {
+      "id": 38,
+      "material": {
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "FinishLine (2)",
+      "transform": {
+        "position": [
+          15.5068359375,
+          -10.337868690490723,
+          65.54086303710938
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          13.04800033569336,
+          1.0,
+          3.6579999923706055
         ]
       }
     }

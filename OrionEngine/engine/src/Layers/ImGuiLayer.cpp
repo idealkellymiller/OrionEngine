@@ -886,9 +886,9 @@ namespace Orion {
 		if (!col) return;
 
 		// Shape dropdown
-		const char* shapes[] = { _("Box"), _("Sphere") };
+		const char* shapes[] = { _("Cube"), _("Sphere") };
 		int currentShape = static_cast<int>(col->shape);
-		if (ImGui::Combo(IMGUI_ELEMENT_TITLE("Shape", "ColliderShape"), &currentShape, shapes, IM_ARRAYSIZE(shapes))) {
+		if (ImGui::Combo(IMGUI_ELEMENT_TITLE("Shape", "ColliderShSape"), &currentShape, shapes, IM_ARRAYSIZE(shapes))) {
 			col->shape = static_cast<ColliderShape>(currentShape);
 		}
 
@@ -1548,16 +1548,16 @@ namespace Orion {
 						EditorLayer::SetSelectedEntity(newEntity);
 					}
 
-					if (ImGui::MenuItem("Create Cube"))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Cube", "HierCreateCube")))
 						EditorLayer::AddPrimitive("Cube", "cube");
 
-					if (ImGui::MenuItem("Create Sphere"))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Sphere", "HierCreateSphere")))
 						EditorLayer::AddPrimitive("Sphere", "sphere");
 
-					if (ImGui::MenuItem("Create Plane"))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Plane", "HierCreatePlane")))
 						EditorLayer::AddPrimitive("Plane", "square");
 
-					if (ImGui::MenuItem("Create Monkey"))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Monkey", "HierCreateMonkey")))
 						EditorLayer::AddPrimitive("Monkey", "monkey");
 
 					ImGui::EndPopup();

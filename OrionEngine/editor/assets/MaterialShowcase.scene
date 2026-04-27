@@ -1,0 +1,176 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "material": {
+        "mtl": "engine://materials/default.mtrl",
+        "name": "default"
+      },
+      "mesh": {
+        "path": "engine://primitives/plane.obj"
+      },
+      "name": "Plane",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          10.0,
+          10.0,
+          10.0
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "material": {
+        "mtl": "materials/CatObj.mtl",
+        "name": "aiStandardSurface5SG"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "Sphere",
+      "transform": {
+        "position": [
+          0.0,
+          1.763062834739685,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "material": {
+        "mtl": "materials/green.mtl",
+        "name": "green"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "Sphere (1)",
+      "transform": {
+        "position": [
+          -1.0,
+          1.763062834739685,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "material": {
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "Sphere (2)",
+      "transform": {
+        "position": [
+          1.0,
+          1.763062834739685,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "material": {
+        "mtl": "materials/bricks.mtl",
+        "name": "bricks"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "Sphere (3)",
+      "transform": {
+        "position": [
+          2.0,
+          1.763062834739685,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "material": {
+        "mtl": "materials/blue.mtl",
+        "name": "blue"
+      },
+      "mesh": {
+        "path": "engine://primitives/sphere.obj"
+      },
+      "name": "Sphere (4)",
+      "transform": {
+        "position": [
+          -2.0,
+          1.763062834739685,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "scene": {
+    "name": "Saved Scene",
+    "version": 1
+  }
+}

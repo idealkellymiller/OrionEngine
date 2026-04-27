@@ -419,6 +419,16 @@ namespace Orion {
 			j["entities"].push_back(entityJson);
 		}
 
+		// Ensure the parent directory exists before opening the file.
+		std::filesystem::path savePath(filePath);
+		std::error_code ec;
+		std::filesystem::create_directories(savePath.parent_path(), ec);
+		if (ec) {
+			std::cout << "Failed to create directory for scene save: "
+			          << savePath.parent_path().string() << " — " << ec.message() << "\n";
+			return false;
+		}
+
 		std::ofstream file(filePath);
 		if (!file.is_open()) {
 			std::cout << "Failed to open file for saving: " << filePath << "\n";
@@ -426,6 +436,11 @@ namespace Orion {
 		}
 
 		file << j.dump(2);
+		file.close();
+
+		// Keep the active path in sync so Ctrl+S saves to the same location next time.
+		s_ActiveScenePath = filePath;
+
 		std::cout << "Successfully saved scene: " << filePath << "\n";
 		return true;
 	}

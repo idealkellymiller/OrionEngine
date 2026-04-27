@@ -287,30 +287,17 @@ namespace Orion {
 			if (!camComp || !camComp->isActive)
 				continue;
 
-			TransformComponent* tc = m_RuntimeScene->GetTransformComponent(entity);
-			if (!tc)
-				continue;
+			// Use the full world transform so a parented camera moves and rotates
+			// with its parent hierarchy (e.g. a camera attached to a moving vehicle).
+			glm::mat4 worldMat = m_RuntimeScene->GetWorldTransform(entity);
 
-			// --- Build camera position from transform ---
-			glm::vec3 camPos = tc->position;
+			// Column 3 = world-space translation.
+			glm::vec3 camPos = glm::vec3(worldMat[3]);
 
-			// --- Build forward direction from transform rotation ---
-			// Default camera looks down -Z (OpenGL convention).
-			// Apply the same X->Y->Z rotation order as RenderScene.
-			glm::vec3 forward(0.0f, 0.0f, -1.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-
-			// Build rotation matrix from Euler angles
-			glm::mat4 rot(1.0f);
-			if (tc->rotation.x != 0.0f)
-				rot = glm::rotate(rot, tc->rotation.x, glm::vec3(1, 0, 0));
-			if (tc->rotation.y != 0.0f)
-				rot = glm::rotate(rot, tc->rotation.y, glm::vec3(0, 1, 0));
-			if (tc->rotation.z != 0.0f)
-				rot = glm::rotate(rot, tc->rotation.z, glm::vec3(0, 0, 1));
-
-			forward = glm::vec3(rot * glm::vec4(forward, 0.0f));
-			up = glm::vec3(rot * glm::vec4(up, 0.0f));
+			// Column 2 = world-space +Z axis.  Camera looks down -Z by convention,
+			// so forward = -col2.  Normalize to strip any scale contribution.
+			glm::vec3 forward = -glm::normalize(glm::vec3(worldMat[2]));
+			glm::vec3 up      =  glm::normalize(glm::vec3(worldMat[1]));
 
 			glm::vec3 target = camPos + forward;
 

@@ -602,4 +602,23 @@ namespace Orion {
 		std::cout << "[EditorLayer] Created primitive '" << name << "' (entity " << entity << ")\n";
 	}
 
+	void EditorLayer::AddPointLight()
+	{
+		std::shared_ptr<Scene> scene = SceneManager::GetActiveScene();
+		if (!scene) return;
+
+		EntityID entity = scene->CreateEntity();
+
+		EntityDataComponent edc;
+		edc.name = "Point Light";
+		scene->AddEntityDataComponent(entity, edc);
+
+		scene->AddTransformComponent(entity, TransformComponent{});
+		scene->AddPointLightComponent(entity, PointLightComponent{});
+
+		SetSelectedEntity(entity);
+
+		std::cout << "[EditorLayer] Created Point Light (entity " << entity << ")\n";
+	}
+
 }

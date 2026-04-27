@@ -44,6 +44,9 @@ namespace Orion {
 		// Looks up the mesh + default material from AssetManager; creates and selects the entity.
 		static void AddPrimitive(const std::string& name, const std::string& modelFileName);
 
+		// Create a bare Point Light entity (EntityData + Transform + PointLightComponent).
+		static void AddPointLight();
+
 		// Play mode
 		void EnterPlayMode();
 		void ExitPlayMode();

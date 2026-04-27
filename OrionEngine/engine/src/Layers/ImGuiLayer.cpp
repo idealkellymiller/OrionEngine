@@ -1548,17 +1548,15 @@ namespace Orion {
 						EditorLayer::SetSelectedEntity(newEntity);
 					}
 
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Cube", "HierCreateCube")))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Cube",        "HierCreateCube")))
 						EditorLayer::AddPrimitive("Cube", "cube");
-
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Sphere", "HierCreateSphere")))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Sphere",      "HierCreateSphere")))
 						EditorLayer::AddPrimitive("Sphere", "sphere");
-
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Plane", "HierCreatePlane")))
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Plane",       "HierCreatePlane")))
 						EditorLayer::AddPrimitive("Plane", "square");
-
-					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Monkey", "HierCreateMonkey")))
-						EditorLayer::AddPrimitive("Monkey", "monkey");
+					ImGui::Separator();
+					if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Point Light", "HierCreatePointLight")))
+						EditorLayer::AddPointLight();
 
 					ImGui::EndPopup();
 

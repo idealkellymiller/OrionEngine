@@ -3,9 +3,9 @@
     {
       "collider": {
         "boxHalfExtents": [
-          10.0,
+          20.0,
           0.0010000000474974513,
-          10.0
+          20.0
         ],
         "isTrigger": false,
         "offset": [
@@ -118,14 +118,15 @@
       },
       "id": 3,
       "name": "Camera",
+      "parent": 2,
       "transform": {
         "position": [
           0.0,
-          2.519641637802124,
-          6.999289512634277
+          7.0,
+          0.0
         ],
         "rotation": [
-          0.0,
+          -1.5707963705062866,
           0.0,
           0.0
         ],
@@ -282,6 +283,728 @@
           -0.2290736436843872,
           2.0,
           -4.059844493865967
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "name": "PlayerLight",
+      "parent": 2,
+      "pointLight": {
+        "color": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "constant": 1.0,
+        "intensity": 2.0,
+        "linear": 0.09000000357627869,
+        "quadratic": 0.03200000151991844
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 11,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (3)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -4.256214141845703,
+          2.0,
+          8.102421760559082
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 12,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (4)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -0.22907282412052155,
+          2.0,
+          12.235249519348145
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 16,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (5)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          11.617029190063477,
+          2.0,
+          7.786098003387451
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 17,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (6)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          7.414919376373291,
+          2.0,
+          12.235249519348145
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 18,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (7)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          18.280315399169922,
+          2.0,
+          -0.1801387369632721
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 19,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (8)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          7.414918422698975,
+          2.0,
+          -4.200562477111816
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 20,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (9)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          14.090863227844238,
+          2.0,
+          -4.200562477111816
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 21,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (10)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          18.280315399169922,
+          2.0,
+          8.935812950134277
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 22,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (11)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          18.280315399169922,
+          2.0,
+          15.036235809326172
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 23,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (12)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          14.112959861755371,
+          2.0,
+          18.760814666748047
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 24,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (13)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          4.8475470542907715,
+          2.0,
+          18.760814666748047
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 25,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (14)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -5.173839092254639,
+          2.0,
+          18.760814666748047
+        ],
+        "rotation": [
+          0.0,
+          1.5707963705062866,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "collider": {
+        "boxHalfExtents": [
+          1.0,
+          2.0,
+          5.0
+        ],
+        "isTrigger": false,
+        "offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": 0,
+        "sphereRadius": 0.5
+      },
+      "id": 26,
+      "material": {
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
+      },
+      "mesh": {
+        "path": "engine://primitives/cube.obj"
+      },
+      "name": "Wall (15)",
+      "rigidbody": {
+        "angularDamping": 0.05000000074505806,
+        "bodyType": 0,
+        "freezeRotX": false,
+        "freezeRotY": false,
+        "freezeRotZ": false,
+        "gravityScale": 1.0,
+        "linearDamping": 0.05000000074505806,
+        "mass": 1.0
+      },
+      "transform": {
+        "position": [
+          -14.670905113220215,
+          2.0,
+          18.760814666748047
         ],
         "rotation": [
           0.0,

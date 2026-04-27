@@ -1207,10 +1207,34 @@ namespace Orion {
 						ImGui::ClearActiveID();   // abandon any in-progress widget edit on the old entity
 						m_InspectorEntity = selected;
 						m_ScaleUniform = false;   // don't leak toggle state across entities
-						// Only rebuild if we don't already have a cached order for this entity
-						if (m_ComponentOrder.find(selected) == m_ComponentOrder.end()) {
-							RebuildComponentOrder(selected, *scene);
+
+						// Validate the cached order, if one exists.
+						// A stale cache occurs when entity IDs are reused across scene loads,
+						// or when components are added to an entity (e.g. after duplication)
+						// before the inspector has had a chance to observe them.
+						// Rule: if the entity owns a component that is absent from the cache,
+						// discard the cache and rebuild from scratch.
+						// User-defined reordering is preserved in all other cases.
+						bool needsRebuild = true;
+						auto cacheIt = m_ComponentOrder.find(selected);
+						if (cacheIt != m_ComponentOrder.end()) {
+							const auto& cached = cacheIt->second;
+							auto inCache = [&](ComponentType t) {
+								return std::find(cached.begin(), cached.end(), t) != cached.end();
+							};
+							needsRebuild =
+								(scene->HasMeshComponent(selected)          && !inCache(ComponentType::Mesh))         ||
+								(scene->HasMaterialComponent(selected)      && !inCache(ComponentType::Material))     ||
+								(scene->HasCameraComponent(selected)        && !inCache(ComponentType::Camera))       ||
+								(scene->HasScriptComponent(selected)        && !inCache(ComponentType::Script))       ||
+								(scene->HasRigidbodyComponent(selected)     && !inCache(ComponentType::Rigidbody))    ||
+								(scene->HasColliderComponent(selected)      && !inCache(ComponentType::Collider))     ||
+								(scene->HasPointLightComponent(selected)    && !inCache(ComponentType::PointLight))   ||
+								(scene->HasAudioSourceComponent(selected)   && !inCache(ComponentType::AudioSource))  ||
+								(scene->HasAudioListenerComponent(selected) && !inCache(ComponentType::AudioListener));
 						}
+						if (needsRebuild)
+							RebuildComponentOrder(selected, *scene);
 					}
 					std::string entID = _("Entity ID: ") + std::format("{}", selected);
 					ImGui::Text(entID.c_str(), std::format("Entity ID: {}", selected));
@@ -1615,6 +1639,13 @@ namespace Orion {
 		// --- Right-click context menu on this entity ---
 		if (ImGui::BeginPopupContextItem())
 		{
+			if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Duplicate", "HierDuplicateEntity")))
+			{
+				EntityID copy = scene.DuplicateEntity(entity);
+				if (copy != INVALID_ENTITY)
+					EditorLayer::SetSelectedEntity(copy);
+			}
+
 			if (ImGui::MenuItem(IMGUI_ELEMENT_TITLE("Create Child Entity", "HierCreateChildEntity")))
 			{
 				EntityID child = scene.CreateEntity();

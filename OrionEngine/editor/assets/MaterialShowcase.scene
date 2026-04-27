@@ -31,8 +31,8 @@
     {
       "id": 3,
       "material": {
-        "mtl": "materials/CatObj.mtl",
-        "name": "aiStandardSurface5SG"
+        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
+        "name": "10450_Rectangular_Grass_Patch_v1"
       },
       "mesh": {
         "path": "engine://primitives/sphere.obj"
@@ -59,8 +59,8 @@
     {
       "id": 4,
       "material": {
-        "mtl": "materials/green.mtl",
-        "name": "green"
+        "mtl": "materials/metal.mtl",
+        "name": "metal"
       },
       "mesh": {
         "path": "engine://primitives/sphere.obj"
@@ -87,8 +87,8 @@
     {
       "id": 5,
       "material": {
-        "mtl": "materials/10450_Rectangular_Grass_Patch_v1_iterations-2.mtl",
-        "name": "10450_Rectangular_Grass_Patch_v1"
+        "mtl": "materials/blue.mtl",
+        "name": "blue"
       },
       "mesh": {
         "path": "engine://primitives/sphere.obj"
@@ -115,8 +115,8 @@
     {
       "id": 6,
       "material": {
-        "mtl": "materials/bricks.mtl",
-        "name": "bricks"
+        "mtl": "materials/mirror.mtl",
+        "name": "mirror"
       },
       "mesh": {
         "path": "engine://primitives/sphere.obj"
@@ -143,8 +143,8 @@
     {
       "id": 7,
       "material": {
-        "mtl": "materials/blue.mtl",
-        "name": "blue"
+        "mtl": "engine://materials/default.mtrl",
+        "name": "default"
       },
       "mesh": {
         "path": "engine://primitives/sphere.obj"
@@ -155,6 +155,70 @@
           -2.0,
           1.763062834739685,
           0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "name": "warm light",
+      "pointLight": {
+        "color": [
+          0.9950980544090271,
+          0.643886923789978,
+          0.0
+        ],
+        "constant": 1.0,
+        "intensity": 2.200000047683716,
+        "linear": 0.09000000357627869,
+        "quadratic": 0.03200000151991844
+      },
+      "transform": {
+        "position": [
+          -3.0,
+          1.5,
+          1.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "name": "cool light",
+      "pointLight": {
+        "color": [
+          0.43627452850341797,
+          0.7015570998191833,
+          1.0
+        ],
+        "constant": 1.0,
+        "intensity": 2.200000047683716,
+        "linear": 0.09000000357627869,
+        "quadratic": 0.03200000151991844
+      },
+      "transform": {
+        "position": [
+          3.0,
+          1.5,
+          1.0
         ],
         "rotation": [
           0.0,

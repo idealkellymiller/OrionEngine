@@ -1,0 +1,7 @@
+# Wavefront Material
+
+newmtl mirror
+Kd 0.0588235 0.0588235 0.0588235
+Ks 1 1 1
+Ns 30
+d 1

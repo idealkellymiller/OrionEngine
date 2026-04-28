@@ -94,6 +94,25 @@ int main(int argc, char** argv)
     // Initialize the renderer (loads shaders)
     Orion::Renderer::Init();
 
+    // Resolve engine assets folder: lives at ../engine/engineAssets/ relative to the exe.
+    // Must be registered BEFORE BeginPlayStandalone loads the scene so that engine://
+    // references (primitives, built-in materials, etc.) resolve correctly.
+    {
+        fs::path engineAssetsPath = fs::absolute(exeDir / ".." / "engine" / "engineAssets");
+        if (fs::exists(engineAssetsPath)) {
+            std::string engPath = engineAssetsPath.string();
+            if (!engPath.empty() && engPath.back() != '\\' && engPath.back() != '/')
+                engPath += '\\';
+            Orion::AssetManager::SetEngineAssetsFolderPath(engPath);
+            Orion::AssetManager::LoadEngineAssetsFolder();
+            std::cout << "[Runtime] Engine assets: " << engPath << "\n";
+        } else {
+            std::cerr << "[Runtime] WARNING: Engine assets not found at: "
+                      << engineAssetsPath.string() << "\n"
+                      << "          Built-in primitives and materials will not load.\n";
+        }
+    }
+
     // Load assets, load scene, init scripts + physics, start playing
     app.GetRuntimeLayer()->BeginPlayStandalone(scenePath, assetsPath);
 

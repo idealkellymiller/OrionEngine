@@ -176,6 +176,13 @@ namespace Orion {
     {
         constexpr std::string_view enginePrefix = "engine://";
         if (ref.rfind(enginePrefix, 0) == 0) {
+            if (m_EngineAssetsFolderPath.empty()) {
+                std::cout << "[Assets] WARNING: scene ref '" << ref
+                          << "' uses engine:// but engine assets folder is not set.\n"
+                          << "         Expected folder: <install>\\engine\\engineAssets\\\n"
+                          << "         Make sure that folder exists and contains the built-in assets.\n";
+                return "";   // return empty so callers get a clean 'not found' rather than a CWD-relative garbage path
+            }
             std::string rel = ref.substr(enginePrefix.size());
             std::replace(rel.begin(), rel.end(), '/', '\\');
             return m_EngineAssetsFolderPath + rel;

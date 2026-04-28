@@ -8,6 +8,6 @@ function OnUpdate(dt)
     if Input.IsKeyDown("Space") then Physics.AddImpulse(0, 400, 0) end
 end
 
-function OnCollisionEnter(other)
+function OnCollision(other, isTrigger)
     Audio.PlayOneShot("audio/fah.mp3")
 end

@@ -26,6 +26,8 @@
 #include <iostream>
 #include <cstdarg>
 #include <thread>
+#include <mutex>
+#include <vector>
 
 // Jolt uses its own namespace
 using namespace JPH;
@@ -70,27 +72,55 @@ namespace {
 namespace Orion {
 
 	// ============================================================
-	// Contact listener — forwards collision events to our callback
+	// Contact listener — queues collision events for main-thread dispatch
 	// ============================================================
+	// OnContactAdded is called from Jolt's job-system threads during
+	// PhysicsSystem::Update().  Calling Lua (or any non-thread-safe code)
+	// directly from here causes crashes when many collisions happen at once.
+	// Instead we push events into a mutex-protected queue and flush them on
+	// the main thread after Update() returns.
+	struct PendingCollision {
+		EntityID a;
+		EntityID b;
+		bool     isTrigger;
+	};
+
 	class OrionContactListener : public JPH::ContactListener {
 	public:
-		// Map from BodyID index -> EntityID, set by PhysicsWorld
 		const std::unordered_map<uint32_t, EntityID>* bodyToEntity = nullptr;
-		// Pointer to the PhysicsWorld's callback (always up-to-date, no stale copies)
-		const CollisionCallback* callbackPtr = nullptr;
 
+		// Called from Jolt worker threads — ONLY push to the queue here.
 		void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
 			const JPH::ContactManifold& /*inManifold*/, JPH::ContactSettings& /*ioSettings*/) override
 		{
-			if (!callbackPtr || !(*callbackPtr) || !bodyToEntity) return;
+			if (!bodyToEntity) return;
 
 			auto it1 = bodyToEntity->find(inBody1.GetID().GetIndex());
 			auto it2 = bodyToEntity->find(inBody2.GetID().GetIndex());
 			if (it1 == bodyToEntity->end() || it2 == bodyToEntity->end()) return;
 
 			bool isTrigger = inBody1.IsSensor() || inBody2.IsSensor();
-			(*callbackPtr)(it1->second, it2->second, isTrigger);
+
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			m_Pending.push_back({ it1->second, it2->second, isTrigger });
 		}
+
+		// Called on the main thread after PhysicsSystem::Update() returns.
+		// Drains the queue and fires the callback safely.
+		void FlushEvents(const CollisionCallback& callback)
+		{
+			std::vector<PendingCollision> events;
+			{
+				std::lock_guard<std::mutex> lock(m_Mutex);
+				events.swap(m_Pending);
+			}
+			for (const auto& ev : events)
+				callback(ev.a, ev.b, ev.isTrigger);
+		}
+
+	private:
+		std::mutex                   m_Mutex;
+		std::vector<PendingCollision> m_Pending;
 	};
 
 	// ============================================================
@@ -167,9 +197,8 @@ namespace Orion {
 		// Gravity
 		m_PhysicsSystem->SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
 
-		// Contact listener — uses pointer to m_CollisionCallback so it's always current
+		// Contact listener — queues events from Jolt threads; flushed on main thread in Step()
 		s_ContactListener.bodyToEntity = &m_BodyIndexToEntity;
-		s_ContactListener.callbackPtr = &m_CollisionCallback;
 		m_PhysicsSystem->SetContactListener(&s_ContactListener);
 
 		// ---- Create bodies for every entity that has Rigidbody + Collider ----
@@ -301,6 +330,11 @@ namespace Orion {
 			m_PhysicsSystem->Update(FIXED_TIMESTEP, 1, m_TempAllocator.get(), m_JobSystem.get());
 			m_Accumulator -= FIXED_TIMESTEP;
 			steps++;
+
+			// Flush queued collision events on the main thread, safely away from
+			// Jolt's job threads.  Only fire if a callback is registered.
+			if (m_CollisionCallback)
+				s_ContactListener.FlushEvents(m_CollisionCallback);
 		}
 
 		// Clamp accumulator to prevent spiral of death

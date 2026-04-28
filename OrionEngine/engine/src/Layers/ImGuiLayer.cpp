@@ -796,15 +796,31 @@ namespace Orion {
 			if (ImGui::Selectable(IMGUI_ELEMENT_TITLE("(none)", "MaterialNone"), matComp->material == INVALID_ASSET_ID))
 				matComp->material = INVALID_ASSET_ID;
 
-			// List every loaded material asset
+			// List every loaded material asset.
+			// Label = "name (file.mtl)" so materials from different files
+			// with the same newmtl name are visually distinguishable.
 			for (auto& [id, asset] : AssetManager::GetAllMaterialAssets())
 			{
 				bool isSelected = (matComp->material == id);
-				std::string label = asset.name.empty()
-					? ("ID: " + std::to_string(id))
-					: asset.name;
 
-				if (ImGui::Selectable(label.c_str(), isSelected))
+				std::string label;
+				if (asset.name.empty()) {
+					label = "ID: " + std::to_string(id);
+				} else {
+					// Extract just the filename from the full key path
+					std::string keyPath = AssetManager::GetMaterialPath(id);
+					size_t sep = keyPath.find("::");
+					std::string filename = (sep != std::string::npos)
+						? std::filesystem::path(keyPath.substr(0, sep)).filename().string()
+						: "";
+					label = filename.empty()
+						? asset.name
+						: asset.name + " (" + filename + ")";
+				}
+
+				// Use id-suffixed ImGui ID so entries with identical labels don't collide
+				std::string imguiLabel = label + "###MatSel" + std::to_string(id);
+				if (ImGui::Selectable(imguiLabel.c_str(), isSelected))
 					matComp->material = id;
 
 				if (isSelected)
@@ -2377,10 +2393,27 @@ namespace Orion {
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
 				if (ImGui::Button("Delete", ImVec2(100, 0))) {
 					try {
-						if (s_PendingDeleteIsFolder)
+						if (s_PendingDeleteIsFolder) {
+							// Unload every .mtl inside the folder before deleting it,
+							// so SaveAllMaterials() doesn't recreate the files on next save.
+							for (const auto& entry : fs::recursive_directory_iterator(s_PendingDeletePath)) {
+								if (!entry.is_regular_file()) continue;
+								std::string ext = entry.path().extension().string();
+								for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+								if (ext == ".mtl")
+									AssetManager::UnloadMaterialFile(entry.path().string());
+							}
 							fs::remove_all(s_PendingDeletePath);
-						else
+						}
+						else {
+							// Unload materials before the file is removed.
+							std::string ext = fs::path(s_PendingDeletePath).extension().string();
+							for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+							if (ext == ".mtl")
+								AssetManager::UnloadMaterialFile(s_PendingDeletePath);
+
 							fs::remove(s_PendingDeletePath);
+						}
 						std::cout << "[Assets] Deleted: " << s_PendingDeletePath << "\n";
 					}
 					catch (const std::exception& e) {

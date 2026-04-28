@@ -533,6 +533,30 @@ namespace Orion {
         }
     }
 
+    void AssetManager::UnloadMaterialFile(const std::string& mtlPath)
+    {
+        const std::string normPath = NormalizePath(mtlPath);
+        const std::string prefix   = normPath + "::";
+
+        // Collect all keys whose file path matches this .mtl.
+        std::vector<std::string> keysToRemove;
+        for (const auto& [key, id] : m_MaterialPathToID) {
+            if (key.size() >= prefix.size() &&
+                key.compare(0, prefix.size(), prefix) == 0)
+            {
+                keysToRemove.push_back(key);
+            }
+        }
+
+        for (const auto& key : keysToRemove) {
+            AssetID id = m_MaterialPathToID[key];
+            m_MaterialAssets.erase(id);
+            m_LoadedMaterials.erase(id);
+            m_MaterialPathToID.erase(key);
+            std::cout << "[Assets] Unloaded material: " << key << "\n";
+        }
+    }
+
     void AssetManager::SaveAllMaterials()
     {
         // Group materials by their .mtl file path

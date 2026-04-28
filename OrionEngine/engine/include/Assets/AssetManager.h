@@ -124,6 +124,11 @@ namespace Orion {
         // Update a material's path key (used when renaming .mtl files)
         static void RekeyMaterial(const std::string& oldKey, const std::string& newKey);
 
+        // Remove all in-memory materials sourced from a given .mtl file.
+        // Must be called after deleting the file on disk so SaveAllMaterials()
+        // does not recreate it on the next save.
+        static void UnloadMaterialFile(const std::string& mtlPath);
+
         // Parse a .mtl file and auto-create Material + Texture assets from it
         static void LoadMTLFile(const std::string& mtlPath);
 

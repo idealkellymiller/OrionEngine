@@ -554,8 +554,8 @@
     {
       "id": 25,
       "material": {
-        "mtl": "materials/blue.mtl",
-        "name": "blue"
+        "mtl": "materials/FinishLine.mtl",
+        "name": "finishline"
       },
       "mesh": {
         "path": "models/CatObj.obj"
